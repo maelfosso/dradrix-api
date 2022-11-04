@@ -1,5 +1,8 @@
 .PHONY: cover start test test-integration
 
+compile:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/main cmd/server/*
+
 cover:
 	go tool cover -html=cover.out
 
