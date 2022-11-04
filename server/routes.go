@@ -6,6 +6,7 @@ import (
 )
 
 func (s *Server) setupRoutes() {
+	s.mux.Use(s.requestLoggerMiddleware)
 	s.mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
