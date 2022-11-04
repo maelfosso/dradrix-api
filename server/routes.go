@@ -1,9 +1,8 @@
 package server
 
 import (
-	"canvas/handlers"
-
 	"github.com/go-chi/cors"
+	"stockinos.com/api/handlers"
 )
 
 func (s *Server) setupRoutes() {
