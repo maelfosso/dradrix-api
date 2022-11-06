@@ -16,6 +16,7 @@ func (s *Server) setupRoutes() {
 		MaxAge:           300,
 	}))
 
+	handlers.Root(s.mux)
 	handlers.Health(s.mux)
 	handlers.FacebookVerificationWebhooks(s.mux)
 }
