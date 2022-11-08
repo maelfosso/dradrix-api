@@ -14,3 +14,6 @@ test:
 
 test-integration:
 	go test -coverprofile=cover.out -p 1 ./...
+
+ngrok:
+	ngrok http --region=us --hostname=api.stockinos.ngrok.io 8000
