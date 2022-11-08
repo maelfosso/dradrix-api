@@ -18,5 +18,5 @@ func (s *Server) setupRoutes() {
 
 	handlers.Root(s.mux)
 	handlers.Health(s.mux)
-	handlers.FacebookVerificationWebhooks(s.mux)
+	handlers.FacebookWebhook(s.mux)
 }
