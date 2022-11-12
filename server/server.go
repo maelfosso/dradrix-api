@@ -12,21 +12,23 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+	"stockinos.com/api/storage"
+	"stockinos.com/api/utils"
 )
 
 type Server struct {
-	address string
-	// database *storage.Database
-	log    *zap.Logger
-	mux    chi.Router
-	server *http.Server
+	address  string
+	database *storage.Database
+	log      *zap.Logger
+	mux      chi.Router
+	server   *http.Server
 }
 
 type Options struct {
-	// Database *storage.Database
-	Host string
-	Log  *zap.Logger
-	Port int
+	Database *storage.Database
+	Host     string
+	Log      *zap.Logger
+	Port     int
 }
 
 func New(opts Options) *Server {
@@ -38,9 +40,10 @@ func New(opts Options) *Server {
 	mux := chi.NewMux()
 
 	return &Server{
-		address: address,
-		log:     opts.Log,
-		mux:     mux,
+		database: createDatabase(opts.Log),
+		address:  address,
+		log:      opts.Log,
+		mux:      mux,
 		server: &http.Server{
 			Addr:              address,
 			Handler:           mux,
@@ -52,8 +55,26 @@ func New(opts Options) *Server {
 	}
 }
 
+func createDatabase(log *zap.Logger) *storage.Database {
+	return storage.NewDatabase(storage.NewDatabaseOptions{
+		Host:                  utils.GetDefault("DB_HOST", "localhost"),
+		Port:                  utils.GetIntDefault("DB_PORT", 5432),
+		User:                  utils.GetDefault("DB_USER", "stockinos"),
+		Password:              utils.GetDefault("DB_PASSWORD", "stockinos"),
+		Name:                  utils.GetDefault("DB_NAME", "stockinos"),
+		MaxOpenConnections:    utils.GetIntDefault("DB_MAX_OPEN_CONNECTION", 10),
+		MaxIdleConnections:    utils.GetIntDefault("DB_MAX_IDLE_CONNECTION", 10),
+		ConnectionMaxLifetime: utils.GetDurationDefault("DB_CONNECTION_MAX_LIFETIME", time.Hour),
+		Log:                   log,
+	})
+}
+
 // Start the server by setting up routes and listening for HTTP request on the given address
 func (s *Server) Start() error {
+	if err := s.database.Connect(); err != nil {
+		return fmt.Errorf("error connecting to database: %w", err)
+	}
+
 	s.setupRoutes()
 
 	s.log.Info("Starting on", zap.String("address", s.address))
