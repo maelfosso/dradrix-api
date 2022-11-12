@@ -9,6 +9,9 @@ cover:
 start:
 	go run cmd/server/*.go
 
+migrate:
+	go run cmd/migrate/*.go
+
 test:
 	go test -coverprofile=cover.out -short ./...
 

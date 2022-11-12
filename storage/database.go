@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -69,16 +68,25 @@ func (d *Database) createDataSourceName(withPassword bool) string {
 func (d *Database) Connect() error {
 	d.log.Info("Connecting to database", zap.String("url", d.createDataSourceName(false)))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
 
 	var err error
 	d.DB, err = gorm.Open(postgres.Open(d.createDataSourceName(true)), &gorm.Config{})
-	d.DB = d.DB.WithContext(ctx)
+	// d.DB = d.DB.WithContext(ctx)
 	if err != nil {
 		d.log.Fatal("Failed to connect to the database : ", zap.Error(err))
 		return err
 	}
+
+	sqlDB, _ := d.DB.DB()
+	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+	sqlDB.SetMaxIdleConns(d.maxIdleConnections)
+	// SetMaxOpenConns sets the maximum number of open connections to the database.
+	sqlDB.SetMaxOpenConns(d.maxOpenConnections)
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	sqlDB.SetConnMaxLifetime(d.connectionMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(d.connectionMaxIdleTime)
 
 	d.log.Debug(
 		"Setting connection pool options",
