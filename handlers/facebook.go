@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,11 @@ import (
 	"stockinos.com/api/utils"
 )
 
-func FacebookWebhook(mux chi.Router) {
+type facebookWebhookInterface interface {
+	SaveWAMessages(ctx context.Context, messages []models.WhatsAppMessage) error
+}
+
+func FacebookWebhook(mux chi.Router, s facebookWebhookInterface) {
 	mux.Get("/webhook", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		hubMode := query.Get("hub.mode")
@@ -42,6 +47,9 @@ func FacebookWebhook(mux chi.Router) {
 
 		fmt.Println("\nIncoming decoded: ", data)
 		fmt.Println()
+
+		s.SaveWAMessages(r.Context(), data.Entry[0].Changes[0].Value.Messages)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 	})
