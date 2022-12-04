@@ -37,7 +37,13 @@ func start() int {
 		return 1
 	}
 
-	db.DB.AutoMigrate(&models.WhatsAppMessage{})
+	db.DB.AutoMigrate(
+		&models.WhatsAppMessage{},
+		&models.WhatsAppMessageText{},
+		&models.WhatsAppMessageImage{},
+		&models.WhatsAppMessageAudio{},
+	)
+
 	return 0
 }
 

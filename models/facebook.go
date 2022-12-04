@@ -1,6 +1,9 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
+)
 
 // WebhookBody
 // object = whatsapp_business_account
@@ -46,33 +49,46 @@ type WhatsAppContactProfile struct {
 
 type WhatsAppMessage struct {
 	gorm.Model
-	ID        string `json:"id",omitemtpy gorm:"primaryKey"`
-	From      string `json:"from",omitempty`
-	Timestamp string `json:"timestamp",omitempty`
-	Type      string `json:"type",omitempty` // text, image, audio
-	// WhatsAppMessageType `json:",inline"`
+	ID                  string `json:"id",omitemtpy gorm:"primaryKey"`
+	From                string `json:"from",omitempty`
+	Timestamp           string `json:"timestamp",omitempty`
+	Type                string `json:"type",omitempty` // text, image, audio
+	WhatsAppMessageType `json:",inline" gorm:"embedded`
 }
 
 type WhatsAppMessageType struct {
-	Text  WhatsAppMessageText  `json:"text",omitempty`
-	Image WhatsAppMessageImage `json:"image",omitempty`
-	Audio WhatsAppMessageAudio `json:"audio",omitempty`
+	TextID  uuid.UUID            `gorm:"default:null"`
+	Text    WhatsAppMessageText  `json:"text",omitempty`
+	ImageID string               `gorm:"default:null"`
+	Image   WhatsAppMessageImage `json:"image",omitempty`
+	AudioID string               `gorm:"default:null"`
+	Audio   WhatsAppMessageAudio `json:"audio",omitempty`
 }
 
 type WhatsAppMessageText struct {
-	Body string `json:"body",omitempty`
+	gorm.Model
+	ID   uuid.UUID `gorm:"type:uuid;primary_key;"`
+	Body string    `json:"body",omitempty`
+}
+
+// BeforeCreate will set a UUID rather than numeric ID.
+func (w *WhatsAppMessageText) BeforeCreate(tx *gorm.DB) error {
+	w.ID = uuid.NewV4()
+	return nil
 }
 
 type WhatsAppMessageImage struct {
+	gorm.Model
 	Caption  string `json:"caption",omitemtpy`
 	MimeType string `json:"mime_type",omitempty` // image/jpeg,
 	Sha256   string `json:"sha256",omitemtpy`
-	Id       string `json:"id",omitempty`
+	ID       string `json:"id",omitempty gorm:"primaryKey"`
 }
 
 type WhatsAppMessageAudio struct {
+	gorm.Model
 	MimeType string `json:"mime_type",omitempty` // audio/ogg; codecs=opus -
 	Sha256   string `json:"sha256",omitemtpy`
-	Id       string `json:"id",omitempty`
+	ID       string `json:"id",omitempty gorm:"primaryKey"`
 	Voice    bool   `json:"voice",omitempty`
 }
