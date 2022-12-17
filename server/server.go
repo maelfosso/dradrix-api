@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+	"stockinos.com/api/broker"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
 )
@@ -19,6 +20,7 @@ import (
 type Server struct {
 	address  string
 	database *storage.Database
+	nats     *broker.Broker
 	log      *zap.Logger
 	mux      chi.Router
 	server   *http.Server
@@ -26,6 +28,7 @@ type Server struct {
 
 type Options struct {
 	Database *storage.Database
+	Nats     *broker.Broker
 	Host     string
 	Log      *zap.Logger
 	Port     int
@@ -41,6 +44,7 @@ func New(opts Options) *Server {
 
 	return &Server{
 		database: createDatabase(opts.Log),
+		nats:     createNats(opts.Log),
 		address:  address,
 		log:      opts.Log,
 		mux:      mux,
@@ -69,10 +73,21 @@ func createDatabase(log *zap.Logger) *storage.Database {
 	})
 }
 
+func createNats(log *zap.Logger) *broker.Broker {
+	return broker.NewBroker(broker.Options{
+		Log:     log,
+		Servers: "http://localhost:4222",
+	})
+}
+
 // Start the server by setting up routes and listening for HTTP request on the given address
 func (s *Server) Start() error {
 	if err := s.database.Connect(); err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
+	}
+
+	if err := s.nats.Connect(); err != nil {
+		return fmt.Errorf("error connecting to nats: %w", err)
 	}
 
 	s.setupRoutes()
