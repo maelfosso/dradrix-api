@@ -90,6 +90,10 @@ func (s *Server) Start() error {
 		return fmt.Errorf("error connecting to nats: %w", err)
 	}
 
+	if err := s.nats.Setup(); err != nil {
+		return fmt.Errorf("error setting up nats: %w", err)
+	}
+
 	s.setupRoutes()
 
 	s.log.Info("Starting on", zap.String("address", s.address))

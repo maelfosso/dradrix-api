@@ -2,8 +2,15 @@ package server
 
 import (
 	"github.com/go-chi/cors"
+	"stockinos.com/api/broker/publishers"
 	"stockinos.com/api/handlers"
+	"stockinos.com/api/storage"
 )
+
+type facebookWebhookStruct struct {
+	*storage.Database
+	*publishers.WhatsAppMessageReceivedPublisher
+}
 
 func (s *Server) setupRoutes() {
 	s.mux.Use(s.requestLoggerMiddleware)
@@ -18,5 +25,9 @@ func (s *Server) setupRoutes() {
 
 	handlers.Root(s.mux)
 	handlers.Health(s.mux)
-	handlers.FacebookWebhook(s.mux, s.database)
+
+	handlers.FacebookWebhook(s.mux, facebookWebhookStruct{
+		Database:                         s.database,
+		WhatsAppMessageReceivedPublisher: publishers.NewWhatsAppMessageReceivedPublisher(*s.nats),
+	})
 }
