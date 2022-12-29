@@ -57,17 +57,17 @@ type WhatsAppMessage struct {
 }
 
 type WhatsAppMessageType struct {
-	TextID  uuid.UUID            `gorm:"default:null"`
+	TextID  uuid.UUID            `json:"text_id,omitempty" gorm:"default:null"`
 	Text    WhatsAppMessageText  `json:"text",omitempty`
-	ImageID string               `gorm:"default:null"`
+	ImageID string               `json:"image_id,omitempty" gorm:"default:null"`
 	Image   WhatsAppMessageImage `json:"image",omitempty`
-	AudioID string               `gorm:"default:null"`
+	AudioID string               `json:"audio_id,omitempty" gorm:"default:null"`
 	Audio   WhatsAppMessageAudio `json:"audio",omitempty`
 }
 
 type WhatsAppMessageText struct {
 	gorm.Model
-	ID   uuid.UUID `gorm:"type:uuid;primary_key;"`
+	ID   uuid.UUID `json:"id,omitempty" gorm:"type:uuid;primary_key;"`
 	Body string    `json:"body",omitempty`
 }
 
