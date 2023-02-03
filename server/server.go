@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 	"stockinos.com/api/broker"
+	"stockinos.com/api/broker/subscribers"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
 )
@@ -95,6 +96,8 @@ func (s *Server) Start() error {
 	}
 
 	s.setupRoutes()
+
+	subscribers.NewWhatsAppMessageWoZSentSubscriber(*s.nats).Subscribe()
 
 	s.log.Info("Starting on", zap.String("address", s.address))
 	if err := s.server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {

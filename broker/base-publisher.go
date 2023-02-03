@@ -18,16 +18,16 @@ func NewPublisher(broker Broker) *BasePublisher {
 	}
 }
 
-func (b *BasePublisher) Init() error {
-	stream, err := b.broker.CheckStreamOrCreate(b.stream())
-	if err != nil {
-		return err
-	}
+// func (b *BasePublisher) Init() error {
+// 	stream, err := b.broker.CheckStreamOrCreate(b.stream())
+// 	if err != nil {
+// 		return err
+// 	}
 
-	_, err = b.broker.AddSubjectToStream(stream, b.subject().String())
-	if err != nil {
-		return err
-	}
+// 	_, err = b.broker.AddSubjectToStream(stream, b.subject().String())
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

@@ -2,6 +2,7 @@ package broker
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -55,12 +56,33 @@ func (b *Broker) Setup() error {
 	return nil
 }
 
+// // createStream creates a stream by using JetStreamContext
+// func createStream(js nats.JetStreamContext) error {
+// 	// Check if the ORDERS stream already exists; if not, create it.
+// 	stream, err := js.StreamInfo(streamName)
+// 	if err != nil {
+// 		 log.Println(err)
+// 	}
+// 	if stream == nil {
+// 		 log.Printf("creating stream %q and subjects %q", streamName, streamSubjects)
+// 		 _, err = js.AddStream(&nats.StreamConfig{
+// 				Name:     streamName,
+// 				Subjects: []string{streamSubjects},
+// 		 })
+// 		 if err != nil {
+// 				return err
+// 		 }
+// 	}
+// 	return nil
+// }
+
 func (b *Broker) CheckStreamOrCreate(name string) (*nats.StreamInfo, error) {
 	var stream *nats.StreamInfo
 	stream, err := b.JetStream.StreamInfo(name)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error getting stream [%s] info: %w", name, err)
-	// }
+	if err != nil {
+		// return nil, fmt.Errorf("error getting stream [%s] info: %w", name, err)
+		log.Println(err)
+	}
 	if stream == nil {
 		stream, err = b.JetStream.AddStream(&nats.StreamConfig{
 			Name:     name,
@@ -77,14 +99,21 @@ func (b *Broker) CheckStreamOrCreate(name string) (*nats.StreamInfo, error) {
 }
 
 func (b *Broker) AddSubjectToStream(stream *nats.StreamInfo, subject string) (*nats.StreamInfo, error) {
-	fmt.Println("AddSugjectToStream - Stream ", stream, stream.Config)
+	log.Println("AddSugjectToStream - Stream ", stream, stream.Config)
 	var err error
+
+	// Check if the subject is already into the stream
+	for _, s := range stream.Config.Subjects {
+		if s == subject {
+			return stream, nil
+		}
+	}
 
 	stream, err = b.JetStream.UpdateStream(&nats.StreamConfig{
 		Name:     stream.Config.Name,
 		Subjects: append(stream.Config.Subjects, subject),
 	})
-	fmt.Println("After UPdateStream ", stream, err)
+	log.Println("After UPdateStream ", stream, err)
 	if err != nil {
 		return nil, fmt.Errorf("error adding [%s] to the stream [%s] info: %w", subject, stream.Config.Name, err)
 	}

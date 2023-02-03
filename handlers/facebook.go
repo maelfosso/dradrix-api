@@ -49,14 +49,22 @@ func FacebookWebhook(mux chi.Router, s facebookWebhookInterface) {
 		// fmt.Println("\nIncoming decoded: ", data)
 		// fmt.Println()
 
-		messages := data.Entry[0].Changes[0].Value.Messages
-		fmt.Println("\nMessage to send: ", messages[0])
-		fmt.Println()
-		err := s.Publish(messages[0])
-		if err != nil {
-			fmt.Println(err)
+		changes := data.Entry[0].Changes[0].Value
+		if len(changes.Messages) > 0 {
+			messages := changes.Messages
+			fmt.Println("\nMessage to send: ", messages[0])
+			fmt.Println()
+			err := s.Publish(messages[0])
+			if err != nil {
+				fmt.Println(err)
+			}
+			// s.SaveWAMessages(r.Context(), messages)
 		}
-		// s.SaveWAMessages(r.Context(), messages)
+		if len(changes.Statuses) > 0 {
+			fmt.Println("\n**** STATUSES **** ")
+			fmt.Println(changes.Statuses)
+			fmt.Println()
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
