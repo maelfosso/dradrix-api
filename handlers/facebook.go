@@ -16,6 +16,7 @@ import (
 type facebookWebhookInterface interface {
 	Publish(message models.WhatsAppMessage) error
 	SaveWAMessages(ctx context.Context, messages []models.WhatsAppMessage) error
+	SaveWAStatus(ctx context.Context, statuses []models.WhatsAppStatus) error
 }
 
 func FacebookWebhook(mux chi.Router, s facebookWebhookInterface) {
@@ -64,6 +65,8 @@ func FacebookWebhook(mux chi.Router, s facebookWebhookInterface) {
 			fmt.Println("\n**** STATUSES **** ")
 			fmt.Println(changes.Statuses)
 			fmt.Println()
+
+			s.SaveWAStatus(r.Context(), changes.Statuses)
 		}
 
 		w.Header().Set("Content-Type", "application/json")

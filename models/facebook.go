@@ -56,6 +56,7 @@ type WhatsAppMessage struct {
 	gorm.Model
 	ID                  string `json:"id",omitemtpy gorm:"primaryKey"`
 	From                string `json:"from",omitempty`
+	To                  string `json:"to",omitempty`
 	Timestamp           string `json:"timestamp",omitempty`
 	Type                string `json:"type",omitempty` // text, image, audio
 	WhatsAppMessageType `json:",inline" gorm:"embedded`
@@ -93,6 +94,7 @@ type WhatsAppMessageAudio struct {
 }
 
 type WhatsAppStatus struct {
+	gorm.Model
 	ID           string                     `json:"id",omitempty gorm:"primaryKey"`
 	Status       string                     `json:"status",omitempty`
 	Timestamp    string                     `json:"timestamp",omitempty`

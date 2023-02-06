@@ -97,7 +97,7 @@ func (s *Server) Start() error {
 
 	s.setupRoutes()
 
-	subscribers.NewWhatsAppMessageWoZSentSubscriber(*s.nats).Subscribe()
+	subscribers.NewMessageWoZSentSubscriber(*s.nats).Subscribe(*s.database)
 
 	s.log.Info("Starting on", zap.String("address", s.address))
 	if err := s.server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {

@@ -7,41 +7,44 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"stockinos.com/api/broker"
+	"stockinos.com/api/models"
+	"stockinos.com/api/services"
+	"stockinos.com/api/storage"
 )
 
-type WhatsAppMessageWoZSentData struct {
+type MessageWoZSentData struct {
 	Id      string `json:"id",omitemtpy`
 	From    string `json:"from",omitemtpy`
 	To      string `json:"to",omitemtpy`
 	Message string `json:"message",omitemtpy`
 }
 
-type WhatsAppMessageWoZSentSubscriber struct {
+type MessageWoZSentSubscriber struct {
 	js nats.JetStream
 }
 
-func (p *WhatsAppMessageWoZSentSubscriber) stream() string {
+func (p *MessageWoZSentSubscriber) stream() string {
 	return "whatsapp:message"
 }
 
-func (p *WhatsAppMessageWoZSentSubscriber) subject() broker.Subject {
-	return broker.WhatsAppMessageWoZSent
+func (p *MessageWoZSentSubscriber) subject() broker.Subject {
+	return broker.MessageWoZSent
 }
 
-func (p *WhatsAppMessageWoZSentSubscriber) parseMsg(msg *nats.Msg) (*WhatsAppMessageWoZSentData, error) {
-	log.Println("WhatsAppMessageWoZSentData : ", msg.Data, string(msg.Data[:]))
+func (p *MessageWoZSentSubscriber) parseMsg(msg *nats.Msg) (*models.WhatsAppMessage, error) {
+	log.Println("MessageWoZSentData : ", msg.Data, string(msg.Data[:]))
 
-	var data WhatsAppMessageWoZSentData
+	var data models.WhatsAppMessage // MessageWoZSentData
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
-		return nil, fmt.Errorf("error when unmarshilling WhatsAppMessageWoZSentData : %s", err)
+		return nil, fmt.Errorf("error when unmarshilling MessageWoZSentData : %s", err)
 	}
-	log.Println("WhatsAppMessageWoZSentData Parsed: ", data)
+	log.Println("MessageWoZSentData Parsed: ", data)
 
 	return &data, nil
 }
 
-func (p *WhatsAppMessageWoZSentSubscriber) Subscribe() error {
+func (p *MessageWoZSentSubscriber) Subscribe(db storage.Database) error {
 	p.js.Subscribe(p.subject().String(), func(msg *nats.Msg) {
 		data, err := p.parseMsg(msg)
 		if err != nil {
@@ -50,7 +53,14 @@ func (p *WhatsAppMessageWoZSentSubscriber) Subscribe() error {
 			msg.Ack()
 		} else {
 			log.Printf("monitor service subscribes from subject:%s\n", msg.Subject)
-			log.Printf("To:%s, From: %s, Message:%s\n", data.To, data.From, data.Message)
+			log.Printf("To:%s, From: %s, Message:%s\n", data.To, data.From, data.Text.Body)
+
+			err = services.HandleMessageSentByWoZ(db, *data)
+			if err != nil {
+				msg.Nak()
+			} else {
+				msg.Ack()
+			}
 		}
 
 	}, nats.Durable("monitor"), nats.ManualAck())
@@ -58,15 +68,15 @@ func (p *WhatsAppMessageWoZSentSubscriber) Subscribe() error {
 	return nil
 }
 
-func NewWhatsAppMessageWoZSentSubscriber(b broker.Broker) *WhatsAppMessageWoZSentSubscriber {
-	s := &WhatsAppMessageWoZSentSubscriber{}
+func NewMessageWoZSentSubscriber(b broker.Broker) *MessageWoZSentSubscriber {
+	s := &MessageWoZSentSubscriber{}
 
 	err := b.BeforePublishing(
 		s.stream(),
 		s.subject().String(),
 	)
 	if err != nil {
-		fmt.Println("NewWhatsAppMessageWoZSentSubscriber - ", err)
+		fmt.Println("NewMessageWoZSentSubscriber - ", err)
 		log.Fatalln(err)
 	}
 

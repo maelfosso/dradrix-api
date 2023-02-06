@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"stockinos.com/api/server"
@@ -18,6 +19,10 @@ import (
 // release is set through the linker at build time, generally from a git sha
 // User for logging and error reporting
 var release string
+
+func init() {
+	godotenv.Load()
+}
 
 func main() {
 	fmt.Println("🤓")
