@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package protos;
+option go_package="stockinos.com/api/grpc/protos";
+
+service Whatsapp {
+  rpc InsertWozMessage(InsertWozMessageRequest) returns (WhatsappMessageResponse) {}
+}
+
+message InsertWozMessageRequest {
+  string from = 1;
+  string to = 2;
+  string message = 3;
+}
+
+message WhatsappMessageResponse {
+  string id = 1;
+  string from = 2;
+  string to = 3;
+  string timestamp = 4;
+  string type = 5;
+
+  optional string textId = 6;
+  optional WhatsappMessageText text = 7;
+
+  // string imageId = 8;
+  // WhatsappMessageImage imageId = 9;
+
+  // string audioId = 10;
+  // WhatsappMessageAudio audio = 11;
+}
+
+message WhatsappMessageText {
+  string id = 1;
+  string body = 2;
+}

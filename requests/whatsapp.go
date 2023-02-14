@@ -21,7 +21,7 @@ var sendMessageTextJsonTemplate = `{
 	}
 }`
 
-func SendMessageText(to, message string) (*WhatsAppSendTextMessageResponse, error) {
+func SendMessageText(to, message string) (*WhatsappSendTextMessageResponse, error) {
 	jsonBody := []byte(fmt.Sprintf(sendMessageTextJsonTemplate, to, message))
 	bodyReader := bytes.NewReader(jsonBody)
 	log.Println("send message text data : ", string(jsonBody))
@@ -58,7 +58,7 @@ func SendMessageText(to, message string) (*WhatsAppSendTextMessageResponse, erro
 
 	log.Println("client: response body: %s", string(resBody))
 
-	var data WhatsAppSendTextMessageResponse
+	var data WhatsappSendTextMessageResponse
 	err = json.Unmarshal(resBody, &data)
 	if err != nil {
 		return nil, fmt.Errorf("error when unmarshilling response body : %s", err)

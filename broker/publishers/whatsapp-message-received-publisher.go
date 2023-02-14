@@ -10,20 +10,20 @@ import (
 	"stockinos.com/api/models"
 )
 
-type WhatsAppMessageReceivedPublisher struct {
+type WhatsappMessageReceivedPublisher struct {
 	// broker.BasePublisher
 	js nats.JetStream
 }
 
-func (p *WhatsAppMessageReceivedPublisher) stream() string {
+func (p *WhatsappMessageReceivedPublisher) stream() string {
 	return "whatsapp:message"
 }
 
-func (p *WhatsAppMessageReceivedPublisher) subject() broker.Subject {
-	return broker.WhatsAppMessageReceived
+func (p *WhatsappMessageReceivedPublisher) subject() broker.Subject {
+	return broker.WhatsappMessageReceived
 }
 
-func (p *WhatsAppMessageReceivedPublisher) Publish(data models.WhatsAppMessage) error {
+func (p *WhatsappMessageReceivedPublisher) Publish(data models.WhatsappMessage) error {
 	fmt.Println("\nMessage to Publish: ", data)
 	fmt.Println()
 	b, err := json.Marshal(data)
@@ -41,15 +41,15 @@ func (p *WhatsAppMessageReceivedPublisher) Publish(data models.WhatsAppMessage) 
 	return nil
 }
 
-func NewWhatsAppMessageReceivedPublisher(b broker.Broker) *WhatsAppMessageReceivedPublisher {
-	p := &WhatsAppMessageReceivedPublisher{}
+func NewWhatsappMessageReceivedPublisher(b broker.Broker) *WhatsappMessageReceivedPublisher {
+	p := &WhatsappMessageReceivedPublisher{}
 
 	err := b.BeforePublishing(
 		p.stream(),
 		p.subject().String(),
 	)
 	if err != nil {
-		fmt.Println("NewWhatsAppMessageReceivedPublisher - ", err)
+		fmt.Println("NewWhatsappMessageReceivedPublisher - ", err)
 		log.Fatalln(err)
 	}
 

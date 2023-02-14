@@ -14,7 +14,7 @@ func Root(mux chi.Router) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		if err := json.NewEncoder(w).Encode("Simple WhatsApp Webhook tester</br>There is no front-end"); err != nil {
+		if err := json.NewEncoder(w).Encode("Simple Whatsapp Webhook tester</br>There is no front-end"); err != nil {
 			fmt.Println("ERror when encoding - ", err)
 			http.Error(w, "error when encoding", http.StatusBadRequest)
 			return

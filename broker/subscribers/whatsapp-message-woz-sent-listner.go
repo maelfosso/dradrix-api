@@ -8,7 +8,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"stockinos.com/api/broker"
 	"stockinos.com/api/models"
-	"stockinos.com/api/services"
 	"stockinos.com/api/storage"
 )
 
@@ -31,10 +30,10 @@ func (p *MessageWoZSentSubscriber) subject() broker.Subject {
 	return broker.MessageWoZSent
 }
 
-func (p *MessageWoZSentSubscriber) parseMsg(msg *nats.Msg) (*models.WhatsAppMessage, error) {
+func (p *MessageWoZSentSubscriber) parseMsg(msg *nats.Msg) (*models.WhatsappMessage, error) {
 	log.Println("MessageWoZSentData : ", msg.Data, string(msg.Data[:]))
 
-	var data models.WhatsAppMessage // MessageWoZSentData
+	var data models.WhatsappMessage // MessageWoZSentData
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
 		return nil, fmt.Errorf("error when unmarshilling MessageWoZSentData : %s", err)
@@ -55,12 +54,12 @@ func (p *MessageWoZSentSubscriber) Subscribe(db storage.Database) error {
 			log.Printf("monitor service subscribes from subject:%s\n", msg.Subject)
 			log.Printf("To:%s, From: %s, Message:%s\n", data.To, data.From, data.Text.Body)
 
-			err = services.HandleMessageSentByWoZ(db, *data)
-			if err != nil {
-				msg.Nak()
-			} else {
-				msg.Ack()
-			}
+			// err = services.HandleMessageSentByWoZ(db, *data)
+			// if err != nil {
+			// 	msg.Nak()
+			// } else {
+			// 	msg.Ack()
+			// }
 		}
 
 	}, nats.Durable("monitor"), nats.ManualAck())

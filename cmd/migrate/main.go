@@ -38,10 +38,10 @@ func start() int {
 	}
 
 	db.DB.AutoMigrate(
-		&models.WhatsAppMessage{},
-		&models.WhatsAppMessageText{},
-		&models.WhatsAppMessageImage{},
-		&models.WhatsAppMessageAudio{},
+		&models.WhatsappMessage{},
+		&models.WhatsappMessageText{},
+		&models.WhatsappMessageImage{},
+		&models.WhatsappMessageAudio{},
 	)
 
 	return 0

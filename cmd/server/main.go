@@ -7,12 +7,16 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"stockinos.com/api/grpc"
 	"stockinos.com/api/server"
+	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
 )
 
@@ -46,10 +50,34 @@ func start() int {
 	host := utils.GetDefault("HOST", "0.0.0.0")
 	port := utils.GetIntDefault("PORT", 8000)
 
+	database := storage.NewDatabase(storage.NewDatabaseOptions{
+		Host:                  utils.GetDefault("DB_HOST", "localhost"),
+		Port:                  utils.GetIntDefault("DB_PORT", 5432),
+		User:                  utils.GetDefault("DB_USER", "stockinos"),
+		Password:              utils.GetDefault("DB_PASSWORD", "stockinos"),
+		Name:                  utils.GetDefault("DB_NAME", "stockinos"),
+		MaxOpenConnections:    utils.GetIntDefault("DB_MAX_OPEN_CONNECTION", 10),
+		MaxIdleConnections:    utils.GetIntDefault("DB_MAX_IDLE_CONNECTION", 10),
+		ConnectionMaxLifetime: utils.GetDurationDefault("DB_CONNECTION_MAX_LIFETIME", time.Hour),
+		Log:                   log,
+	})
+
+	if err := database.Connect(); err != nil {
+		log.Fatal("error connecting to database: %w", zap.Error(err))
+	}
+
 	s := server.New(server.Options{
-		Host: host,
-		Port: port,
-		Log:  log,
+		Database: database,
+		Host:     host,
+		Port:     port,
+		Log:      log,
+	})
+
+	gs := grpc.New(grpc.Options{
+		Database: database,
+		Host:     host,
+		Port:     port + 10,
+		Log:      log,
 	})
 
 	var eg errgroup.Group
@@ -66,10 +94,45 @@ func start() int {
 		return nil
 	})
 
-	if err := s.Start(); err != nil {
-		log.Info("Error starting server", zap.Error(err))
-		return 1
-	}
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+
+	eg.Go(func() error {
+		if err := s.Start(); err != nil {
+			log.Info("Error starting grpc server", zap.Error(err))
+			// return 1
+			// wg.Done()
+			return err
+		}
+
+		return nil
+	})
+
+	eg.Go(func() error {
+		if err := gs.Start(); err != nil {
+			log.Info("Error starting grpc server", zap.Error(err))
+			// return 1
+			// wg.Done()
+			return err
+		}
+
+		return nil
+	})
+	// go func() {
+	// 	if err := gs.Start(); err != nil {
+	// 		log.Info("Error starting grpc server", zap.Error(err))
+	// 		// return 1
+	// 		wg.Done()
+	// 	}
+	// }()
+
+	// go func() {
+	// 	if err := s.Start(); err != nil {
+	// 		log.Info("Error starting server", zap.Error(err))
+	// 		// return 1
+	// 		wg.Done()
+	// 	}
+	// }()
 
 	if err := eg.Wait(); err != nil {
 		return 1

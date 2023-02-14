@@ -7,7 +7,7 @@ import (
 	"stockinos.com/api/models"
 )
 
-func (d *Database) SaveWAMessages(ctx context.Context, messages []models.WhatsAppMessage) error {
+func (d *Database) SaveWAMessages(ctx context.Context, messages []models.WhatsappMessage) error {
 	d.DB.WithContext(ctx).Create(&messages)
 
 	for _, message := range messages {
@@ -18,7 +18,7 @@ func (d *Database) SaveWAMessages(ctx context.Context, messages []models.WhatsAp
 	return nil
 }
 
-func (d *Database) SaveWAStatus(ctx context.Context, statuses []models.WhatsAppStatus) error {
+func (d *Database) SaveWAStatus(ctx context.Context, statuses []models.WhatsappStatus) error {
 	d.DB.WithContext(ctx).Create(&statuses)
 
 	for _, message := range statuses {

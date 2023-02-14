@@ -1,16 +1,16 @@
 package requests
 
-type WhatsAppSendTextMessageResponse struct {
+type WhatsappSendTextMessageResponse struct {
 	MessagingProduct string            `json:"messaging_product",omitemtpy`
-	Contacts         []WhatsAppContact `json:"contacts",omitempty`
-	Messages         []WhatsAppMessage `json:"messages",omitempty`
+	Contacts         []WhatsappContact `json:"contacts",omitempty`
+	Messages         []WhatsappMessage `json:"messages",omitempty`
 }
 
-type WhatsAppContact struct {
+type WhatsappContact struct {
 	Input string `json:"input",omitempty`
 	WaId  string `json:"wa_id",omitempty`
 }
 
-type WhatsAppMessage struct {
+type WhatsappMessage struct {
 	ID string `json:"id",omitempty`
 }

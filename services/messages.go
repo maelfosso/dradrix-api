@@ -1,27 +1,22 @@
 package services
 
 import (
-	"context"
-	"time"
-
-	"stockinos.com/api/models"
 	"stockinos.com/api/requests"
-	"stockinos.com/api/storage"
 )
 
-func HandleMessageSentByWoZ(db storage.Database, data models.WhatsAppMessage) error { // (*requests.WhatsAppSendTextMessageResponse, error) {
-	response, err := requests.SendMessageText(data.To, data.Text.Body)
+func WASendTextMessage(to, body string) (string, error) { // (*requests.WhatsappSendTextMessageResponse, error) {
+	response, err := requests.SendMessageText(to, body)
 	if err != nil {
-		return err
+		return "", err
 	}
-	data.ID = response.Messages[0].ID
+	msgId := response.Messages[0].ID
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	// defer cancel()
 
-	err = db.SaveWAMessages(ctx, []models.WhatsAppMessage{data})
-	if err != nil {
-		return err
-	}
-	return nil
+	// err = db.SaveWAMessages(ctx, []models.WhatsappMessage{data})
+	// if err != nil {
+	// 	return err
+	// }
+	return msgId, nil
 }

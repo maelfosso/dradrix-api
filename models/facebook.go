@@ -21,63 +21,63 @@ type WebhookEntry struct {
 // field = messages for messages
 type WebhookEntryChange struct {
 	Field string          `json:"field",omitempty`
-	Value WebhookWhatsApp `json:"value",omitempty`
+	Value WebhookWhatsapp `json:"value",omitempty`
 }
 
-// WebhookEntryChangeValue Contains information about WhatsApp
+// WebhookEntryChangeValue Contains information about Whatsapp
 // messaging_product = whatsapp
-type WebhookWhatsApp struct { // Cont
+type WebhookWhatsapp struct { // Cont
 	MessagingProduct string            `json:"messaging_product",omitemtpy`
-	Metadata         WhatsAppMetadata  `json:"metadata",omitemtpy`
-	Contacts         []WhatsAppContact `json:"contacts",omitempty`
-	Messages         []WhatsAppMessage `json:"messages",omitempty`
-	Statuses         []WhatsAppStatus  `json:"statuses",omitempty`
+	Metadata         WhatsappMetadata  `json:"metadata",omitemtpy`
+	Contacts         []WhatsappContact `json:"contacts",omitempty`
+	Messages         []WhatsappMessage `json:"messages",omitempty`
+	Statuses         []WhatsappStatus  `json:"statuses",omitempty`
 }
 
 // Whatsapp Business account information
-type WhatsAppMetadata struct {
+type WhatsappMetadata struct {
 	DisplayPhoneNumber string `json:"display_phone_number",omitempty`
 	PhoneNumberId      string `json:"phone_number_id",omitempty`
 }
 
 // Whatsapp user. For our case the client.
 // Normally, we have to create an account for this user in our platform
-type WhatsAppContact struct {
-	Profile WhatsAppContactProfile `json:"profile",omitempty`
+type WhatsappContact struct {
+	Profile WhatsappContactProfile `json:"profile",omitempty`
 	WaId    string                 `json:"wa_id",omitempty`
 }
 
-type WhatsAppContactProfile struct {
+type WhatsappContactProfile struct {
 	Name string `json:"name",omitempty`
 }
 
 // The Whatsapp message sent by the client
-type WhatsAppMessage struct {
+type WhatsappMessage struct {
 	gorm.Model
 	ID                  string `json:"id",omitemtpy gorm:"primaryKey"`
 	From                string `json:"from",omitempty`
 	To                  string `json:"to",omitempty`
 	Timestamp           string `json:"timestamp",omitempty`
 	Type                string `json:"type",omitempty` // text, image, audio
-	WhatsAppMessageType `json:",inline" gorm:"embedded`
+	WhatsappMessageType `json:",inline" gorm:"embedded`
 }
 
-type WhatsAppMessageType struct {
+type WhatsappMessageType struct {
 	TextID  uuid.UUID            `json:"text_id,omitempty" gorm:"default:null"`
-	Text    WhatsAppMessageText  `json:"text",omitempty`
+	Text    WhatsappMessageText  `json:"text",omitempty`
 	ImageID string               `json:"image_id,omitempty" gorm:"default:null"`
-	Image   WhatsAppMessageImage `json:"image",omitempty`
+	Image   WhatsappMessageImage `json:"image",omitempty`
 	AudioID string               `json:"audio_id,omitempty" gorm:"default:null"`
-	Audio   WhatsAppMessageAudio `json:"audio",omitempty`
+	Audio   WhatsappMessageAudio `json:"audio",omitempty`
 }
 
-type WhatsAppMessageText struct {
+type WhatsappMessageText struct {
 	gorm.Model
 	ID   uuid.UUID `json:"id,omitempty" gorm:"type:uuid;primary_key;"`
 	Body string    `json:"body",omitempty`
 }
 
-type WhatsAppMessageImage struct {
+type WhatsappMessageImage struct {
 	gorm.Model
 	Caption  string `json:"caption",omitemtpy`
 	MimeType string `json:"mime_type",omitempty` // image/jpeg,
@@ -85,7 +85,7 @@ type WhatsAppMessageImage struct {
 	ID       string `json:"id",omitempty gorm:"primaryKey"`
 }
 
-type WhatsAppMessageAudio struct {
+type WhatsappMessageAudio struct {
 	gorm.Model
 	MimeType string `json:"mime_type",omitempty` // audio/ogg; codecs=opus -
 	Sha256   string `json:"sha256",omitemtpy`
@@ -93,27 +93,27 @@ type WhatsAppMessageAudio struct {
 	Voice    bool   `json:"voice",omitempty`
 }
 
-type WhatsAppStatus struct {
+type WhatsappStatus struct {
 	gorm.Model
 	ID           string                     `json:"id",omitempty gorm:"primaryKey"`
 	Status       string                     `json:"status",omitempty`
 	Timestamp    string                     `json:"timestamp",omitempty`
 	RecipientId  string                     `json:"recipient_id",omitempty`
-	Conversation WhatsAppStatusConversation `json:"conversation",omitempty`
-	Pricing      WhatsAppStatusPricing      `json:"pricing",omitempty`
+	Conversation WhatsappStatusConversation `json:"conversation",omitempty`
+	Pricing      WhatsappStatusPricing      `json:"pricing",omitempty`
 }
 
-type WhatsAppStatusConversation struct {
+type WhatsappStatusConversation struct {
 	ID                  string                           `json:"id",omitempty gorm:"primaryKey"`
 	ExpirationTimestamp string                           `json:"expiration_timestamp",omitempty`
-	Origin              WhatsAppStatusConversationOrigin `json:"origin",omitempty`
+	Origin              WhatsappStatusConversationOrigin `json:"origin",omitempty`
 }
 
-type WhatsAppStatusConversationOrigin struct {
+type WhatsappStatusConversationOrigin struct {
 	Type string `json:"type",omitempty`
 }
 
-type WhatsAppStatusPricing struct {
+type WhatsappStatusPricing struct {
 	Billable     bool   `json:"billable",omitempty`
 	PricingModel string `json:"pricing_model",omitempty`
 	Category     string `json:"category",omitempty`

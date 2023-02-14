@@ -9,7 +9,7 @@ import (
 
 type facebookWebhookStruct struct {
 	*storage.Database
-	*publishers.WhatsAppMessageReceivedPublisher
+	*publishers.WhatsappMessageReceivedPublisher
 }
 
 func (s *Server) setupRoutes() {
@@ -28,6 +28,6 @@ func (s *Server) setupRoutes() {
 
 	handlers.FacebookWebhook(s.mux, facebookWebhookStruct{
 		Database:                         s.database,
-		WhatsAppMessageReceivedPublisher: publishers.NewWhatsAppMessageReceivedPublisher(*s.nats),
+		WhatsappMessageReceivedPublisher: publishers.NewWhatsappMessageReceivedPublisher(*s.nats),
 	})
 }

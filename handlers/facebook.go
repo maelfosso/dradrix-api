@@ -14,9 +14,9 @@ import (
 )
 
 type facebookWebhookInterface interface {
-	Publish(message models.WhatsAppMessage) error
-	SaveWAMessages(ctx context.Context, messages []models.WhatsAppMessage) error
-	SaveWAStatus(ctx context.Context, statuses []models.WhatsAppStatus) error
+	Publish(message models.WhatsappMessage) error
+	SaveWAMessages(ctx context.Context, messages []models.WhatsappMessage) error
+	SaveWAStatus(ctx context.Context, statuses []models.WhatsappStatus) error
 }
 
 func FacebookWebhook(mux chi.Router, s facebookWebhookInterface) {

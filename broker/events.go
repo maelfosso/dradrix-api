@@ -10,17 +10,17 @@ type Event struct {
 	data    reflect.Type // func(reflect.Value) reflect.Value
 }
 
-// type WhatsAppMessageReceivedEvent struct {
+// type WhatsappMessageReceivedEvent struct {
 // 	subject Subject.
-// 	data    models.WhatsAppMessage
+// 	data    models.WhatsappMessage
 // }
 
-// func NewWhatsAppMessageReceivedEvent() *Event {
+// func NewWhatsappMessageReceivedEvent() *Event {
 // 	return &Event{
-// 		subject: WhatsAppMessageReceived,
+// 		subject: WhatsappMessageReceived,
 // 		stream:  "whatsapp:message",
-// 		data:    models.WhatsAppMessage,
+// 		data:    models.WhatsappMessage,
 // 	}
 // }
 
-// type WhatsAppMessageReceivedEvent = NewWhatsAppMessageReceivedEvent()
+// type WhatsappMessageReceivedEvent = NewWhatsappMessageReceivedEvent()
