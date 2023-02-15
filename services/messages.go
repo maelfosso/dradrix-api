@@ -4,7 +4,7 @@ import (
 	"stockinos.com/api/requests"
 )
 
-func WASendTextMessage(to, body string) (string, error) { // (*requests.WhatsappSendTextMessageResponse, error) {
+func WASendTextMessage(to, body string) (string, error) { // (*requests.WhatsappSendMessageResponse, error) {
 	response, err := requests.SendMessageText(to, body)
 	if err != nil {
 		return "", err
