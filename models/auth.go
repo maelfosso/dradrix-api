@@ -2,9 +2,10 @@ package models
 
 import "gorm.io/gorm"
 
-type PinCodeOTP struct {
+type OTP struct {
 	gorm.Model
-	MessageId   string `json:"message_id",omitempty`
-	PhoneNumber string `json:"phone_number",omitempty`
-	PinCode     string `json:"pin_code",omitempty`
+	WaMessageId string `json:"wa_message_id,omitempty"`
+	PhoneNumber string `json:"phone_number,omitempty"`
+	PinCode     string `json:"pin_code,omitempty"`
+	Active      bool   `json:"active,omitempty"`
 }

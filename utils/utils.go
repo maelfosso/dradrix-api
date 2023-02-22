@@ -24,7 +24,7 @@ func stringWithCharset(now time.Time, charset string, length int) string {
 	return string(b)
 }
 
-func GeneratePinCode(now time.Time) string {
+func GenerateOTP(now time.Time) string {
 	charset := "0123456789"
 	return stringWithCharset(now, charset, 6)
 }
