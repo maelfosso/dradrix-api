@@ -3,22 +3,28 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
 	"stockinos.com/api/models"
 )
 
-const OTP_VALIDITY_MINUTES = 10
+const OTP_VALIDITY_MINUTES = 5
 
 func (d *Database) CreateOTP(ctx context.Context, otp models.OTP) error {
 	var m models.OTP
 
 	// Check if an instance with the phone number that is active, already exists
-	if err := d.DB.WithContext(ctx).First(&m, "phone_number = ? AND active = ?", otp.PhoneNumber, true).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	err := d.DB.WithContext(ctx).First(&m, "phone_number = ? AND active = ?", otp.PhoneNumber, true).Error
+	if err == nil {
 		// If so, invalidate it
 		m.Active = false
 		d.DB.WithContext(ctx).Save(&m)
+	} else {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("error when looking for existing active OTP: %w", err)
+		}
 	}
 
 	// Save the current one
