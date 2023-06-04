@@ -35,7 +35,8 @@ func (d *Database) CreateOTP(ctx context.Context, otp models.OTP) error {
 func (d *Database) CheckOTP(ctx context.Context, phoneNumber, pinCode string) (*models.OTP, error) {
 	var otp models.OTP
 
-	if err := d.DB.WithContext(ctx).Where(&otp, "phone_number = ? AND active = ?", phoneNumber, true).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	wQuery := d.DB.WithContext(ctx).Where("phone_number = ? AND active = ?", phoneNumber, true).First(&otp)
+	if err := wQuery.Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, errors.New("OTP_NOT_EXISTS_WITH_PHONE_NUMBER")
 	}
 

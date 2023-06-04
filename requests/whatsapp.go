@@ -85,37 +85,38 @@ var jsonForSendMessageTemplateText = `{
 			{
 				"type": "body",
 				"parameters": %s
-				// [
-				// 	{
-				// 		"type": "text",
-				// 		"text": "text-string"
-				// 	},
-				// 	{
-				// 		"type": "currency",
-				// 		"currency": {
-				// 			"fallback_value": "$100.99",
-				// 			"code": "USD",
-				// 			"amount_1000": 100990
-				// 		}
-				// 	},
-				// 	{
-				// 		"type": "date_time",
-				// 		"date_time": {
-				// 			"fallback_value": "February 25, 1977",
-				// 			"day_of_week": 5,
-				// 			"year": 1977,
-				// 			"month": 2,
-				// 			"day_of_month": 25,
-				// 			"hour": 15,
-				// 			"minute": 33,
-				// 			"calendar": "GREGORIAN"
-				// 		}
-				// 	}
-				// ]
 			}
 		]
 	}
 }`
+
+// [
+// 	{
+// 		"type": "text",
+// 		"text": "text-string"
+// 	},
+// 	{
+// 		"type": "currency",
+// 		"currency": {
+// 			"fallback_value": "$100.99",
+// 			"code": "USD",
+// 			"amount_1000": 100990
+// 		}
+// 	},
+// 	{
+// 		"type": "date_time",
+// 		"date_time": {
+// 			"fallback_value": "February 25, 1977",
+// 			"day_of_week": 5,
+// 			"year": 1977,
+// 			"month": 2,
+// 			"day_of_month": 25,
+// 			"hour": 15,
+// 			"minute": 33,
+// 			"calendar": "GREGORIAN"
+// 		}
+// 	}
+// ]
 
 func SendMessageTextFromTemplate(to, template, language, parameters string) (*WhatsappSendMessageResponse, error) {
 	jsonBody := []byte(

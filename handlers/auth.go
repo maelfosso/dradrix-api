@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -13,9 +14,10 @@ import (
 )
 
 type authInterface interface {
+	CreateUserIfNotExists(ctx context.Context, phoneNumber string) error
 	CreateOTP(ctx context.Context, pinCode models.OTP) error
 	SaveOTP(ctx context.Context, pinCode models.OTP) error
-	CheckOTP(ctx context.Context, phoneNumber, pinCode string) (models.OTP, error)
+	CheckOTP(ctx context.Context, phoneNumber, pinCode string) (*models.OTP, error)
 }
 
 type GetOTPRequest struct {
@@ -29,8 +31,8 @@ type VerifyOTPRequest struct {
 	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
 }
 
-func GetOTPFromPhoneNumber(mux chi.Router, a authInterface) {
-	mux.Post("/auth/otp", func(w http.ResponseWriter, r *http.Request) {
+func GetOTP(mux chi.Router, a authInterface) {
+	mux.Post("/otp", func(w http.ResponseWriter, r *http.Request) {
 		var input GetOTPRequest
 
 		// read the request body
@@ -38,12 +40,13 @@ func GetOTPFromPhoneNumber(mux chi.Router, a authInterface) {
 
 		// extract the phone number
 		err := decoder.Decode(&input)
+		log.Println("extract the phone number: ", err, input)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		// generate the pin code of 6 digits
+		// generate the pin code of 4 digits
 		now := time.Now()
 		pinCode := utils.GenerateOTP(now)
 
@@ -53,10 +56,17 @@ func GetOTPFromPhoneNumber(mux chi.Router, a authInterface) {
 			input.Language,
 			pinCode,
 		)
-
-		// if request failed, no whatsapp account with phone number
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Println("error when sending the OTP via WhatsApp: ", err)
+			http.Error(w, "ERR_COTP_150", http.StatusBadRequest)
+			return
+		}
+
+		// check if there is an user with this account
+		err = a.CreateUserIfNotExists(r.Context(), input.PhoneNumber)
+		if err != nil {
+			log.Println("error when creating the user if he does not exist: ", err)
+			http.Error(w, "ERR_COTP_151", http.StatusBadRequest)
 			return
 		}
 
@@ -65,16 +75,22 @@ func GetOTPFromPhoneNumber(mux chi.Router, a authInterface) {
 		m.WaMessageId = res.Messages[0].ID
 		m.PhoneNumber = input.PhoneNumber
 		m.PinCode = pinCode
+		m.Active = true
 
-		a.CreateOTP(r.Context(), m)
+		err = a.CreateOTP(r.Context(), m)
+		if err != nil {
+			log.Println("error when saving the OTP: ", err)
+			http.Error(w, "ERR_COTP_152", http.StatusBadRequest)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 	})
 }
 
-func OTPVerification(mux chi.Router, a authInterface) {
-	mux.Post("/auth/verify-otp", func(w http.ResponseWriter, r *http.Request) {
+func CheckOTP(mux chi.Router, a authInterface) {
+	mux.Post("/otp/check", func(w http.ResponseWriter, r *http.Request) {
 		// read the request body
 		var input VerifyOTPRequest
 
@@ -83,22 +99,64 @@ func OTPVerification(mux chi.Router, a authInterface) {
 
 		// extract the phone number and the pin code
 		err := decoder.Decode(&input)
+
+		log.Println("extract the phone number: ", err, input)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Println("error when extracting the request body: ", err)
+			http.Error(w, "ERR_CTOP_101", http.StatusBadRequest)
 			return
 		}
 
 		// check that the pin code is 6 digit
-		var m models.OTP
+		var m *models.OTP
 
 		// check that the phone number is correct
 		m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Println("error when checking the otp: ", err)
+			http.Error(w, "ERR_COTP_102", http.StatusBadRequest)
 			return
 		}
 
 		m.Active = false
-		a.SaveOTP(r.Context(), m)
+		err = a.SaveOTP(r.Context(), *m)
+		if err != nil {
+			log.Println("error when changing the active state of the current OTP line: ", err)
+			http.Error(w, "ERR_COTP_103", http.StatusBadRequest)
+			return
+		}
+
+		// Generating the JWT Token
+
+	})
+}
+
+func ResendOTP(mux chi.Router, a authInterface) {
+	mux.Post("/otp/resend", func(w http.ResponseWriter, r *http.Request) {
+		// // read the request body
+		// var input VerifyOTPRequest
+
+		// // read the request body
+		// decoder := json.NewDecoder(r.Body)
+
+		// // extract the phone number and the pin code
+		// err := decoder.Decode(&input)
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
+
+		// // check that the pin code is 6 digit
+		// var m *models.OTP
+
+		// // check that the phone number is correct
+		// m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
+
+		// m.Active = false
+		// a.SaveOTP(r.Context(), *m)
 	})
 }
