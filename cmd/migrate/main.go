@@ -43,6 +43,7 @@ func start() int {
 		&models.WhatsappMessageImage{},
 		&models.WhatsappMessageAudio{},
 		&models.OTP{},
+		&models.User{},
 	)
 
 	return 0

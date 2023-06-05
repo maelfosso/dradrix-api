@@ -14,3 +14,9 @@ type WhatsappContact struct {
 type WhatsappMessage struct {
 	ID string `json:"id",omitempty`
 }
+
+type SignInResult struct {
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phone_number,omitempty"`
+	Token       string `json:"token,omitempty"`
+}

@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/go-chi/chi/v5"
 	"stockinos.com/api/models"
 	"stockinos.com/api/requests"
+	"stockinos.com/api/services"
 	"stockinos.com/api/utils"
 )
 
@@ -18,6 +20,7 @@ type authInterface interface {
 	CreateOTP(ctx context.Context, pinCode models.OTP) error
 	SaveOTP(ctx context.Context, pinCode models.OTP) error
 	CheckOTP(ctx context.Context, phoneNumber, pinCode string) (*models.OTP, error)
+	FindUserByPhoneNumber(ctx context.Context, phoneNumber string) (*models.User, error)
 }
 
 type GetOTPRequest struct {
@@ -25,7 +28,7 @@ type GetOTPRequest struct {
 	Language    string `json:"language,omitempty"`     // Language for template
 }
 
-type VerifyOTPRequest struct {
+type CheckOTPRequest struct {
 	PhoneNumber string `json:"phone_number,omitempty"` // Phone number of the customer
 	Language    string `json:"language,omitempty"`     // Language for template
 	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
@@ -92,7 +95,7 @@ func GetOTP(mux chi.Router, a authInterface) {
 func CheckOTP(mux chi.Router, a authInterface) {
 	mux.Post("/otp/check", func(w http.ResponseWriter, r *http.Request) {
 		// read the request body
-		var input VerifyOTPRequest
+		var input CheckOTPRequest
 
 		// read the request body
 		decoder := json.NewDecoder(r.Body)
@@ -127,14 +130,40 @@ func CheckOTP(mux chi.Router, a authInterface) {
 		}
 
 		// Generating the JWT Token
+		u, err := a.FindUserByPhoneNumber(r.Context(), input.PhoneNumber)
+		if err != nil {
+			log.Println("error when looking for user: ", err)
+			http.Error(w, "ERR_COTP_104", http.StatusBadRequest)
+			return
+		}
 
+		var signInResult requests.SignInResult
+		signInResult.Name = u.Name
+		signInResult.PhoneNumber = u.PhoneNumber
+
+		tokenString, err := services.GenerateJWTToken(structs.Map(signInResult))
+		if err != nil {
+			log.Println("error when generating jwt token ", err)
+			http.Error(w, "ERR_COTP_105", http.StatusBadRequest)
+			return
+		}
+
+		signInResult.Token = tokenString
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(signInResult); err != nil {
+			log.Println("error when encoding auth result: ", err)
+			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
+			return
+		}
 	})
 }
 
 func ResendOTP(mux chi.Router, a authInterface) {
 	mux.Post("/otp/resend", func(w http.ResponseWriter, r *http.Request) {
 		// // read the request body
-		// var input VerifyOTPRequest
+		// var input CheckOTPRequest
 
 		// // read the request body
 		// decoder := json.NewDecoder(r.Body)
