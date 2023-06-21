@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -117,7 +118,7 @@ func CheckOTP(mux chi.Router, a authInterface) {
 		m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
 		if err != nil {
 			log.Println("error when checking the otp: ", err)
-			http.Error(w, "ERR_COTP_102", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("ERR_COTP_102_%s", err), http.StatusBadRequest)
 			return
 		}
 
