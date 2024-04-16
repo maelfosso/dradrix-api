@@ -1,13 +1,32 @@
 package storage
 
-// import (
-// 	"context"
-// 	"errors"
-// 	"fmt"
+import (
+	"context"
 
-// 	"gorm.io/gorm"
-// 	"stockinos.com/api/models"
-// )
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+type GetUserByUsernameParams struct {
+	PhoneNumber string
+}
+
+func (q *Queries) GetUserByUsername(ctx context.Context, arg GetUserByUsernameParams) error {
+	var result bson.M
+
+	err := q.usersCollection.FindOne(
+		ctx,
+		bson.D{{Key: "phoneNumber", Value: arg.PhoneNumber}},
+	).Decode(&result)
+	if err == mongo.ErrNoDocuments {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // func (d *Database) CreateUserIfNotExists(ctx context.Context, phoneNumber string) error {
 // 	var user models.User

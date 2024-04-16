@@ -10,10 +10,11 @@ import (
 )
 
 type Database struct {
-	DB   *mongo.Client
-	uri  string
-	name string
-	log  *zap.Logger
+	Storage Storage
+	DB      *mongo.Client
+	uri     string
+	name    string
+	log     *zap.Logger
 }
 
 type NewDatabaseOptions struct {
@@ -79,4 +80,14 @@ func (d *Database) Disconnect() {
 
 func (d *Database) GetCollection(coll string) *mongo.Collection {
 	return d.DB.Database(d.name).Collection(coll)
+}
+
+type DBCollections struct {
+	usersCollection *mongo.Collection
+}
+
+func (d *Database) GetAllCollections() *DBCollections {
+	return &DBCollections{
+		usersCollection: d.GetCollection("users"),
+	}
 }
