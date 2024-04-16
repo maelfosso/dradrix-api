@@ -63,10 +63,10 @@ func (gs *GrpcWhatsappServer) InsertWozMessage(ctx context.Context, request *pb.
 	}
 
 	gs.log.Info("Whatsapp message to be inserted", zap.Any("wa message", waMsg))
-	err = gs.database.SaveWAMessages(ctx, []models.WhatsappMessage{waMsg})
-	if err != nil {
-		return nil, fmt.Errorf("error when saving the message in database: %w", err)
-	}
+	// err = gs.database.SaveWAMessages(ctx, []models.WhatsappMessage{waMsg})
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error when saving the message in database: %w", err)
+	// }
 
 	textIdString := textId.String()
 	return &pb.WhatsappMessageResponse{

@@ -1,30 +1,30 @@
 package storage
 
-import (
-	"context"
-	"fmt"
+// import (
+// 	"context"
+// 	"fmt"
 
-	"stockinos.com/api/models"
-)
+// 	"stockinos.com/api/models"
+// )
 
-func (d *Database) SaveWAMessages(ctx context.Context, messages []models.WhatsappMessage) error {
-	d.DB.WithContext(ctx).Create(&messages)
+// func (d *Database) SaveWAMessages(ctx context.Context, messages []models.WhatsappMessage) error {
+// 	d.DB.WithContext(ctx).Create(&messages)
 
-	for _, message := range messages {
-		// d.log(message.ID)
-		fmt.Println("ID Message : ", message.ID)
-	}
+// 	for _, message := range messages {
+// 		// d.log(message.ID)
+// 		fmt.Println("ID Message : ", message.ID)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (d *Database) SaveWAStatus(ctx context.Context, statuses []models.WhatsappStatus) error {
-	d.DB.WithContext(ctx).Create(&statuses)
+// func (d *Database) SaveWAStatus(ctx context.Context, statuses []models.WhatsappStatus) error {
+// 	d.DB.WithContext(ctx).Create(&statuses)
 
-	for _, message := range statuses {
-		// d.log(message.ID)
-		fmt.Println("ID Message : ", message.ID)
-	}
+// 	for _, message := range statuses {
+// 		// d.log(message.ID)
+// 		fmt.Println("ID Message : ", message.ID)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

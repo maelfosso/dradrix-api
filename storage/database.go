@@ -1,39 +1,25 @@
 package storage
 
 import (
-	"fmt"
+	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 type Database struct {
-	DB                    *gorm.DB
-	host                  string
-	port                  int
-	user                  string
-	password              string
-	name                  string
-	maxOpenConnections    int
-	maxIdleConnections    int
-	connectionMaxLifetime time.Duration
-	connectionMaxIdleTime time.Duration
-	log                   *zap.Logger
+	DB   *mongo.Client
+	uri  string
+	name string
+	log  *zap.Logger
 }
 
 type NewDatabaseOptions struct {
-	Host                  string
-	Port                  int
-	User                  string
-	Password              string
-	Name                  string
-	MaxOpenConnections    int
-	MaxIdleConnections    int
-	ConnectionMaxLifetime time.Duration
-	ConnectionMaxIdleTime time.Duration
-	Log                   *zap.Logger
+	URI  string
+	Name string
+	Log  *zap.Logger
 }
 
 func NewDatabase(opts NewDatabaseOptions) *Database {
@@ -42,59 +28,55 @@ func NewDatabase(opts NewDatabaseOptions) *Database {
 	}
 
 	return &Database{
-		host:                  opts.Host,
-		port:                  opts.Port,
-		user:                  opts.User,
-		password:              opts.Password,
-		name:                  opts.Name,
-		maxOpenConnections:    opts.MaxIdleConnections,
-		maxIdleConnections:    opts.MaxIdleConnections,
-		connectionMaxLifetime: opts.ConnectionMaxLifetime,
-		connectionMaxIdleTime: opts.ConnectionMaxIdleTime,
-		log:                   opts.Log,
+		uri:  opts.URI,
+		name: opts.Name,
+		log:  opts.Log,
 	}
 }
 
 func (d *Database) createDataSourceName(withPassword bool) string {
-	password := d.password
-	if !withPassword {
-		password = "xxx"
-	}
+	// password := d.password
+	// if !withPassword {
+	// 	password = "xxx"
+	// }
 
-	return fmt.Sprintf("postgresql://%v:%v@%v:%v/%v?sslmode=disable",
-		d.user, password, d.host, d.port, d.name)
+	// return fmt.Sprintf("postgresql://%v:%v@%v:%v/%v?sslmode=disable",
+	// 	d.user, password, d.host, d.port, d.name)
+	return d.uri
 }
 
 func (d *Database) Connect() error {
 	d.log.Info("Connecting to database", zap.String("url", d.createDataSourceName(false)))
 
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	var err error
-	d.DB, err = gorm.Open(postgres.Open(d.createDataSourceName(true)), &gorm.Config{})
-	// d.DB = d.DB.WithContext(ctx)
+	// d.DB, err = gorm.Open(postgres.Open(d.createDataSourceName(true)), &gorm.Config{})
+	d.DB, err = mongo.Connect(
+		ctx,
+		options.Client().ApplyURI(d.uri),
+	)
 	if err != nil {
 		d.log.Fatal("Failed to connect to the database : ", zap.Error(err))
 		return err
 	}
 
-	sqlDB, _ := d.DB.DB()
-	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
-	sqlDB.SetMaxIdleConns(d.maxIdleConnections)
-	// SetMaxOpenConns sets the maximum number of open connections to the database.
-	sqlDB.SetMaxOpenConns(d.maxOpenConnections)
-	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
-	sqlDB.SetConnMaxLifetime(d.connectionMaxLifetime)
-	sqlDB.SetConnMaxIdleTime(d.connectionMaxIdleTime)
+	err = d.DB.Ping(context.Background(), nil)
+	if err != nil {
+		d.log.Fatal("Ping to database has failed")
+	}
 
-	d.log.Debug(
-		"Setting connection pool options",
-		zap.Int("max open connections", d.maxOpenConnections),
-		zap.Int("max idle connections", d.maxIdleConnections),
-		zap.Duration("connection max lifetime", d.connectionMaxLifetime),
-		zap.Duration("connection max idle time", d.connectionMaxIdleTime),
-	)
-
+	d.log.Fatal("Successfully connected to MongoDB")
 	return nil
+}
+
+func (d *Database) Disconnect() {
+	if err := d.DB.Disconnect(context.TODO()); err != nil {
+		panic(err)
+	}
+}
+
+func (d *Database) GetCollection(coll string) *mongo.Collection {
+	return d.DB.Database(d.name).Collection(coll)
 }

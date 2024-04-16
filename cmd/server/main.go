@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -51,15 +50,9 @@ func start() int {
 	port := utils.GetIntDefault("PORT", 8000)
 
 	database := storage.NewDatabase(storage.NewDatabaseOptions{
-		Host:                  utils.GetDefault("DB_HOST", "localhost"),
-		Port:                  utils.GetIntDefault("DB_PORT", 5432),
-		User:                  utils.GetDefault("DB_USER", "stockinos"),
-		Password:              utils.GetDefault("DB_PASSWORD", "stockinos"),
-		Name:                  utils.GetDefault("DB_NAME", "stockinos"),
-		MaxOpenConnections:    utils.GetIntDefault("DB_MAX_OPEN_CONNECTION", 10),
-		MaxIdleConnections:    utils.GetIntDefault("DB_MAX_IDLE_CONNECTION", 10),
-		ConnectionMaxLifetime: utils.GetDurationDefault("DB_CONNECTION_MAX_LIFETIME", time.Hour),
-		Log:                   log,
+		URI:  utils.GetDefault("MONGODB_URI", "mongodb://localhost:27017/stockinos"),
+		Name: utils.GetDefault("MONGDB_DBNAME", "stockinos"),
+		Log:  log,
 	})
 
 	if err := database.Connect(); err != nil {
