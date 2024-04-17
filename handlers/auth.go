@@ -3,16 +3,14 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/fatih/structs"
 	"github.com/go-chi/chi/v5"
 	"stockinos.com/api/models"
 	"stockinos.com/api/requests"
-	"stockinos.com/api/services"
+	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
 )
 
@@ -24,19 +22,23 @@ type authInterface interface {
 	FindUserByPhoneNumber(ctx context.Context, phoneNumber string) (*models.User, error)
 }
 
+type getOTPInterface interface {
+	CreateUser(ctx context.Context, arg storage.CreateUserParams) (*models.User, error)
+	DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
+	CreateOTP(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
+	// DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) error
+	// GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
+}
+
 type GetOTPRequest struct {
 	PhoneNumber string `json:"phone_number,omitempty"` // Phone number of the customer
 	Language    string `json:"language,omitempty"`     // Language for template
 }
 
-type CheckOTPRequest struct {
-	PhoneNumber string `json:"phone_number,omitempty"` // Phone number of the customer
-	Language    string `json:"language,omitempty"`     // Language for template
-	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
-}
-
-func GetOTP(mux chi.Router, a authInterface) {
+func GetOTP(mux chi.Router, svc getOTPInterface) {
 	mux.Post("/otp", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		var input GetOTPRequest
 
 		// read the request body
@@ -55,7 +57,7 @@ func GetOTP(mux chi.Router, a authInterface) {
 		pinCode := utils.GenerateOTP(now)
 
 		// send the pin code to a the phone number using Whatsapp API
-		res, err := requests.SendWoZOTP(
+		waMessageId, err := requests.SendWoZOTP(
 			input.PhoneNumber,
 			input.Language,
 			pinCode,
@@ -66,22 +68,33 @@ func GetOTP(mux chi.Router, a authInterface) {
 			return
 		}
 
-		// check if there is an user with this account
-		err = a.CreateUserIfNotExists(r.Context(), input.PhoneNumber)
+		// Check if there is an user with this phone number
+		user, err := svc.DoesUserExists(ctx, storage.DoesUserExistsParams{
+			PhoneNumber: input.PhoneNumber,
+		})
 		if err != nil {
-			log.Println("error when creating the user if he does not exist: ", err)
-			http.Error(w, "ERR_COTP_151", http.StatusBadRequest)
+			log.Println("Error at DoesUserExists", err)
 			return
 		}
 
-		// if not, save the association phone number/pin code in the db
-		var m models.OTP
-		m.WaMessageId = res.Messages[0].ID
-		m.PhoneNumber = input.PhoneNumber
-		m.PinCode = pinCode
-		m.Active = true
+		// If there is none, we create the user
+		if user == nil {
+			_, err := svc.CreateUser(ctx, storage.CreateUserParams{
+				PhoneNumber: input.PhoneNumber,
+				Name:        "",
+			})
+			if err != nil {
+				log.Println("Error at CreateUser", err)
+				return
+			}
+		}
 
-		err = a.CreateOTP(r.Context(), m)
+		// Then we save the OTP
+		_, err = svc.CreateOTP(ctx, storage.CreateOTPParams{
+			WaMessageId: waMessageId,
+			PhoneNumber: input.PhoneNumber,
+			PinCode:     pinCode,
+		})
 		if err != nil {
 			log.Println("error when saving the OTP: ", err)
 			http.Error(w, "ERR_COTP_152", http.StatusBadRequest)
@@ -93,100 +106,106 @@ func GetOTP(mux chi.Router, a authInterface) {
 	})
 }
 
-func CheckOTP(mux chi.Router, a authInterface) {
-	mux.Post("/otp/check", func(w http.ResponseWriter, r *http.Request) {
-		// read the request body
-		var input CheckOTPRequest
+// type CheckOTPRequest struct {
+// 	PhoneNumber string `json:"phone_number,omitempty"` // Phone number of the customer
+// 	Language    string `json:"language,omitempty"`     // Language for template
+// 	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
+// }
 
-		// read the request body
-		decoder := json.NewDecoder(r.Body)
+// func CheckOTP(mux chi.Router, a authInterface) {
+// 	mux.Post("/otp/check", func(w http.ResponseWriter, r *http.Request) {
+// 		// read the request body
+// 		var input CheckOTPRequest
 
-		// extract the phone number and the pin code
-		err := decoder.Decode(&input)
+// 		// read the request body
+// 		decoder := json.NewDecoder(r.Body)
 
-		log.Println("extract the phone number: ", err, input)
-		if err != nil {
-			log.Println("error when extracting the request body: ", err)
-			http.Error(w, "ERR_CTOP_101", http.StatusBadRequest)
-			return
-		}
+// 		// extract the phone number and the pin code
+// 		err := decoder.Decode(&input)
 
-		// check that the pin code is 6 digit
-		var m *models.OTP
+// 		log.Println("extract the phone number: ", err, input)
+// 		if err != nil {
+// 			log.Println("error when extracting the request body: ", err)
+// 			http.Error(w, "ERR_CTOP_101", http.StatusBadRequest)
+// 			return
+// 		}
 
-		// check that the phone number is correct
-		m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
-		if err != nil {
-			log.Println("error when checking the otp: ", err)
-			http.Error(w, fmt.Sprintf("ERR_COTP_102_%s", err), http.StatusBadRequest)
-			return
-		}
+// 		// check that the pin code is 6 digit
+// 		var m *models.OTP
 
-		m.Active = false
-		err = a.SaveOTP(r.Context(), *m)
-		if err != nil {
-			log.Println("error when changing the active state of the current OTP line: ", err)
-			http.Error(w, "ERR_COTP_103", http.StatusBadRequest)
-			return
-		}
+// 		// check that the phone number is correct
+// 		m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
+// 		if err != nil {
+// 			log.Println("error when checking the otp: ", err)
+// 			http.Error(w, fmt.Sprintf("ERR_COTP_102_%s", err), http.StatusBadRequest)
+// 			return
+// 		}
 
-		// Generating the JWT Token
-		u, err := a.FindUserByPhoneNumber(r.Context(), input.PhoneNumber)
-		if err != nil {
-			log.Println("error when looking for user: ", err)
-			http.Error(w, "ERR_COTP_104", http.StatusBadRequest)
-			return
-		}
+// 		m.Active = false
+// 		err = a.SaveOTP(r.Context(), *m)
+// 		if err != nil {
+// 			log.Println("error when changing the active state of the current OTP line: ", err)
+// 			http.Error(w, "ERR_COTP_103", http.StatusBadRequest)
+// 			return
+// 		}
 
-		var signInResult requests.SignInResult
-		signInResult.Name = u.Name
-		signInResult.PhoneNumber = u.PhoneNumber
+// 		// Generating the JWT Token
+// 		u, err := a.FindUserByPhoneNumber(r.Context(), input.PhoneNumber)
+// 		if err != nil {
+// 			log.Println("error when looking for user: ", err)
+// 			http.Error(w, "ERR_COTP_104", http.StatusBadRequest)
+// 			return
+// 		}
 
-		tokenString, err := services.GenerateJWTToken(structs.Map(signInResult))
-		if err != nil {
-			log.Println("error when generating jwt token ", err)
-			http.Error(w, "ERR_COTP_105", http.StatusBadRequest)
-			return
-		}
+// 		var signInResult requests.SignInResult
+// 		signInResult.Name = u.Name
+// 		signInResult.PhoneNumber = u.PhoneNumber
 
-		signInResult.Token = tokenString
+// 		tokenString, err := services.GenerateJWTToken(structs.Map(signInResult))
+// 		if err != nil {
+// 			log.Println("error when generating jwt token ", err)
+// 			http.Error(w, "ERR_COTP_105", http.StatusBadRequest)
+// 			return
+// 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(signInResult); err != nil {
-			log.Println("error when encoding auth result: ", err)
-			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
-			return
-		}
-	})
-}
+// 		signInResult.Token = tokenString
 
-func ResendOTP(mux chi.Router, a authInterface) {
-	mux.Post("/otp/resend", func(w http.ResponseWriter, r *http.Request) {
-		// // read the request body
-		// var input CheckOTPRequest
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.WriteHeader(http.StatusOK)
+// 		if err := json.NewEncoder(w).Encode(signInResult); err != nil {
+// 			log.Println("error when encoding auth result: ", err)
+// 			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
+// 			return
+// 		}
+// 	})
+// }
 
-		// // read the request body
-		// decoder := json.NewDecoder(r.Body)
+// func ResendOTP(mux chi.Router, a authInterface) {
+// 	mux.Post("/otp/resend", func(w http.ResponseWriter, r *http.Request) {
+// 		// // read the request body
+// 		// var input CheckOTPRequest
 
-		// // extract the phone number and the pin code
-		// err := decoder.Decode(&input)
-		// if err != nil {
-		// 	http.Error(w, err.Error(), http.StatusBadRequest)
-		// 	return
-		// }
+// 		// // read the request body
+// 		// decoder := json.NewDecoder(r.Body)
 
-		// // check that the pin code is 6 digit
-		// var m *models.OTP
+// 		// // extract the phone number and the pin code
+// 		// err := decoder.Decode(&input)
+// 		// if err != nil {
+// 		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+// 		// 	return
+// 		// }
 
-		// // check that the phone number is correct
-		// m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
-		// if err != nil {
-		// 	http.Error(w, err.Error(), http.StatusBadRequest)
-		// 	return
-		// }
+// 		// // check that the pin code is 6 digit
+// 		// var m *models.OTP
 
-		// m.Active = false
-		// a.SaveOTP(r.Context(), *m)
-	})
-}
+// 		// // check that the phone number is correct
+// 		// m, err = a.CheckOTP(r.Context(), input.PhoneNumber, input.PinCode)
+// 		// if err != nil {
+// 		// 	http.Error(w, err.Error(), http.StatusBadRequest)
+// 		// 	return
+// 		// }
+
+// 		// m.Active = false
+// 		// a.SaveOTP(r.Context(), *m)
+// 	})
+// }

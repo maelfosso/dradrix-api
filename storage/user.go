@@ -2,30 +2,77 @@ package storage
 
 import (
 	"context"
+	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"stockinos.com/api/models"
 )
 
-type GetUserByUsernameParams struct {
+type DoesUserExistsParams struct {
 	PhoneNumber string
 }
 
-func (q *Queries) GetUserByUsername(ctx context.Context, arg GetUserByUsernameParams) error {
-	var result bson.M
+func (q *Queries) DoesUserExists(ctx context.Context, arg DoesUserExistsParams) (*models.User, error) {
+	var user models.User
 
 	err := q.usersCollection.FindOne(
 		ctx,
 		bson.D{{Key: "phoneNumber", Value: arg.PhoneNumber}},
-	).Decode(&result)
-	if err == mongo.ErrNoDocuments {
-		return nil
-	}
+	).Decode(&user)
 	if err != nil {
-		return err
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		} else {
+			return nil, err
+		}
 	}
 
-	return nil
+	return &user, nil
+}
+
+type GetUserByPhoneNumberParams struct {
+	PhoneNumber string
+}
+
+func (q *Queries) GetUserByPhoneNumber(ctx context.Context, arg GetUserByPhoneNumberParams) (*models.User, error) {
+	var user models.User
+
+	err := q.usersCollection.FindOne(
+		ctx,
+		bson.D{{Key: "phoneNumber", Value: arg.PhoneNumber}},
+	).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+type CreateUserParams struct {
+	PhoneNumber string
+	Name        string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models.User, error) {
+	var user models.User = models.User{
+		Id:          primitive.NewObjectID(),
+		PhoneNumber: arg.PhoneNumber,
+		Name:        arg.Name,
+	}
+
+	result, err := q.usersCollection.InsertOne(ctx, user)
+	log.Println("[CreateUser] ", result.InsertedID, user.Id)
+	if err != nil {
+		return nil, err
+	} else {
+		return &user, nil
+	}
 }
 
 // func (d *Database) CreateUserIfNotExists(ctx context.Context, phoneNumber string) error {

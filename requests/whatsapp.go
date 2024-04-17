@@ -164,7 +164,7 @@ func SendMessageTextFromTemplate(to, template, language, parameters string) (*Wh
 	return &data, nil
 }
 
-func SendWoZOTP(to, language, pinCode string) (*WhatsappSendMessageResponse, error) {
+func SendWoZOTP(to, language, pinCode string) (string, error) {
 	parameters := fmt.Sprintf(`[
 		{
 			"type": "text",
@@ -173,5 +173,9 @@ func SendWoZOTP(to, language, pinCode string) (*WhatsappSendMessageResponse, err
 	]`, pinCode)
 	template := "woz_otp"
 
-	return SendMessageTextFromTemplate(to, template, language, parameters)
+	res, err := SendMessageTextFromTemplate(to, template, language, parameters)
+	if err != nil {
+		return "", err
+	}
+	return res.Messages[0].ID, nil
 }

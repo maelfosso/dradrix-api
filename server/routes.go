@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"stockinos.com/api/broker/publishers"
 	"stockinos.com/api/handlers"
@@ -31,12 +32,12 @@ func (s *Server) setupRoutes() {
 	// 	WhatsappMessageReceivedPublisher: publishers.NewWhatsappMessageReceivedPublisher(*s.nats),
 	// })
 
-	// s.mux.Group(func(r chi.Router) {
-	// 	// Auth
-	// 	r.Route("/auth", func(r chi.Router) {
-	// 		handlers.GetOTP(r, s.database)
-	// 		handlers.CheckOTP(r, s.database)
-	// 		handlers.ResendOTP(r, s.database)
-	// 	})
-	// })
+	s.mux.Group(func(r chi.Router) {
+		// Auth
+		r.Route("/auth", func(r chi.Router) {
+			handlers.GetOTP(r, s.database.Storage)
+			// handlers.CheckOTP(r, s.database)
+			// handlers.ResendOTP(r, s.database)
+		})
+	})
 }
