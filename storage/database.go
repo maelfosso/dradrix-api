@@ -68,7 +68,7 @@ func (d *Database) Connect() error {
 		d.log.Fatal("Ping to database has failed")
 	}
 
-	d.log.Fatal("Successfully connected to MongoDB")
+	d.log.Info("Successfully connected to MongoDB")
 	return nil
 }
 

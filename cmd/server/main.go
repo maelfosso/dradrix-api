@@ -13,7 +13,6 @@ import (
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"stockinos.com/api/grpc"
 	"stockinos.com/api/server"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
@@ -47,7 +46,7 @@ func start() int {
 	}()
 
 	host := utils.GetDefault("HOST", "0.0.0.0")
-	port := utils.GetIntDefault("PORT", 8000)
+	port := utils.GetIntDefault("PORT", 8080)
 
 	database := storage.NewDatabase(storage.NewDatabaseOptions{
 		URI:  utils.GetDefault("MONGODB_URI", "mongodb://localhost:27017/stockinos"),
@@ -66,12 +65,12 @@ func start() int {
 		Log:      log,
 	})
 
-	gs := grpc.New(grpc.Options{
-		Database: database,
-		Host:     host,
-		Port:     port + 10,
-		Log:      log,
-	})
+	// gs := grpc.New(grpc.Options{
+	// 	Database: database,
+	// 	Host:     host,
+	// 	Port:     port + 10,
+	// 	Log:      log,
+	// })
 
 	var eg errgroup.Group
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
@@ -92,7 +91,7 @@ func start() int {
 
 	eg.Go(func() error {
 		if err := s.Start(); err != nil {
-			log.Info("Error starting grpc server", zap.Error(err))
+			log.Info("Error starting http server", zap.Error(err))
 			// return 1
 			// wg.Done()
 			return err
@@ -101,16 +100,16 @@ func start() int {
 		return nil
 	})
 
-	eg.Go(func() error {
-		if err := gs.Start(); err != nil {
-			log.Info("Error starting grpc server", zap.Error(err))
-			// return 1
-			// wg.Done()
-			return err
-		}
+	// eg.Go(func() error {
+	// 	if err := gs.Start(); err != nil {
+	// 		log.Info("Error starting grpc server", zap.Error(err))
+	// 		// return 1
+	// 		// wg.Done()
+	// 		return err
+	// 	}
 
-		return nil
-	})
+	// 	return nil
+	// })
 	// go func() {
 	// 	if err := gs.Start(); err != nil {
 	// 		log.Info("Error starting grpc server", zap.Error(err))
