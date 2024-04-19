@@ -43,7 +43,7 @@ func New(opts Options) *Server {
 	mux := chi.NewMux()
 
 	return &Server{
-		database: opts.Database, // createDatabase(opts.Log),
+		database: createDatabase(opts.Log),
 		nats:     createNats(opts.Log),
 		address:  address,
 		log:      opts.Log,
@@ -76,8 +76,7 @@ func createNats(log *zap.Logger) *broker.Broker {
 
 // Start the server by setting up routes and listening for HTTP request on the given address
 func (s *Server) Start() error {
-	// if err := s.database.Connect(); err != nil {
-	if s.database == nil {
+	if err := s.database.Connect(); err != nil {
 		return fmt.Errorf("error with the database: not available")
 	}
 

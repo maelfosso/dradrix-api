@@ -63,6 +63,8 @@ func (d *Database) Connect() error {
 		return err
 	}
 
+	d.Storage = NewStorage(*d)
+
 	err = d.DB.Ping(context.Background(), nil)
 	if err != nil {
 		d.log.Fatal("Ping to database has failed")
