@@ -20,18 +20,18 @@ import (
 type Server struct {
 	address  string
 	database *storage.Database
-	nats     *broker.Broker
-	log      *zap.Logger
-	mux      chi.Router
-	server   *http.Server
+	// nats     *broker.Broker
+	log    *zap.Logger
+	mux    chi.Router
+	server *http.Server
 }
 
 type Options struct {
 	Database *storage.Database
-	Nats     *broker.Broker
-	Host     string
-	Log      *zap.Logger
-	Port     int
+	// Nats     *broker.Broker
+	Host string
+	Log  *zap.Logger
+	Port int
 }
 
 func New(opts Options) *Server {
@@ -44,10 +44,10 @@ func New(opts Options) *Server {
 
 	return &Server{
 		database: createDatabase(opts.Log),
-		nats:     createNats(opts.Log),
-		address:  address,
-		log:      opts.Log,
-		mux:      mux,
+		// nats:     createNats(opts.Log),
+		address: address,
+		log:     opts.Log,
+		mux:     mux,
 		server: &http.Server{
 			Addr:              address,
 			Handler:           mux,
