@@ -18,21 +18,19 @@ func CreateServer() func() {
 	db, cleanupDB := CreateDatabase()
 	s := server.New(server.Options{
 		Host:     "localhost",
-		Port:     8080,
+		Port:     8081,
 		Database: db,
 	})
 
 	go func() {
 		if err := s.Start(); err != nil {
-			log.Println("[IntegrationTest] Start Failed", err)
 			panic(err)
 		}
 	}()
 
 	for {
-		_, err := http.Get("http://localhost:8080/")
+		_, err := http.Get("http://localhost:8081/")
 		if err == nil {
-			log.Println("[IntegrationTest] Before time.sleep", err)
 			break
 		}
 		time.Sleep(5 * time.Millisecond)

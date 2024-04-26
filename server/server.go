@@ -93,7 +93,7 @@ func (s *Server) Start() error {
 	// subscribers.NewMessageWoZSentSubscriber(*s.nats).Subscribe(*s.database)
 
 	s.log.Info("Starting on", zap.String("address", s.address))
-	if err := s.server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error starting server: %w", err)
 	}
 	return nil
