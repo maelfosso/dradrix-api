@@ -80,6 +80,16 @@ func (d *Database) Disconnect() {
 	}
 }
 
+func (d *Database) Ping(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	if err := d.DB.Ping(ctx, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *Database) GetCollection(coll string) *mongo.Collection {
 	return d.DB.Database(d.name).Collection(coll)
 }

@@ -25,7 +25,7 @@ func (s *Server) setupRoutes() {
 	}))
 
 	handlers.Root(s.mux)
-	handlers.Health(s.mux)
+	handlers.Health(s.mux, s.database)
 
 	// handlers.FacebookWebhook(s.mux, facebookWebhookStruct{
 	// 	Database:                         s.database,

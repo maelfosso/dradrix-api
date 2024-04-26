@@ -19,8 +19,8 @@ func TestServer_Start(t *testing.T) {
 		if err != nil {
 			t.Errorf("Server has not started due to error (%v)", err)
 		}
-		if resp.StatusCode != http.StatusNotFound {
-			t.Fatalf("CreateServer() status code = %d; want %d", resp.StatusCode, http.StatusNotFound)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("CreateServer() status code = %d; want %d", resp.StatusCode, http.StatusOK)
 		}
 	})
 }
