@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -72,33 +71,42 @@ func start() int {
 	// 	Log:      log,
 	// })
 
-	var eg errgroup.Group
+	// var eg errgroup.Group
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		if err := s.Start(); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	<-ctx.Done()
 
 	eg.Go(func() error {
 		<-ctx.Done()
 		if err := s.Stop(); err != nil {
-			log.Info("Error stopping server", zap.Error(err))
 			return err
 		}
 
 		return nil
 	})
 
-	wg := new(sync.WaitGroup)
-	wg.Add(2)
+	// wg := new(sync.WaitGroup)
+	// wg.Add(2)
 
-	eg.Go(func() error {
-		if err := s.Start(); err != nil {
-			log.Info("Error starting http server", zap.Error(err))
-			// return 1
-			// wg.Done()
-			return err
-		}
+	// eg.Go(func() error {
+	// 	if err := s.Start(); err != nil {
+	// 		log.Info("Error starting http server", zap.Error(err))
+	// 		// return 1
+	// 		// wg.Done()
+	// 		return err
+	// 	}
 
-		return nil
-	})
+	// 	return nil
+	// })
 
 	// eg.Go(func() error {
 	// 	if err := gs.Start(); err != nil {

@@ -53,14 +53,14 @@ func SendMessageText(to, message string) (*WhatsappSendMessageResponse, error) {
 	}
 
 	log.Println("Client: got response!")
-	log.Println("client: status code: %d", res.StatusCode)
+	log.Printf("client: status code: %d", res.StatusCode)
 
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("client: could not read response body: %s", err)
 	}
 
-	log.Println("client: response body: %s", string(resBody))
+	log.Printf("client: response body: %s", string(resBody))
 
 	var data WhatsappSendMessageResponse
 	err = json.Unmarshal(resBody, &data)
@@ -146,14 +146,14 @@ func SendMessageTextFromTemplate(to, template, language, parameters string) (*Wh
 	}
 
 	log.Println("client: got response!")
-	log.Println("client: status code: %d", res.StatusCode)
+	log.Printf("client: status code: %d", res.StatusCode)
 
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("client: could not read response body: %w", err)
 	}
 
-	log.Println("client: response body: %s", string(resBody))
+	log.Printf("client: response body: %s", string(resBody))
 
 	var data WhatsappSendMessageResponse
 	err = json.Unmarshal(resBody, &data)
