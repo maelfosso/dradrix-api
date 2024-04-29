@@ -19,7 +19,7 @@ func (q *Queries) DoesUserExists(ctx context.Context, arg DoesUserExistsParams) 
 
 	err := q.usersCollection.FindOne(
 		ctx,
-		bson.D{{Key: "phoneNumber", Value: arg.PhoneNumber}},
+		bson.D{{Key: "phone_number", Value: arg.PhoneNumber}},
 	).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -41,7 +41,7 @@ func (q *Queries) GetUserByPhoneNumber(ctx context.Context, arg GetUserByPhoneNu
 
 	err := q.usersCollection.FindOne(
 		ctx,
-		bson.D{{Key: "phoneNumber", Value: arg.PhoneNumber}},
+		bson.D{{Key: "phone_number", Value: arg.PhoneNumber}},
 	).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

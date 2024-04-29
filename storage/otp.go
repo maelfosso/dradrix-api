@@ -42,6 +42,7 @@ func (q *Queries) CreateOTP(ctx context.Context, arg CreateOTPParams) (*models.O
 		PhoneNumber: arg.PhoneNumber,
 		WaMessageId: arg.WaMessageId,
 		PinCode:     arg.PinCode,
+		Active:      true,
 	}
 
 	_, err := q.otpsCollection.InsertOne(ctx, otp)

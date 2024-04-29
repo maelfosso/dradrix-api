@@ -35,7 +35,7 @@ func (s *Server) setupRoutes() {
 	s.mux.Group(func(r chi.Router) {
 		// Auth
 		r.Route("/auth", func(r chi.Router) {
-			handlers.GetOTP(r, s.database.Storage)
+			handlers.CreateOTP(r, s.database.Storage)
 			// handlers.CheckOTP(r, s.database)
 			// handlers.ResendOTP(r, s.database)
 		})

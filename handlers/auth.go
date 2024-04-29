@@ -9,44 +9,32 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"stockinos.com/api/models"
-	"stockinos.com/api/requests"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
 )
-
-type authInterface interface {
-	CreateUserIfNotExists(ctx context.Context, phoneNumber string) error
-	CreateOTP(ctx context.Context, pinCode models.OTP) error
-	SaveOTP(ctx context.Context, pinCode models.OTP) error
-	CheckOTP(ctx context.Context, phoneNumber, pinCode string) (*models.OTP, error)
-	FindUserByPhoneNumber(ctx context.Context, phoneNumber string) (*models.User, error)
-}
 
 type getOTPInterface interface {
 	CreateUser(ctx context.Context, arg storage.CreateUserParams) (*models.User, error)
 	DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
 	CreateOTP(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
-	// DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) error
-	// GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
 }
 
-type GetOTPRequest struct {
+type CreateOTPRequest struct {
 	PhoneNumber string `json:"phone_number,omitempty"` // Phone number of the customer
 	Language    string `json:"language,omitempty"`     // Language for template
 }
 
-func GetOTP(mux chi.Router, svc getOTPInterface) {
+func CreateOTP(mux chi.Router, svc getOTPInterface) {
 	mux.Post("/otp", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var input GetOTPRequest
+		var input CreateOTPRequest
 
 		// read the request body
 		decoder := json.NewDecoder(r.Body)
 
 		// extract the phone number
 		err := decoder.Decode(&input)
-		log.Println("extract the phone number: ", err, input)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -57,16 +45,17 @@ func GetOTP(mux chi.Router, svc getOTPInterface) {
 		pinCode := utils.GenerateOTP(now)
 
 		// send the pin code to a the phone number using Whatsapp API
-		waMessageId, err := requests.SendWoZOTP(
-			input.PhoneNumber,
-			input.Language,
-			pinCode,
-		)
-		if err != nil {
-			log.Println("error when sending the OTP via WhatsApp: ", err)
-			http.Error(w, "ERR_COTP_150", http.StatusBadRequest)
-			return
-		}
+		// waMessageId, err := requests.SendWoZOTP(
+		// 	input.PhoneNumber,
+		// 	input.Language,
+		// 	pinCode,
+		// )
+		// if err != nil {
+		// 	log.Println("error when sending the OTP via WhatsApp: ", err)
+		// 	http.Error(w, "ERR_COTP_150", http.StatusBadRequest)
+		// 	return
+		// }
+		waMessageId := "xxx-yyy-zzz"
 
 		// Check if there is an user with this phone number
 		user, err := svc.DoesUserExists(ctx, storage.DoesUserExistsParams{
