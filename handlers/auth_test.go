@@ -235,7 +235,7 @@ func TestCheckOTP(t *testing.T) {
 			Language:    "fr",
 		})
 
-		_, headers, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
+		_, _, _ = helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
 			PinCode:     otps[len(otps)-1].PinCode,

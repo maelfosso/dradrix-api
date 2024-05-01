@@ -58,9 +58,14 @@ type DesactivateOTPParams struct {
 }
 
 func (q *Queries) DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) error {
-	// id, _ := arg.Id.Hex()
-	filter := bson.D{{Key: "_id", Value: arg.Id}}
-	update := bson.D{{Key: "active", Value: true}}
+	filter := bson.M{
+		"_id": arg.Id,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"active": false,
+		},
+	}
 
 	_, err := q.otpsCollection.UpdateOne(
 		ctx,
