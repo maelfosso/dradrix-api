@@ -24,7 +24,7 @@ func (store *MongoStorage) CheckOTPTx(ctx context.Context, arg CheckOTPParams) (
 			return nil, fmt.Errorf("ERR_COTP_102_%s", err)
 		}
 
-		err = store.DesactivateOTP(ctx, DesactivateOTPParams{
+		otp, err = store.DesactivateOTP(ctx, DesactivateOTPParams{
 			Id: otp.Id,
 		})
 		if err != nil {

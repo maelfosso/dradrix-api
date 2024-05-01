@@ -2,10 +2,12 @@ package storage
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"stockinos.com/api/models"
 )
 
@@ -20,7 +22,7 @@ func (q *Queries) GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) 
 		bson.D{{Key: "phone_number", Value: arg.PhoneNumber}, {Key: "active", Value: true}},
 	).Decode(&otp)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		} else {
 			return nil, err
@@ -57,7 +59,7 @@ type DesactivateOTPParams struct {
 	Id primitive.ObjectID
 }
 
-func (q *Queries) DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) error {
+func (q *Queries) DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) (*models.OTP, error) {
 	filter := bson.M{
 		"_id": arg.Id,
 	}
@@ -66,16 +68,26 @@ func (q *Queries) DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) 
 			"active": false,
 		},
 	}
+	after := options.After
 
-	_, err := q.otpsCollection.UpdateOne(
+	var otp models.OTP
+	err := q.otpsCollection.FindOneAndUpdate(
 		ctx,
 		filter,
 		update,
-	)
+		&options.FindOneAndUpdateOptions{
+			ReturnDocument: &after,
+		},
+	).Decode(&otp)
 	if err != nil {
-		return err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
 	}
-	return nil
+
+	return &otp, nil
 }
 
 type CheckOTPParams struct {
@@ -93,7 +105,7 @@ func (q *Queries) CheckOTP(ctx context.Context, arg CheckOTPParams) (*models.OTP
 	}
 	err := q.otpsCollection.FindOne(ctx, filter).Decode(&otp)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		} else {
 			return nil, err

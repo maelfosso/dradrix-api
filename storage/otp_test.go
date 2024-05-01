@@ -81,7 +81,7 @@ func TestDesactivateOTP(t *testing.T) {
 			PinCode:     "0000",
 			PhoneNumber: "2222-2222-2",
 		})
-		err := db.Storage.DesactivateOTP(context.Background(), storage.DesactivateOTPParams{
+		_, err := db.Storage.DesactivateOTP(context.Background(), storage.DesactivateOTPParams{
 			Id: otp.Id,
 		})
 		if err != nil {
@@ -121,7 +121,7 @@ func TestCheckOTP(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CheckOTP err=%v, want=nil", err)
 		}
-		if otp.PhoneNumber != "0000-0000-0" && otp.PinCode != "0000" && !otp.Active {
+		if otp.PhoneNumber != "0000-0000-0" || otp.PinCode != "0000" || !otp.Active {
 			t.Fatalf("CheckOTP wrong fetched otp=%s/%s/%t; want=0000-0000-0/0000/true", otp.PhoneNumber, otp.PinCode, otp.Active)
 		}
 	})

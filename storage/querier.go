@@ -13,7 +13,7 @@ type Querier interface {
 
 	// OTP
 	CheckOTP(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
-	DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) error
+	DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) (*models.OTP, error)
 	CreateOTP(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
 	GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
 }
