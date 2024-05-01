@@ -36,7 +36,7 @@ func (s *Server) setupRoutes() {
 		// Auth
 		r.Route("/auth", func(r chi.Router) {
 			handlers.CreateOTP(r, s.database.Storage)
-			// handlers.CheckOTP(r, s.database)
+			handlers.CheckOTP(r, s.database.Storage)
 			// handlers.ResendOTP(r, s.database)
 		})
 	})

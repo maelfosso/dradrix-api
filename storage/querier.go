@@ -19,6 +19,7 @@ type Querier interface {
 }
 
 type QuerierTx interface {
+	CheckOTPTx(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
 }
 
 var _ Querier = (*Queries)(nil)
