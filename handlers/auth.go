@@ -8,8 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 	"stockinos.com/api/models"
+	"stockinos.com/api/services"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
 )
@@ -164,38 +167,30 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 			return
 		}
 
-		// m.Active = false
-		// err = a.SaveOTP(r.Context(), *m)
-		// if err != nil {
-		// 	log.Println("error when changing the active state of the current OTP line: ", err)
-		// 	http.Error(w, "ERR_COTP_103", http.StatusBadRequest)
-		// 	return
-		// }
+		tokenString, err := services.GenerateJWTToken(structs.Map(&user))
+		if err != nil {
+			log.Println("Error CreateUser", zap.Error(err))
+			http.Error(w, "error when creating token", http.StatusBadRequest)
+			return
+		}
 
-		// // Generating the JWT Token
-		// u, err := a.FindUserByPhoneNumber(r.Context(), input.PhoneNumber)
-		// if err != nil {
-		// 	log.Println("error when looking for user: ", err)
-		// 	http.Error(w, "ERR_COTP_104", http.StatusBadRequest)
-		// 	return
-		// }
-
-		// var signInResult requests.SignInResult
-		// signInResult.Name = u.Name
-		// signInResult.PhoneNumber = u.PhoneNumber
-
-		// tokenString, err := services.GenerateJWTToken(structs.Map(signInResult))
-		// if err != nil {
-		// 	log.Println("error when generating jwt token ", err)
-		// 	http.Error(w, "ERR_COTP_105", http.StatusBadRequest)
-		// 	return
-		// }
-
-		// signInResult.Token = tokenString
+		http.SetCookie(
+			w,
+			&http.Cookie{
+				Name:     "jwt",
+				Value:    tokenString,
+				Path:     "/",
+				Expires:  time.Now().Add(1 * time.Hour),
+				HttpOnly: true,
+				Secure:   true,
+				MaxAge:   3600,
+				SameSite: http.SameSiteLaxMode,
+			},
+		)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(true); err != nil {
+		if err := json.NewEncoder(w).Encode(user); err != nil {
 			log.Println("error when encoding auth result: ", err)
 			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
 			return

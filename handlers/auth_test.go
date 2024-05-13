@@ -45,7 +45,7 @@ func (s *getOTPMock) DoesUserExists(ctx context.Context, arg storage.DoesUserExi
 	return user, nil
 }
 
-func (s *getOTPMock) CreateOTP(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+func (s *getOTPMock) CreateOTPx(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
 	otp := models.OTP{
 		Id:          otpId,
 		WaMessageId: "xxx-yyy-zzz",
@@ -112,6 +112,34 @@ func TestCreateOTP(t *testing.T) {
 		}
 		if len(users) == 2 {
 			t.Fatalf("CreateOTP() number of users created = %d; want = %d", len(users), 1)
+		}
+	})
+
+	t.Run("return 200 but always only one active otp", func(t *testing.T) {
+		Init()
+		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
+			PhoneNumber: "695165033",
+			Language:    "fr",
+		})
+		code, _, _ := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
+			PhoneNumber: "695165033",
+			Language:    "fr",
+		})
+		if code != http.StatusOK {
+			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
+		}
+		if len(otps) < 2 {
+			t.Fatalf("CreateOTP() number of otps created = %d; want = %d", len(otps), 2)
+		}
+		nActiveOTP := 0
+		for i := range otps {
+			otp := otps[i]
+			if otp.Active == true {
+				nActiveOTP += 1
+			}
+		}
+		if nActiveOTP != 1 {
+			t.Fatalf("CreateOTP number of active otps = %d; want = %d", nActiveOTP, 1)
 		}
 	})
 
