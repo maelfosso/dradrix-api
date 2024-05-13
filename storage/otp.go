@@ -90,6 +90,36 @@ func (q *Queries) DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) 
 	return &otp, nil
 }
 
+type DesactivateAllOTPFromPhoneNumberParams struct {
+	PhoneNumber string
+}
+
+func (q *Queries) DesactivateAllOTPFromPhoneNumber(ctx context.Context, arg DesactivateAllOTPFromPhoneNumberParams) error {
+	filter := bson.M{
+		"phone_number": arg.PhoneNumber,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"active": false,
+		},
+	}
+
+	_, err := q.otpsCollection.UpdateMany(
+		ctx,
+		filter,
+		update,
+	)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type CheckOTPParams struct {
 	PhoneNumber string
 	UserOTP     string

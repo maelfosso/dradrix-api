@@ -17,7 +17,7 @@ import (
 type getOTPInterface interface {
 	CreateUser(ctx context.Context, arg storage.CreateUserParams) (*models.User, error)
 	DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
-	CreateOTP(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
+	CreateOTPx(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
 }
 
 type CreateOTPRequest struct {
@@ -80,7 +80,9 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 		}
 
 		// Then we save the OTP
-		_, err = svc.CreateOTP(ctx, storage.CreateOTPParams{
+		// 1- update all otps to not active
+		// 2- create the new otp as active
+		_, err = svc.CreateOTPx(ctx, storage.CreateOTPParams{
 			WaMessageId: waMessageId,
 			PhoneNumber: input.PhoneNumber,
 			PinCode:     pinCode,
