@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
@@ -70,13 +71,20 @@ func TestCreateOTP(t *testing.T) {
 	t.Run("return 200", func(t *testing.T) {
 		Init()
 
-		code, _, _ := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
+		userPhoneNumber := "695165033"
+		code, _, responseData := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
+			PhoneNumber: userPhoneNumber,
 			Language:    "fr",
 		})
 
 		if code != http.StatusOK {
 			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
+		}
+
+		var responsePhoneNumber string
+		err := json.Unmarshal([]byte(responseData), &responsePhoneNumber)
+		if err != nil || responsePhoneNumber != userPhoneNumber {
+			t.Fatalf("CreateOTP() response request = %s; want = %s", responsePhoneNumber, userPhoneNumber)
 		}
 		if users[len(users)-1].PhoneNumber != "695165033" {
 			t.Fatalf("CreateOTP() last user phone number = %s; want = %s", otps[len(otps)-1].PhoneNumber, "695165033")
