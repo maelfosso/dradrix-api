@@ -93,6 +93,11 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(input.PhoneNumber); err != nil {
+			log.Println("error when encoding auth result: ", err)
+			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
+			return
+		}
 	})
 }
 
