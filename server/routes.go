@@ -24,22 +24,30 @@ func (s *Server) setupRoutes() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+
 	s.mux.Use(services.Verifier)
 	s.mux.Use(services.ParseJwtToken)
-	s.mux.Use(services.Authenticator)
-	s.mux.Use(s.convertJWTTokenToMember)
 
-	handlers.Root(s.mux)
-	handlers.Health(s.mux, s.database)
-
-	handlers.GetCurrentUser(s.mux)
-
+	// Protected Routes
 	s.mux.Group(func(r chi.Router) {
-		// Auth
-		r.Route("/auth", func(r chi.Router) {
-			handlers.CreateOTP(r, s.database.Storage)
-			handlers.CheckOTP(r, s.database.Storage)
-			// handlers.ResendOTP(r, s.database)
+		r.Use(services.Authenticator)
+		r.Use(s.convertJWTTokenToMember)
+
+		handlers.GetCurrentUser(r)
+	})
+
+	// Public Routes
+	s.mux.Group(func(r chi.Router) {
+		handlers.Root(r)
+		handlers.Health(r, s.database)
+
+		r.Group(func(r chi.Router) {
+			// Auth
+			r.Route("/auth", func(r chi.Router) {
+				handlers.CreateOTP(r, s.database.Storage)
+				handlers.CheckOTP(r, s.database.Storage)
+				// handlers.ResendOTP(r, s.database)
+			})
 		})
 	})
 
