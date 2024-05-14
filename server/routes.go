@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/cors"
 	"stockinos.com/api/broker/publishers"
 	"stockinos.com/api/handlers"
+	"stockinos.com/api/services"
 	"stockinos.com/api/storage"
 )
 
@@ -23,14 +24,15 @@ func (s *Server) setupRoutes() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	s.mux.Use(services.Verifier)
+	s.mux.Use(services.ParseJwtToken)
+	s.mux.Use(services.Authenticator)
+	s.mux.Use(s.convertJWTTokenToMember)
 
 	handlers.Root(s.mux)
 	handlers.Health(s.mux, s.database)
 
-	// handlers.FacebookWebhook(s.mux, facebookWebhookStruct{
-	// 	Database:                         s.database,
-	// 	WhatsappMessageReceivedPublisher: publishers.NewWhatsappMessageReceivedPublisher(*s.nats),
-	// })
+	handlers.GetCurrentUser(s.mux)
 
 	s.mux.Group(func(r chi.Router) {
 		// Auth
@@ -40,4 +42,9 @@ func (s *Server) setupRoutes() {
 			// handlers.ResendOTP(r, s.database)
 		})
 	})
+
+	// handlers.FacebookWebhook(s.mux, facebookWebhookStruct{
+	// 	Database:                         s.database,
+	// 	WhatsappMessageReceivedPublisher: publishers.NewWhatsappMessageReceivedPublisher(*s.nats),
+	// })
 }

@@ -167,7 +167,7 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 			return
 		}
 
-		tokenString, err := services.GenerateJWTToken(structs.Map(&user))
+		tokenString, err := services.GenerateJwtToken(structs.Map(&user))
 		if err != nil {
 			log.Println("Error CreateUser", zap.Error(err))
 			http.Error(w, "error when creating token", http.StatusBadRequest)

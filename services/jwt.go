@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -17,13 +16,13 @@ type contextKey struct {
 	name string
 }
 
-var JwtMemberKey *contextKey
+var JwtUserKey *contextKey
 var JwtClaimsKey *contextKey
 var JwtTokenKey *contextKey
 var JwtErrorKey *contextKey
-var jwtSecretKey []byte // (os.Getenv("JWT_SECRET"))
+var jwtSecretKey []byte // (os.Getenv("Jwt_SECRET"))
 
-type TWAJWTClaims struct {
+type TWAJwtClaims struct {
 	*jwt.RegisteredClaims
 	User interface{}
 }
@@ -33,15 +32,15 @@ func (k *contextKey) String() string {
 }
 
 func init() {
-	JwtMemberKey = &contextKey{"Member"}
+	JwtUserKey = &contextKey{"User"}
 	JwtClaimsKey = &contextKey{"Claims"}
 	JwtTokenKey = &contextKey{"Token"}
 	JwtErrorKey = &contextKey{"Error"}
-	jwtSecretKey = []byte(os.Getenv("JWT_SECRET"))
-	// TokenAuth = jwtauth.New("HS256", []byte(os.Getenv("JWT_SECRET")), "s-tschwaa")
+	jwtSecretKey = []byte(os.Getenv("Jwt_SECRET"))
+	// TokenAuth = jwtauth.New("HS256", []byte(os.Getenv("Jwt_SECRET")), "s-tschwaa")
 }
 
-func GenerateJWTToken(data map[string]interface{}) (string, error) {
+func GenerateJwtToken(data map[string]interface{}) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	now := time.Now().UTC()
@@ -60,19 +59,34 @@ func GenerateJWTToken(data map[string]interface{}) (string, error) {
 	return tokenString, nil
 }
 
-func ExtractTokenFromRequest(r *http.Request) (string, error) {
+func TokenFromCookie(r *http.Request) (string, error) {
+	cookie, err := r.Cookie("jwt")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			return "", fmt.Errorf("no cookie found")
+		} else {
+			return "", fmt.Errorf("error when getting cookies: %w", err)
+		}
+	}
+	if cookie.Value == "" {
+		return "", fmt.Errorf("empty token found")
+	}
+
+	return cookie.Value, nil
+}
+
+func TokenFromHeader(r *http.Request) (string, error) {
 	var tokenString string
 
-	authorizationHeader := r.Header.Get("Authorization")
-	log.Println("Authorization Bearer : ", authorizationHeader)
-	if strings.HasPrefix(authorizationHeader, "Bearer ") {
-		tokenString = strings.TrimPrefix(authorizationHeader, "Bearer ")
+	bearer := r.Header.Get("Authorization")
+	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
+		tokenString = bearer[7:]
 	} else {
 		return "", fmt.Errorf("no authorization found in header")
 	}
 
 	if tokenString == "" {
-		return "", fmt.Errorf("empty authorization found")
+		return "", fmt.Errorf("empty token found")
 	}
 
 	return tokenString, nil
@@ -80,8 +94,7 @@ func ExtractTokenFromRequest(r *http.Request) (string, error) {
 
 func Verifier(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := ExtractTokenFromRequest(r)
-		log.Println("Verifier : ", tokenString, err)
+		tokenString, err := TokenFromCookie(r)
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, JwtTokenKey, tokenString)
@@ -90,7 +103,7 @@ func Verifier(next http.Handler) http.Handler {
 	})
 }
 
-func ParseJWTToken(next http.Handler) http.Handler {
+func ParseJwtToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		tokenString, _ := ctx.Value(JwtTokenKey).(string)
@@ -101,7 +114,6 @@ func ParseJWTToken(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("ParseJWTToken starts with: ", tokenString)
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
