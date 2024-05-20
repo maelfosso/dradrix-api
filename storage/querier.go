@@ -17,9 +17,14 @@ type Querier interface {
 	DesactivateAllOTPFromPhoneNumber(ctx context.Context, arg DesactivateAllOTPFromPhoneNumberParams) error
 	CreateOTP(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
 	GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
+
+	// Monitoring - Activity
+	CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error)
+	GetActivity(ctx context.Context, arg GetActivityParams) (*models.Activity, error)
 }
 
 type QuerierTx interface {
+	// OTP
 	CheckOTPTx(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
 	CreateOTPx(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
 }
