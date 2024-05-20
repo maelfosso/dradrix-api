@@ -21,6 +21,8 @@ type Querier interface {
 	// Monitoring - Activity
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error)
 	GetActivity(ctx context.Context, arg GetActivityParams) (*models.Activity, error)
+	DeleteActivity(ctx context.Context, arg DeleteActivityParams) error
+	GetAllActivitiesFromUser(ctx context.Context, arg GetAllActivitiesFromUserParams) ([]*models.Activity, error)
 }
 
 type QuerierTx interface {

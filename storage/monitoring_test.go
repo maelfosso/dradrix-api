@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stockinos.com/api/integrationtest"
 	"stockinos.com/api/models"
 	"stockinos.com/api/storage"
@@ -28,6 +29,8 @@ func TestCreateActivity(t *testing.T) {
 			{Name: "f1", Description: "Description 1", Type: "number"},
 			{Name: "f2", Description: "Description 2", Type: "text"},
 		},
+
+		CreatedBy: primitive.NewObjectID(),
 	}
 	activity, err := db.Storage.CreateActivity(context.Background(), arg)
 	if err != nil {
@@ -44,6 +47,9 @@ func TestCreateActivity(t *testing.T) {
 	}
 	if activity.CreatedAt.IsZero() || activity.UpdatedAt.IsZero() {
 		t.Fatalf("CreateActivity() date - got empty date; want date with values")
+	}
+	if activity.CreatedBy != arg.CreatedBy {
+		t.Fatalf("CreateActivity() createdBy - got: %v; want: %v", activity.CreatedBy, arg.CreatedBy)
 	}
 
 	afterCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
@@ -66,5 +72,50 @@ func TestCreateActivity(t *testing.T) {
 			arg.Name, arg.Description, len(arg.Fields),
 		)
 	}
+	if got.CreatedBy != arg.CreatedBy {
+		t.Fatalf("CreateActivity() createdBy - got: %v; want: %v", got.CreatedBy, arg.CreatedBy)
+	}
+}
 
+func TestDeleteActivity(t *testing.T) {
+
+	db, cleanup := integrationtest.CreateDatabase()
+	defer cleanup()
+
+	arg := storage.CreateActivityParams{
+		Name:        "a1",
+		Description: "Activity 1",
+		Fields: []models.ActivityFields{
+			{Name: "f1", Description: "Description 1", Type: "number"},
+			{Name: "f2", Description: "Description 2", Type: "text"},
+		},
+	}
+	activity, err := db.Storage.CreateActivity(context.Background(), arg)
+	if err != nil {
+		t.Fatalf("CreateActivity() err = %v; want nil", err)
+	}
+
+	_, err = db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
+		Id: activity.Id,
+	})
+	if err != nil {
+		t.Fatalf("GetActivity() - err = %v; want nil", err)
+	}
+
+	err = db.Storage.DeleteActivity(context.Background(), storage.DeleteActivityParams{
+		Id: activity.Id,
+	})
+	if err != nil {
+		t.Fatalf("DeleteActivity() - err = %v; want nil", err)
+	}
+
+	activities, err := db.Storage.GetAllActivitiesFromUser(context.Background(), storage.GetAllActivitiesFromUserParams{
+		CreatedBy: arg.CreatedBy,
+	})
+	if err != nil {
+		t.Fatalf("GetAllActivitiesFromUser() - err = %v; want nil", err)
+	}
+	if len(activities) != 0 {
+		t.Fatalf("GetAllActivitiesFromUser() size - got: %d; want = 0", len(activities))
+	}
 }
