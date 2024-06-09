@@ -18,9 +18,10 @@ func TestCompany(t *testing.T) {
 	defer disconnect()
 
 	tests := map[string]func(*testing.T, *storage.Database){
-		"CreateCompany": testCreateCompany,
-		"UpdateCompany": testUpdateCompany,
-		"DeleteCompany": testDeleteCompany,
+		"CreateCompany":   testCreateCompany,
+		"UpdateCompany":   testUpdateCompany,
+		"DeleteCompany":   testDeleteCompany,
+		"GetAllCompanies": testGetAllCompanies,
 	}
 
 	for name, tc := range tests {
@@ -54,6 +55,53 @@ func testCreateCompany(t *testing.T, db *storage.Database) {
 	}
 	if err := companyEq(got, company); err != nil {
 		t.Fatalf("GetCompany() %v", err)
+	}
+}
+
+func testGetAllCompanies(t *testing.T, db *storage.Database) {
+	const NUM_COMPANIES_CREATED = 3
+	userA := primitive.NewObjectID()
+	userB := primitive.NewObjectID()
+
+	var companies []*models.Company
+
+	for i := 0; i < NUM_COMPANIES_CREATED; i++ {
+		company, _ := db.Storage.CreateCompany(context.Background(), storage.CreateCompanyParams{
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+
+			CreatedBy: userA,
+		})
+		companies = append(companies, company)
+	}
+
+	got, err := db.Storage.GetAllCompanies(context.TODO(), storage.GetAllCompaniesParams{
+		UserId: userA,
+	})
+	if err != nil {
+		t.Fatalf("GetAllCompanies(): got error; want nil")
+	}
+	if len(got) != NUM_COMPANIES_CREATED {
+		t.Fatalf("GetAllCompanies(): got %d companies; want %d companies", len(got), NUM_COMPANIES_CREATED)
+	}
+	if err := companyEq(got[0], companies[0]); err != nil {
+		t.Fatalf("GetAllCompanies(): %v", err)
+	}
+	if err := companyEq(got[1], companies[1]); err != nil {
+		t.Fatalf("GetAllCompanies(): %v", err)
+	}
+	if err := companyEq(got[len(got)-1], companies[len(companies)-1]); err != nil {
+		t.Fatalf("GetAllCompanies(): %v", err)
+	}
+
+	got, err = db.Storage.GetAllCompanies(context.TODO(), storage.GetAllCompaniesParams{
+		UserId: userB,
+	})
+	if err != nil {
+		t.Fatalf("GetAllCompanies(): got error; want nil")
+	}
+	if len(got) != 0 {
+		t.Fatalf("GetAllCompanies(): got %d companies; want %d companies", len(got), 0)
 	}
 }
 

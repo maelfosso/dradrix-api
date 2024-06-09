@@ -20,6 +20,7 @@ type Querier interface {
 
 	// Company
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (*models.Company, error)
+	GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Company, error)
 	GetCompany(ctx context.Context, arg GetCompanyParams) (*models.Company, error)
 	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (*models.Company, error)
 	DeleteCompany(ctx context.Context, arg DeleteCompanyParams) error

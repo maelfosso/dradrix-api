@@ -39,6 +39,27 @@ func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (*
 	}
 }
 
+type GetAllCompaniesParams struct {
+	UserId primitive.ObjectID
+}
+
+func (q *Queries) GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Company, error) {
+	var companies []*models.Company
+
+	filter := bson.M{
+		"created_by": arg.UserId,
+		"deleted_at": nil,
+	}
+	cursor, err := q.companiesCollection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if err = cursor.All(ctx, &companies); err != nil {
+		return nil, err
+	}
+	return companies, nil
+}
+
 type GetCompanyParams struct {
 	Id primitive.ObjectID
 }
