@@ -18,6 +18,12 @@ type Querier interface {
 	CreateOTP(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
 	GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
 
+	// Company
+	CreateCompany(ctx context.Context, arg CreateCompanyParams) (*models.Company, error)
+	GetCompany(ctx context.Context, arg GetCompanyParams) (*models.Company, error)
+	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (*models.Company, error)
+	DeleteCompany(ctx context.Context, arg DeleteCompanyParams) error
+
 	// Monitoring
 	// Activity
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error)
