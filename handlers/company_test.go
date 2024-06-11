@@ -155,6 +155,25 @@ func testGetCompany(t *testing.T, handler *handlers.AppHandler) {
 		}
 	})
 
+	t.Run("no company found", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockGetCompanyDB{
+			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+				return nil, nil
+			},
+		}
+
+		handler.GetCompany(mux, db)
+		code, _, response := helpertest.MakeGetRequest(mux, fmt.Sprintf("/%s", primitive.NewObjectID().Hex()))
+		if code != http.StatusBadRequest {
+			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+		}
+		want := "ERR_GONE_CMP_03"
+		if response != want {
+			t.Fatalf("GetCompany(): response error - got %s, want %s", response, want)
+		}
+	})
+
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
 		company := &models.Company{

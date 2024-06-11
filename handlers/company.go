@@ -73,6 +73,10 @@ func (handler *AppHandler) GetCompany(mux chi.Router, db getCompanyInterface) {
 			http.Error(w, "ERR_GONE_CMP_02", http.StatusBadRequest)
 			return
 		}
+		if company == nil {
+			http.Error(w, "ERR_GONE_CMP_03", http.StatusBadRequest)
+			return
+		}
 
 		response := GetCompanyResponse{
 			Company: *company,
