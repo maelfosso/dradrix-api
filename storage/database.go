@@ -75,7 +75,7 @@ func (d *Database) Connect() error {
 }
 
 func (d *Database) Disconnect() {
-	if err := d.DB.Disconnect(context.TODO()); err != nil {
+	if err := d.DB.Disconnect(context.Background()); err != nil {
 		panic(err)
 	}
 }

@@ -30,7 +30,8 @@ type Querier interface {
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error)
 	GetActivity(ctx context.Context, arg GetActivityParams) (*models.Activity, error)
 	DeleteActivity(ctx context.Context, arg DeleteActivityParams) error
-	GetAllActivitiesFromUser(ctx context.Context, arg GetAllActivitiesFromUserParams) ([]*models.Activity, error)
+	GetAllActivities(ctx context.Context, arg GetAllActivitiesParams) ([]*models.Activity, error)
+	UpdateActivity(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error)
 	// Data
 	CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error)
 	GetData(ctx context.Context, arg GetDataParams) (*models.Data, error)
