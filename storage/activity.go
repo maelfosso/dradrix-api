@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"stockinos.com/api/models"
 )
 
@@ -123,4 +124,45 @@ func (q *Queries) DeleteActivityFromCompany(ctx context.Context, arg DeleteActiv
 	}
 
 	return nil
+}
+
+type UpdateActivityParams struct {
+	Id        primitive.ObjectID
+	CompanyId primitive.ObjectID
+
+	Field string
+	Value interface{}
+	// Type  string
+}
+
+func (q *Queries) UpdateActivityFromCompany(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error) {
+	filter := bson.M{
+		"_id":        arg.Id,
+		"company_id": arg.CompanyId,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			arg.Field: arg.Value,
+		},
+	}
+	after := options.After
+
+	var activity models.Activity
+	err := q.activitiesCollection.FindOneAndUpdate(
+		ctx,
+		filter,
+		update,
+		&options.FindOneAndUpdateOptions{
+			ReturnDocument: &after,
+		},
+	).Decode(&activity)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return &activity, nil
 }

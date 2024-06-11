@@ -22,6 +22,7 @@ func TestActivity(t *testing.T) {
 	tests := map[string]func(*testing.T, *storage.Database){
 		"CreateActivity": testCreateActivity,
 		"DeleteActivity": testDeleteActivity,
+		"UpdateActivity": testUpdateActivity,
 	}
 
 	for name, tc := range tests {
@@ -131,6 +132,106 @@ func testDeleteActivity(t *testing.T, db *storage.Database) {
 	}
 	if len(activities) != 0 {
 		t.Fatalf("GetAllActivitiesFromCompany(): got %d number of activities; want = 0", len(activities))
+	}
+}
+
+func testUpdateActivity(t *testing.T, db *storage.Database) {
+
+	beforeCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
+	if err != nil {
+		t.Fatalf("CountDocuments() Before; err = %v; want nil", err)
+	}
+
+	arg := storage.CreateActivityParams{
+		Name:        "a1",
+		Description: "Activity 1",
+		Fields: []models.ActivityFields{
+			{Name: "f1", Description: "Description 1", Type: "number"},
+			{Name: "f2", Description: "Description 2", Type: "text", Id: true},
+		},
+
+		CompanyId: primitive.NewObjectID(),
+		CreatedBy: primitive.NewObjectID(),
+	}
+	activity, err := db.Storage.CreateActivity(context.Background(), arg)
+	if err != nil {
+		t.Fatalf("CreateActivity() err = %v; want nil", err)
+	}
+	if activity.Id.IsZero() {
+		t.Fatalf("CreateActivity(): Id is nil; want non nil")
+	}
+
+	argForUpdate := storage.UpdateActivityParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+
+		Field: "name",
+		Value: "a2",
+	}
+	updated, err := db.Storage.UpdateActivityFromCompany(context.TODO(), argForUpdate)
+	if err != nil {
+		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
+	}
+	if updated.Name != argForUpdate.Value {
+		t.Fatalf(
+			"UpdateActivity(): updated %s value - got %s; want %s",
+			argForUpdate.Field, updated.Name, argForUpdate.Value,
+		)
+	}
+
+	argForUpdate = storage.UpdateActivityParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+
+		Field: "fields.1.code",
+		Value: "f1",
+	}
+	updated, err = db.Storage.UpdateActivityFromCompany(context.TODO(), argForUpdate)
+	if err != nil {
+		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
+	}
+	if updated.Fields[1].Code != argForUpdate.Value {
+		t.Fatalf(
+			"UpdateActivity(): updated %s value - got %s; want %s",
+			argForUpdate.Field, updated.Name, argForUpdate.Value,
+		)
+	}
+
+	argForUpdate = storage.UpdateActivityParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+
+		Field: "fields.1.id",
+		Value: false,
+	}
+	updated, err = db.Storage.UpdateActivityFromCompany(context.TODO(), argForUpdate)
+	if err != nil {
+		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
+	}
+	if updated.Fields[0].Id != argForUpdate.Value {
+		t.Fatalf(
+			"UpdateActivity(): updated %s value - got %s; want %s",
+			argForUpdate.Field, updated.Name, argForUpdate.Value,
+		)
+	}
+
+	afterCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
+	if err != nil {
+		t.Fatalf("CountDocuments() After; err = %v; want nil", err)
+	}
+	if afterCount-beforeCount != 1 {
+		t.Fatalf("AfterCount - BeforeCount = %d; want = %d", afterCount-beforeCount, 1)
+	}
+
+	got, err := db.Storage.GetActivityFromCompany(context.TODO(), storage.GetActivityFromCompanyParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+	})
+	if err != nil {
+		t.Fatalf("GetActivityFromCompany(): got error %+v; want nit", err.Error())
+	}
+	if err := activityEq(got, updated); err != nil {
+		t.Fatalf("GetActivityFromCompany(): %v", err.Error())
 	}
 }
 

@@ -31,6 +31,7 @@ type Querier interface {
 	GetActivityFromCompany(ctx context.Context, arg GetActivityFromCompanyParams) (*models.Activity, error)
 	DeleteActivityFromCompany(ctx context.Context, arg DeleteActivityParams) error
 	GetAllActivitiesFromCompany(ctx context.Context, arg GetAllActivitiesFromCompanyParams) ([]*models.Activity, error)
+	UpdateActivityFromCompany(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error)
 	// Data
 	CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error)
 	GetData(ctx context.Context, arg GetDataParams) (*models.Data, error)
