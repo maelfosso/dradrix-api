@@ -95,13 +95,19 @@ func (d *Database) GetCollection(coll string) *mongo.Collection {
 }
 
 type DBCollections struct {
-	usersCollection *mongo.Collection
-	otpsCollection  *mongo.Collection
+	usersCollection      *mongo.Collection
+	otpsCollection       *mongo.Collection
+	companiesCollection  *mongo.Collection
+	activitiesCollection *mongo.Collection
+	datasCollections     *mongo.Collection
 }
 
 func (d *Database) GetAllCollections() *DBCollections {
 	return &DBCollections{
-		usersCollection: d.GetCollection("users"),
-		otpsCollection:  d.GetCollection("otps"),
+		usersCollection:      d.GetCollection("users"),
+		otpsCollection:       d.GetCollection("otps"),
+		companiesCollection:  d.GetCollection("companies"),
+		activitiesCollection: d.GetCollection("activities"),
+		datasCollections:     d.GetCollection("datas"),
 	}
 }

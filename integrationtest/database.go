@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"stockinos.com/api/storage"
 )
 
@@ -52,4 +53,11 @@ func connect(name string) (*storage.Database, func()) {
 			panic(err)
 		}
 	}
+}
+
+func Cleanup(db *storage.Database) {
+	db.GetCollection("companies").DeleteMany(context.Background(), bson.M{})
+	db.GetCollection("activities").DeleteMany(context.Background(), bson.M{})
+	db.GetCollection("otps").DeleteMany(context.Background(), bson.M{})
+	db.GetCollection("users").DeleteMany(context.Background(), bson.M{})
 }

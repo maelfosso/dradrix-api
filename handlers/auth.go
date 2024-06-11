@@ -180,7 +180,7 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 				Name:     "jwt",
 				Value:    tokenString,
 				Path:     "/",
-				Expires:  time.Now().Add(1 * time.Hour),
+				Expires:  time.Now().Add(24 * time.Hour),
 				HttpOnly: true,
 				Secure:   true,
 				MaxAge:   3600,

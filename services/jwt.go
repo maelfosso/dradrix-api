@@ -22,7 +22,7 @@ var JwtTokenKey *contextKey
 var JwtErrorKey *contextKey
 var jwtSecretKey []byte // (os.Getenv("Jwt_SECRET"))
 
-type TWAJwtClaims struct {
+type DDXJwtClaims struct {
 	*jwt.RegisteredClaims
 	User interface{}
 }
@@ -36,21 +36,21 @@ func init() {
 	JwtClaimsKey = &contextKey{"Claims"}
 	JwtTokenKey = &contextKey{"Token"}
 	JwtErrorKey = &contextKey{"Error"}
-	jwtSecretKey = []byte(os.Getenv("Jwt_SECRET"))
+	jwtSecretKey = []byte(os.Getenv("JWT_SECRET"))
 	// TokenAuth = jwtauth.New("HS256", []byte(os.Getenv("Jwt_SECRET")), "s-tschwaa")
 }
 
 func GenerateJwtToken(data map[string]interface{}) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-
 	now := time.Now().UTC()
-	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = now.Add(60 * time.Hour).Unix()
-	claims["iat"] = now.Unix()
-	claims["nbf"] = now.Unix()
-	// claims["authorized"] = true
-	claims["user"] = data
+	claims := DDXJwtClaims{
+		User: data,
+		RegisteredClaims: &jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour * 24)),
+		},
+	}
 
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtSecretKey)
 	if err != nil {
 		return "", err
@@ -114,9 +114,9 @@ func ParseJwtToken(next http.Handler) http.Handler {
 			return
 		}
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		token, err := jwt.ParseWithClaims(tokenString, &DDXJwtClaims{}, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
 
 			return jwtSecretKey, nil
@@ -134,14 +134,14 @@ func ParseJwtToken(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
+		claims, ok := token.Claims.(*DDXJwtClaims)
 		if !ok {
 			ctx = context.WithValue(ctx, JwtErrorKey, errors.New("invalid token claims"))
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
-		ctx = context.WithValue(ctx, JwtClaimsKey, claims["user"])
+		ctx = context.WithValue(ctx, JwtClaimsKey, claims.User)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -150,7 +150,6 @@ func Authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		err, _ := ctx.Value(JwtErrorKey).(error)
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
