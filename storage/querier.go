@@ -28,10 +28,10 @@ type Querier interface {
 	// Monitoring
 	// Activity
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error)
-	GetActivityFromCompany(ctx context.Context, arg GetActivityFromCompanyParams) (*models.Activity, error)
-	DeleteActivityFromCompany(ctx context.Context, arg DeleteActivityParams) error
-	GetAllActivitiesFromCompany(ctx context.Context, arg GetAllActivitiesFromCompanyParams) ([]*models.Activity, error)
-	UpdateActivityFromCompany(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error)
+	GetActivity(ctx context.Context, arg GetActivityParams) (*models.Activity, error)
+	DeleteActivity(ctx context.Context, arg DeleteActivityParams) error
+	GetAllActivities(ctx context.Context, arg GetAllActivitiesParams) ([]*models.Activity, error)
+	UpdateActivity(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error)
 	// Data
 	CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error)
 	GetData(ctx context.Context, arg GetDataParams) (*models.Data, error)

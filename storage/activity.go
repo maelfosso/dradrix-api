@@ -44,12 +44,12 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 	}
 }
 
-type GetActivityFromCompanyParams struct {
+type GetActivityParams struct {
 	Id        primitive.ObjectID
 	CompanyId primitive.ObjectID
 }
 
-func (q *Queries) GetActivityFromCompany(ctx context.Context, arg GetActivityFromCompanyParams) (*models.Activity, error) {
+func (q *Queries) GetActivity(ctx context.Context, arg GetActivityParams) (*models.Activity, error) {
 	var activity models.Activity
 
 	filter := bson.M{
@@ -68,11 +68,11 @@ func (q *Queries) GetActivityFromCompany(ctx context.Context, arg GetActivityFro
 	return &activity, nil
 }
 
-type GetAllActivitiesFromCompanyParams struct {
+type GetAllActivitiesParams struct {
 	CompanyId primitive.ObjectID
 }
 
-func (q *Queries) GetAllActivitiesFromCompany(ctx context.Context, arg GetAllActivitiesFromCompanyParams) ([]*models.Activity, error) {
+func (q *Queries) GetAllActivities(ctx context.Context, arg GetAllActivitiesParams) ([]*models.Activity, error) {
 	var activities []*models.Activity
 
 	filter := bson.M{
@@ -98,7 +98,7 @@ type DeleteActivityParams struct {
 	CompanyId primitive.ObjectID
 }
 
-func (q *Queries) DeleteActivityFromCompany(ctx context.Context, arg DeleteActivityParams) error {
+func (q *Queries) DeleteActivity(ctx context.Context, arg DeleteActivityParams) error {
 	filter := bson.M{
 		"_id":        arg.Id,
 		"company_id": arg.CompanyId,
@@ -135,7 +135,7 @@ type UpdateActivityParams struct {
 	// Type  string
 }
 
-func (q *Queries) UpdateActivityFromCompany(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error) {
+func (q *Queries) UpdateActivity(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error) {
 	filter := bson.M{
 		"_id":        arg.Id,
 		"company_id": arg.CompanyId,
