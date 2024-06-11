@@ -6,11 +6,13 @@ import (
 	"sort"
 	"testing"
 
+	gofaker "github.com/go-faker/faker/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stockinos.com/api/integrationtest"
 	"stockinos.com/api/models"
 	"stockinos.com/api/storage"
+	sfaker "syreclabs.com/go/faker"
 )
 
 func TestActivity(t *testing.T) {
@@ -20,9 +22,10 @@ func TestActivity(t *testing.T) {
 	defer disconnect()
 
 	tests := map[string]func(*testing.T, *storage.Database){
-		"CreateActivity": testCreateActivity,
-		"DeleteActivity": testDeleteActivity,
-		"UpdateActivity": testUpdateActivity,
+		"CreateActivity":   testCreateActivity,
+		"DeleteActivity":   testDeleteActivity,
+		"UpdateActivity":   testUpdateActivity,
+		"GetAllActivities": testGetAllActivities,
 	}
 
 	for name, tc := range tests {
@@ -232,6 +235,76 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 	}
 	if err := activityEq(got, updated); err != nil {
 		t.Fatalf("GetActivityFromCompany(): %v", err.Error())
+	}
+}
+
+func testGetAllActivities(t *testing.T, db *storage.Database) {
+	const NUM_ACTIVITIES_CREATED = 3
+	companyA := primitive.NewObjectID()
+	companyB := primitive.NewObjectID()
+
+	var activities []*models.Activity
+
+	for i := 0; i < NUM_ACTIVITIES_CREATED; i++ {
+		activity, _ := db.Storage.CreateActivity(context.Background(), storage.CreateActivityParams{
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+
+			Fields: []models.ActivityFields{
+				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "number"},
+				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", Id: true},
+			},
+
+			CompanyId: companyA,
+			CreatedBy: primitive.NewObjectID(),
+		})
+		activities = append(activities, activity)
+	}
+
+	got, err := db.Storage.GetAllActivities(context.TODO(), storage.GetAllActivitiesParams{
+		CompanyId: companyA,
+	})
+	if err != nil {
+		t.Fatalf("GetAllActivities(): got error; want nil")
+	}
+	if len(got) != NUM_ACTIVITIES_CREATED {
+		t.Fatalf("GetAllActivities(): got %d activities; want %d activities", len(got), NUM_ACTIVITIES_CREATED)
+	}
+	if err := activityEq(got[0], activities[0]); err != nil {
+		t.Fatalf("GetAllActivities(): %v", err)
+	}
+	if err := activityEq(got[1], activities[1]); err != nil {
+		t.Fatalf("GetAllActivities(): %v", err)
+	}
+	if err := activityEq(got[len(got)-1], activities[len(activities)-1]); err != nil {
+		t.Fatalf("GetAllActivities(): %v", err)
+	}
+
+	got, err = db.Storage.GetAllActivities(context.TODO(), storage.GetAllActivitiesParams{
+		CompanyId: companyB,
+	})
+	if err != nil {
+		t.Fatalf("GetAllActivities(): got error; want nil")
+	}
+	if len(got) != 0 {
+		t.Fatalf("GetAllActivities(): got %d activities; want %d activities", len(got), 0)
+	}
+
+	db.Storage.DeleteActivity(context.TODO(), storage.DeleteActivityParams{
+		Id:        activities[0].Id,
+		CompanyId: companyA,
+	})
+	got, err = db.Storage.GetAllActivities(context.TODO(), storage.GetAllActivitiesParams{
+		CompanyId: companyA,
+	})
+	if err != nil {
+		t.Fatalf("GetAllActivities(): got error; want nil")
+	}
+	if len(got) != NUM_ACTIVITIES_CREATED-1 {
+		t.Fatalf("GetAllActivities(): got %d activities; want %d activities", len(got), NUM_ACTIVITIES_CREATED)
+	}
+	if err := activityEq(got[0], activities[1]); err != nil {
+		t.Fatalf("GetAllActivities(): %v", err)
 	}
 }
 
