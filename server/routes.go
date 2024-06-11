@@ -15,6 +15,8 @@ type facebookWebhookStruct struct {
 }
 
 func (s *Server) setupRoutes() {
+	appHandler := handlers.NewAppHandler()
+
 	s.mux.Use(s.requestLoggerMiddleware)
 	s.mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
@@ -34,6 +36,14 @@ func (s *Server) setupRoutes() {
 		r.Use(s.convertJWTTokenToMember)
 
 		handlers.GetCurrentUser(r)
+
+		r.Route("/companies", func(r chi.Router) {
+			appHandler.GetAllCompanies(r, s.database.Storage)
+			appHandler.GetCompany(r, s.database.Storage)
+			appHandler.CreateCompany(r, s.database.Storage)
+			appHandler.UpdateCompany(r, s.database.Storage)
+			appHandler.DeleteCompany(r, s.database.Storage)
+		})
 	})
 
 	// Public Routes
