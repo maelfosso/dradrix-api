@@ -49,7 +49,7 @@ func connect(name string) (*storage.Database, func()) {
 	}
 
 	return db, func() {
-		if err := db.DB.Disconnect(context.TODO()); err != nil {
+		if err := db.DB.Disconnect(context.Background()); err != nil {
 			panic(err)
 		}
 	}

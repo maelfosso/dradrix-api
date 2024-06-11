@@ -75,7 +75,7 @@ func testGetAllCompanies(t *testing.T, db *storage.Database) {
 		companies = append(companies, company)
 	}
 
-	got, err := db.Storage.GetAllCompanies(context.TODO(), storage.GetAllCompaniesParams{
+	got, err := db.Storage.GetAllCompanies(context.Background(), storage.GetAllCompaniesParams{
 		UserId: userA,
 	})
 	if err != nil {
@@ -94,7 +94,7 @@ func testGetAllCompanies(t *testing.T, db *storage.Database) {
 		t.Fatalf("GetAllCompanies(): %v", err)
 	}
 
-	got, err = db.Storage.GetAllCompanies(context.TODO(), storage.GetAllCompaniesParams{
+	got, err = db.Storage.GetAllCompanies(context.Background(), storage.GetAllCompaniesParams{
 		UserId: userB,
 	})
 	if err != nil {

@@ -71,7 +71,7 @@ func testCreateActivity(t *testing.T, db *storage.Database) {
 		t.Fatalf("AfterCount - BeforeCount = %d; want = %d", afterCount-beforeCount, 1)
 	}
 
-	got, err := db.Storage.GetActivity(context.TODO(), storage.GetActivityParams{
+	got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
 		Id:        activity.Id,
 		CompanyId: arg.CompanyId,
 	})
@@ -171,7 +171,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		Field: "name",
 		Value: "a2",
 	}
-	updated, err := db.Storage.UpdateActivity(context.TODO(), argForUpdate)
+	updated, err := db.Storage.UpdateActivity(context.Background(), argForUpdate)
 	if err != nil {
 		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
 	}
@@ -189,7 +189,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		Field: "fields.1.code",
 		Value: "f1",
 	}
-	updated, err = db.Storage.UpdateActivity(context.TODO(), argForUpdate)
+	updated, err = db.Storage.UpdateActivity(context.Background(), argForUpdate)
 	if err != nil {
 		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
 	}
@@ -207,7 +207,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		Field: "fields.1.id",
 		Value: false,
 	}
-	updated, err = db.Storage.UpdateActivity(context.TODO(), argForUpdate)
+	updated, err = db.Storage.UpdateActivity(context.Background(), argForUpdate)
 	if err != nil {
 		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
 	}
@@ -226,7 +226,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		t.Fatalf("AfterCount - BeforeCount = %d; want = %d", afterCount-beforeCount, 1)
 	}
 
-	got, err := db.Storage.GetActivity(context.TODO(), storage.GetActivityParams{
+	got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
 		Id:        activity.Id,
 		CompanyId: arg.CompanyId,
 	})
@@ -261,7 +261,7 @@ func testGetAllActivities(t *testing.T, db *storage.Database) {
 		activities = append(activities, activity)
 	}
 
-	got, err := db.Storage.GetAllActivities(context.TODO(), storage.GetAllActivitiesParams{
+	got, err := db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
 		CompanyId: companyA,
 	})
 	if err != nil {
@@ -280,7 +280,7 @@ func testGetAllActivities(t *testing.T, db *storage.Database) {
 		t.Fatalf("GetAllActivities(): %v", err)
 	}
 
-	got, err = db.Storage.GetAllActivities(context.TODO(), storage.GetAllActivitiesParams{
+	got, err = db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
 		CompanyId: companyB,
 	})
 	if err != nil {
@@ -290,11 +290,11 @@ func testGetAllActivities(t *testing.T, db *storage.Database) {
 		t.Fatalf("GetAllActivities(): got %d activities; want %d activities", len(got), 0)
 	}
 
-	db.Storage.DeleteActivity(context.TODO(), storage.DeleteActivityParams{
+	db.Storage.DeleteActivity(context.Background(), storage.DeleteActivityParams{
 		Id:        activities[0].Id,
 		CompanyId: companyA,
 	})
-	got, err = db.Storage.GetAllActivities(context.TODO(), storage.GetAllActivitiesParams{
+	got, err = db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
 		CompanyId: companyA,
 	})
 	if err != nil {
