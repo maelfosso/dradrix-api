@@ -21,6 +21,7 @@ func TestActivity(t *testing.T) {
 
 	tests := map[string]func(*testing.T, *storage.Database){
 		"CreateActivity": testCreateActivity,
+		"DeleteActivity": testDeleteActivity,
 	}
 
 	for name, tc := range tests {
@@ -68,13 +69,68 @@ func testCreateActivity(t *testing.T, db *storage.Database) {
 
 	got, err := db.Storage.GetActivityFromCompany(context.TODO(), storage.GetActivityFromCompanyParams{
 		Id:        activity.Id,
-		CompanyId: activity.CompanyId,
+		CompanyId: arg.CompanyId,
 	})
 	if err != nil {
 		t.Fatalf("GetActivityFromCompany(): got error %+v; want nit", err.Error())
 	}
 	if err := activityEq(got, activity); err != nil {
 		t.Fatalf("GetActivityFromCompany(): %v", err.Error())
+	}
+}
+
+func testDeleteActivity(t *testing.T, db *storage.Database) {
+	arg := storage.CreateActivityParams{
+		Name:        "a1",
+		Description: "Activity 1",
+		Fields: []models.ActivityFields{
+			{Name: "f1", Description: "Description 1", Type: "number"},
+			{Name: "f2", Description: "Description 2", Type: "text"},
+		},
+
+		CompanyId: primitive.NewObjectID(),
+		CreatedBy: primitive.NewObjectID(),
+	}
+	activity, err := db.Storage.CreateActivity(context.Background(), arg)
+	if err != nil {
+		t.Fatalf("CreateActivity(): err = %v; want nil", err)
+	}
+
+	_, err = db.Storage.GetActivityFromCompany(context.Background(), storage.GetActivityFromCompanyParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+	})
+	if err != nil {
+		t.Fatalf("GetActivityFromCompany(): got error = %v; want nil", err)
+	}
+
+	err = db.Storage.DeleteActivityFromCompany(context.Background(), storage.DeleteActivityParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+	})
+	if err != nil {
+		t.Fatalf("DeleteActivityFromCompany(): got err = %v; want nil", err)
+	}
+
+	activity, err = db.Storage.GetActivityFromCompany(context.Background(), storage.GetActivityFromCompanyParams{
+		Id:        activity.Id,
+		CompanyId: arg.CompanyId,
+	})
+	if err != nil {
+		t.Fatalf("GetActivityFromCompany(): got error = %v; want nil", err)
+	}
+	if activity != nil {
+		t.Fatalf("GetActivityFromCompany(): got %v; want nil", activity)
+	}
+
+	activities, err := db.Storage.GetAllActivitiesFromCompany(context.Background(), storage.GetAllActivitiesFromCompanyParams{
+		CompanyId: arg.CompanyId,
+	})
+	if err != nil {
+		t.Fatalf("GetAllActivitiesFromCompany(): got err = %v; want nil", err)
+	}
+	if len(activities) != 0 {
+		t.Fatalf("GetAllActivitiesFromCompany(): got %d number of activities; want = 0", len(activities))
 	}
 }
 
