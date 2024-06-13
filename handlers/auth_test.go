@@ -75,7 +75,7 @@ func TestCreateOTP(t *testing.T) {
 		code, _, responseData := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: userPhoneNumber,
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 
 		if code != http.StatusOK {
 			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
@@ -102,11 +102,11 @@ func TestCreateOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 		code, _, _ := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 		if code != http.StatusOK {
 			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
 		}
@@ -120,11 +120,11 @@ func TestCreateOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 		code, _, _ := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 		if code != http.StatusOK {
 			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
 		}
@@ -189,13 +189,13 @@ func TestCheckOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 
 		code, _, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
 			PinCode:     otps[len(otps)-1].PinCode,
-		})
+		}, []helpertest.ContextData{})
 		if code != http.StatusOK {
 			t.Fatalf("CheckOTP() status code = %d; want = %d", code, http.StatusOK)
 		}
@@ -207,13 +207,13 @@ func TestCheckOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 
 		code, _, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
 			PhoneNumber: "678908989",
 			Language:    "fr",
 			PinCode:     otps[len(otps)-1].PinCode,
-		})
+		}, []helpertest.ContextData{})
 		if code != http.StatusBadRequest {
 			t.Fatalf("CheckOTP() status code = %d; want = %d", code, http.StatusBadRequest)
 		}
@@ -225,13 +225,13 @@ func TestCheckOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 
 		code, _, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
 			PinCode:     "0000",
-		})
+		}, []helpertest.ContextData{})
 		if code != http.StatusBadRequest {
 			t.Fatalf("CheckOTP() status code = %d; want = %d", code, http.StatusBadRequest)
 		}
@@ -243,13 +243,13 @@ func TestCheckOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
 			PinCode:     otps[len(otps)-1].PinCode,
-		})
+		}, []helpertest.ContextData{})
 
 		var activeOTPExists bool = false
 		for i := range otps {
@@ -269,13 +269,13 @@ func TestCheckOTP(t *testing.T) {
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
-		})
+		}, []helpertest.ContextData{})
 
 		_, _, _ = helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
 			PhoneNumber: "695165033",
 			Language:    "fr",
 			PinCode:     otps[len(otps)-1].PinCode,
-		})
+		}, []helpertest.ContextData{})
 		// headers.
 	})
 }
