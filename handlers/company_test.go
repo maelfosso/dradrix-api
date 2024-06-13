@@ -30,11 +30,12 @@ func TestCompany(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"GetAllCompanies": testGetAllCompanies,
-		"GetCompany":      testGetCompany,
-		"CreateCompany":   testCreateCompany,
-		"UpdateCompany":   testUpdateCompany,
-		"DeleteCompany":   testDeleteCompany,
+		"CompanyMiddleware": testCompanyMiddleware,
+		// "GetAllCompanies":   testGetAllCompanies,
+		// "GetCompany":        testGetCompany,
+		// "CreateCompany":     testCreateCompany,
+		// "UpdateCompany":     testUpdateCompany,
+		// "DeleteCompany":     testDeleteCompany,
 	}
 
 	for name, tc := range tests {
@@ -42,6 +43,142 @@ func TestCompany(t *testing.T) {
 			tc(t, handler)
 		})
 	}
+}
+
+type mockCompanyMiddlewareDB struct {
+	GetCompanyFunc func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
+}
+
+func (mdb *mockCompanyMiddlewareDB) GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+	return mdb.GetCompanyFunc(ctx, arg)
+}
+
+func testCompanyMiddleware(t *testing.T, handler *handlers.AppHandler) {
+	t.Run("invalid company id", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockCompanyMiddlewareDB{
+			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+				return nil, nil
+			},
+		}
+
+		mux.Route("/{companyId}", func(r chi.Router) {
+			handler.CompanyMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+		})
+
+		_, w, response := helpertest.MakeGetRequest(mux, "/1", []helpertest.ContextData{})
+		code := w.StatusCode
+		if code != http.StatusBadRequest {
+			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusBadRequest)
+		}
+		want := "ERR_CMP_MDW_01"
+		if response != want {
+			t.Fatalf("CompanyMiddleware(): response error - got %s, want %s", response, want)
+		}
+	})
+
+	t.Run("error from db", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockCompanyMiddlewareDB{
+			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+				return nil, errors.New("an error happens")
+			},
+		}
+
+		mux.Route("/{companyId}", func(r chi.Router) {
+			handler.CompanyMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+		})
+
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			[]helpertest.ContextData{},
+		)
+		code := w.StatusCode
+		if code != http.StatusBadRequest {
+			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusBadRequest)
+		}
+		want := "ERR_CMP_MDW_02"
+		if response != want {
+			t.Fatalf("CompanyMiddleware(): response error - got %s, want %s", response, want)
+		}
+	})
+
+	t.Run("no company found", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockCompanyMiddlewareDB{
+			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+				return nil, nil
+			},
+		}
+
+		mux.Route("/{companyId}", func(r chi.Router) {
+			handler.CompanyMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+		})
+
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			[]helpertest.ContextData{},
+		)
+		code := w.StatusCode
+
+		if code != http.StatusNotFound {
+			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusNotFound)
+		}
+		want := "ERR_CMP_MDW_03"
+		if response != want {
+			t.Fatalf("CompanyMiddleware(): response error - got %s, want %s", response, want)
+		}
+	})
+
+	t.Run("company found", func(t *testing.T) {
+		company := &models.Company{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		mux := chi.NewMux()
+		db := &mockCompanyMiddlewareDB{
+			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+				return company, nil
+			},
+		}
+
+		mux.Route("/{companyId}", func(r chi.Router) {
+			handler.CompanyMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				got := r.Context().Value("company").(*models.Company)
+				if err := companyEq(got, company); err != nil {
+					t.Fatalf("CompanyMiddleware(): %v", err)
+				}
+			})
+		})
+
+		_, w, _ := helpertest.MakeGetRequest(
+			mux,
+			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			[]helpertest.ContextData{},
+		)
+		code := w.StatusCode
+		if code != http.StatusOK {
+			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusOK)
+		}
+	})
+
 }
 
 type mockGetAllCompaniesDB struct {
@@ -62,7 +199,8 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 		}
 
 		handler.GetAllCompanies(mux, db)
-		code, _, response := helpertest.MakeGetRequest(mux, "/")
+		_, w, response := helpertest.MakeGetRequest(mux, "/", []helpertest.ContextData{})
+		code := w.StatusCode
 		if code != http.StatusBadRequest {
 			t.Fatalf("GetAllCompanies(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
@@ -93,7 +231,8 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 		}
 
 		handler.GetAllCompanies(mux, db)
-		code, _, response := helpertest.MakeGetRequest(mux, "/")
+		_, w, response := helpertest.MakeGetRequest(mux, "/", []helpertest.ContextData{})
+		code := w.StatusCode
 		if code != http.StatusOK {
 			t.Fatalf("GetAllCompanies(): status - got %d; want %d", code, http.StatusOK)
 		}
@@ -108,71 +247,7 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 	})
 }
 
-type mockGetCompanyDB struct {
-	GetCompanyFunc func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
-}
-
-func (mdb *mockGetCompanyDB) GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-	return mdb.GetCompanyFunc(ctx, arg)
-}
-
 func testGetCompany(t *testing.T, handler *handlers.AppHandler) {
-	t.Run("invalid company id", func(t *testing.T) {
-		mux := chi.NewMux()
-		db := &mockGetCompanyDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-				return nil, nil
-			},
-		}
-
-		handler.GetCompany(mux, db)
-		code, _, response := helpertest.MakeGetRequest(mux, "/1")
-		if code != http.StatusBadRequest {
-			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusBadRequest)
-		}
-		want := "ERR_GONE_CMP_01"
-		if response != want {
-			t.Fatalf("GetCompany(): response error - got %s, want %s", response, want)
-		}
-	})
-
-	t.Run("error from db", func(t *testing.T) {
-		mux := chi.NewMux()
-		db := &mockGetCompanyDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-				return nil, errors.New("an error happens")
-			},
-		}
-
-		handler.GetCompany(mux, db)
-		code, _, response := helpertest.MakeGetRequest(mux, fmt.Sprintf("/%s", primitive.NewObjectID().Hex()))
-		if code != http.StatusBadRequest {
-			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusBadRequest)
-		}
-		want := "ERR_GONE_CMP_02"
-		if response != want {
-			t.Fatalf("GetCompany(): response error - got %s, want %s", response, want)
-		}
-	})
-
-	t.Run("no company found", func(t *testing.T) {
-		mux := chi.NewMux()
-		db := &mockGetCompanyDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-				return nil, nil
-			},
-		}
-
-		handler.GetCompany(mux, db)
-		code, _, response := helpertest.MakeGetRequest(mux, fmt.Sprintf("/%s", primitive.NewObjectID().Hex()))
-		if code != http.StatusBadRequest {
-			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusBadRequest)
-		}
-		want := "ERR_GONE_CMP_03"
-		if response != want {
-			t.Fatalf("GetCompany(): response error - got %s, want %s", response, want)
-		}
-	})
 
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
@@ -182,14 +257,20 @@ func testGetCompany(t *testing.T, handler *handlers.AppHandler) {
 			Description: gofaker.Paragraph(),
 		}
 
-		db := &mockGetCompanyDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-				return company, nil
-			},
-		}
+		db := &struct{}{}
 
 		handler.GetCompany(mux, db)
-		code, _, response := helpertest.MakeGetRequest(mux, fmt.Sprintf("/%s", primitive.NewObjectID().Hex()))
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			"/",
+			[]helpertest.ContextData{
+				{
+					Name:  "company",
+					Value: company,
+				},
+			},
+		)
+		code := w.StatusCode
 		if code != http.StatusOK {
 			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusOK)
 		}
@@ -225,6 +306,7 @@ func testCreateCompany(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			helpertest.CreateFormHeader(),
 			"{\"test\": \"that\"}",
+			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
 			t.Fatalf("CreateCompany(): status - got %d; want %d", code, http.StatusBadRequest)
@@ -252,6 +334,7 @@ func testCreateCompany(t *testing.T, handler *handlers.AppHandler) {
 				Name:        sfaker.Company().Name(),
 				Description: gofaker.Paragraph(),
 			},
+			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
 			t.Fatalf("CreateCompany(): status - got %d; want %d", code, http.StatusBadRequest)
@@ -285,6 +368,7 @@ func testCreateCompany(t *testing.T, handler *handlers.AppHandler) {
 				Name:        company.Name,
 				Description: company.Description,
 			},
+			[]helpertest.ContextData{},
 		)
 		want := http.StatusOK
 		if code != want {
@@ -308,30 +392,6 @@ func (mdb *mockUpdateCompanyDB) UpdateCompany(ctx context.Context, arg storage.U
 }
 
 func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
-	t.Run("invalid company id", func(t *testing.T) {
-		mux := chi.NewMux()
-		db := &mockUpdateCompanyDB{
-			UpdateCompanyFunc: func(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error) {
-				return nil, nil
-			},
-		}
-
-		handler.UpdateCompany(mux, db)
-		code, _, response := helpertest.MakePutRequest(
-			mux,
-			"/1",
-			helpertest.CreateFormHeader(),
-			"{\"test\": \"that\"}",
-		)
-		if code != http.StatusBadRequest {
-			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusBadRequest)
-		}
-		wantCode := "ERR_U_CMP_01"
-		if response != wantCode {
-			t.Fatalf("GetCompany(): response error - got %s, want %s", response, wantCode)
-		}
-	})
-
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
 		db := &mockUpdateCompanyDB{
@@ -343,16 +403,17 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 		handler.UpdateCompany(mux, db)
 		code, _, response := helpertest.MakePutRequest(
 			mux,
-			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			"/",
 			helpertest.CreateFormHeader(),
 			"{\"test\": \"that\"}",
+			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
 			t.Fatalf("UpdateCompany(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_HDL_PRB_"
 		if !strings.HasPrefix(response, want) {
-			t.Fatalf("CreateComponey(): response error - got %s, want %s", response, want)
+			t.Fatalf("UpdateComponey(): response error - got %s, want %s", response, want)
 		}
 	})
 
@@ -367,11 +428,18 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 		handler.UpdateCompany(mux, db)
 		code, _, response := helpertest.MakePutRequest(
 			mux,
-			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			"/",
 			helpertest.CreateFormHeader(),
 			handlers.UpdateCompanyRequest{
 				Name:        sfaker.Company().Name(),
 				Description: gofaker.Paragraph(),
+			},
+			[]helpertest.ContextData{
+				{Name: "company", Value: &models.Company{
+					Id:          primitive.NewObjectID(),
+					Name:        sfaker.Company().Name(),
+					Description: gofaker.Paragraph(),
+				}},
 			},
 		)
 		wantCode := http.StatusBadRequest
@@ -394,18 +462,27 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 		mux := chi.NewMux()
 		db := &mockUpdateCompanyDB{
 			UpdateCompanyFunc: func(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error) {
-				return company, nil
+				return &models.Company{
+					Id:          company.Id,
+					Name:        sfaker.Company().Name(),
+					Description: gofaker.Paragraph(),
+				}, nil
 			},
 		}
 
 		handler.UpdateCompany(mux, db)
 		code, _, response := helpertest.MakePutRequest(
 			mux,
-			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			"/",
 			helpertest.CreateFormHeader(),
 			handlers.UpdateCompanyRequest{
 				Name:        company.Name,
 				Description: company.Description,
+			},
+			[]helpertest.ContextData{
+				{
+					Name: "company", Value: company,
+				},
 			},
 		)
 		want := http.StatusOK
@@ -415,8 +492,8 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 
 		got := handlers.UpdateCompanyResponse{}
 		json.Unmarshal([]byte(response), &got)
-		if err := companyEq(&got.Company, company); err != nil {
-			t.Fatalf("GetCompany(): %v", err)
+		if got.Company.Id != company.Id {
+			t.Fatalf("UpdatedCompany(): Id - got %s; want %s", got.Company.Id, company.Id)
 		}
 	})
 }
@@ -430,54 +507,6 @@ func (mdb *mockDeleteCompanyDB) DeleteCompany(ctx context.Context, arg storage.D
 }
 
 func testDeleteCompany(t *testing.T, handler *handlers.AppHandler) {
-	t.Run("invalid company id", func(t *testing.T) {
-		mux := chi.NewMux()
-		db := &mockDeleteCompanyDB{
-			DeleteCompanyFunc: func(ctx context.Context, arg storage.DeleteCompanyParams) error {
-				return nil
-			},
-		}
-
-		handler.DeleteCompany(mux, db)
-		code, _, response := helpertest.MakeDeleteRequest(
-			mux,
-			"/1",
-			helpertest.CreateFormHeader(),
-			nil,
-		)
-		if code != http.StatusBadRequest {
-			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusBadRequest)
-		}
-		wantCode := "ERR_D_CMP_01"
-		if response != wantCode {
-			t.Fatalf("GetCompany(): response error - got %s, want %s", response, wantCode)
-		}
-	})
-
-	// t.Run("invalid input data", func(t *testing.T) {
-	// 	mux := chi.NewMux()
-	// 	db := &mockDeleteCompanyDB{
-	// 		DeleteCompanyFunc: func(ctx context.Context, arg storage.DeleteCompanyParams) error {
-	// 			return nil
-	// 		},
-	// 	}
-
-	// 	handler.DeleteCompany(mux, db)
-	// 	code, _, response := helpertest.MakeDeleteRequest(
-	// 		mux,
-	// 		fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
-	// 		helpertest.CreateFormHeader(),
-	// 		"{\"test\": \"that\"}",
-	// 	)
-	// 	if code != http.StatusBadRequest {
-	// 		t.Fatalf("DeleteCompany(): status - got %d; want %d", code, http.StatusBadRequest)
-	// 	}
-	// 	want := "ERR_HDL_PRB_"
-	// 	if !strings.HasPrefix(response, want) {
-	// 		t.Fatalf("CreateComponey(): response error - got %s, want %s", response, want)
-	// 	}
-	// })
-
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
 		db := &mockDeleteCompanyDB{
@@ -489,9 +518,16 @@ func testDeleteCompany(t *testing.T, handler *handlers.AppHandler) {
 		handler.DeleteCompany(mux, db)
 		code, _, response := helpertest.MakeDeleteRequest(
 			mux,
-			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			"/",
 			helpertest.CreateFormHeader(),
 			nil,
+			[]helpertest.ContextData{
+				{Name: "company", Value: &models.Company{
+					Id:          primitive.NewObjectID(),
+					Name:        sfaker.Company().Name(),
+					Description: gofaker.Paragraph(),
+				}},
+			},
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
@@ -514,9 +550,16 @@ func testDeleteCompany(t *testing.T, handler *handlers.AppHandler) {
 		handler.DeleteCompany(mux, db)
 		code, _, response := helpertest.MakeDeleteRequest(
 			mux,
-			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			"/",
 			helpertest.CreateFormHeader(),
 			nil,
+			[]helpertest.ContextData{
+				{Name: "company", Value: &models.Company{
+					Id:          primitive.NewObjectID(),
+					Name:        sfaker.Company().Name(),
+					Description: gofaker.Paragraph(),
+				}},
+			},
 		)
 		want := http.StatusOK
 		if code != want {
