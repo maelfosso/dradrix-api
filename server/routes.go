@@ -39,10 +39,15 @@ func (s *Server) setupRoutes() {
 
 		r.Route("/companies", func(r chi.Router) {
 			appHandler.GetAllCompanies(r, s.database.Storage)
-			appHandler.GetCompany(r, s.database.Storage)
 			appHandler.CreateCompany(r, s.database.Storage)
-			appHandler.UpdateCompany(r, s.database.Storage)
-			appHandler.DeleteCompany(r, s.database.Storage)
+
+			r.Route("/{companyId}", func(r chi.Router) {
+				appHandler.CompanyMiddleware(r, s.database.Storage)
+
+				appHandler.GetCompany(r, s.database.Storage)
+				appHandler.UpdateCompany(r, s.database.Storage)
+				appHandler.DeleteCompany(r, s.database.Storage)
+			})
 		})
 	})
 
