@@ -101,10 +101,10 @@ func (handler *AppHandler) CreateActivity(mux chi.Router, db createActivityInter
 	mux.Post("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		input := &CreateActivityRequest{}
-		statusCode, err := handler.ParsingRequestBody(w, r, &input)
+		var input CreateActivityRequest
+		httpStatus, err := handler.ParsingRequestBody(w, r, &input)
 		if err != nil {
-			http.Error(w, err.Error(), statusCode)
+			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
@@ -181,7 +181,7 @@ func (handler *AppHandler) DeleteActivity(mux chi.Router, db deleteActivityInter
 			CompanyId: company.Id,
 		})
 		if err != nil {
-			http.Error(w, "ERR_ATVT_DLT_001", http.StatusBadRequest)
+			http.Error(w, "ERR_ATVT_DLT_01", http.StatusBadRequest)
 			return
 		}
 
@@ -211,7 +211,7 @@ type UpdateActivityResponse struct {
 }
 
 func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInterface) {
-	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.Patch("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		var input UpdateActivityRequest
@@ -232,7 +232,7 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			Value: input.Value,
 		})
 		if err != nil {
-			http.Error(w, "ERR_ATVT_UDT_001", http.StatusBadRequest)
+			http.Error(w, "ERR_ATVT_UDT_01", http.StatusBadRequest)
 			return
 		}
 

@@ -189,7 +189,7 @@ func (handler *AppHandler) UpdateCompany(mux chi.Router, db updateCompanyInterfa
 			Description: input.Description,
 		})
 		if err != nil {
-			http.Error(w, "ERR_U_CMP_02", http.StatusBadRequest)
+			http.Error(w, "ERR_U_CMP_01", http.StatusBadRequest)
 			return
 		}
 

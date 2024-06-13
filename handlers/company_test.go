@@ -31,11 +31,11 @@ func TestCompany(t *testing.T) {
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
 		"CompanyMiddleware": testCompanyMiddleware,
-		// "GetAllCompanies":   testGetAllCompanies,
-		// "GetCompany":        testGetCompany,
-		// "CreateCompany":     testCreateCompany,
-		// "UpdateCompany":     testUpdateCompany,
-		// "DeleteCompany":     testDeleteCompany,
+		"GetAllCompanies":   testGetAllCompanies,
+		"GetCompany":        testGetCompany,
+		"CreateCompany":     testCreateCompany,
+		"UpdateCompany":     testUpdateCompany,
+		"DeleteCompany":     testDeleteCompany,
 	}
 
 	for name, tc := range tests {
