@@ -23,7 +23,8 @@ func TestHealth(t *testing.T) {
 	t.Run("returns 200", func(t *testing.T) {
 		mux := chi.NewMux()
 		handlers.Health(mux, &pingerMock{})
-		code, _, _ := helpertest.MakeGetRequest(mux, "/health")
+		_, w, _ := helpertest.MakeGetRequest(mux, "/health", []helpertest.ContextData{})
+		code := w.StatusCode
 		if code != http.StatusOK {
 			t.Fatalf("Health() status = %d; want = %d", code, http.StatusOK)
 		}
@@ -32,7 +33,8 @@ func TestHealth(t *testing.T) {
 	t.Run("returns 502 if the database connot be pinged", func(t *testing.T) {
 		mux := chi.NewMux()
 		handlers.Health(mux, &pingerMock{err: errors.New("Oh, no!")})
-		code, _, _ := helpertest.MakeGetRequest(mux, "/health")
+		_, w, _ := helpertest.MakeGetRequest(mux, "/health", []helpertest.ContextData{})
+		code := w.StatusCode
 		if code != http.StatusBadGateway {
 			t.Fatalf("Health() status = %d; want = %d", code, http.StatusBadGateway)
 		}
