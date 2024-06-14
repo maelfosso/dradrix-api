@@ -126,7 +126,7 @@ func (q *Queries) DeleteActivity(ctx context.Context, arg DeleteActivityParams) 
 	return nil
 }
 
-type UpdateActivityParams struct {
+type UpdateSetInActivityParams struct {
 	Id        primitive.ObjectID
 	CompanyId primitive.ObjectID
 
@@ -135,7 +135,7 @@ type UpdateActivityParams struct {
 	// Type  string
 }
 
-func (q *Queries) UpdateActivity(ctx context.Context, arg UpdateActivityParams) (*models.Activity, error) {
+func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivityParams) (*models.Activity, error) {
 	filter := bson.M{
 		"_id":        arg.Id,
 		"company_id": arg.CompanyId,
@@ -145,6 +145,62 @@ func (q *Queries) UpdateActivity(ctx context.Context, arg UpdateActivityParams) 
 			arg.Field: arg.Value,
 		},
 	}
+
+	return q.updateQuery(ctx, filter, update)
+}
+
+type UpdateAddToActivityParams struct {
+	Id        primitive.ObjectID
+	CompanyId primitive.ObjectID
+
+	Position uint
+	Field    string
+	Value    interface{}
+}
+
+func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivityParams) (*models.Activity, error) {
+	filter := bson.M{
+		"_id":       arg.Id,
+		"companyId": arg.CompanyId,
+	}
+	update := bson.M{
+		"$push": bson.M{
+			arg.Field: bson.M{
+				"$each": bson.A{
+					arg.Value,
+				},
+				"$position": arg.Position,
+			},
+		},
+	}
+
+	return q.updateQuery(ctx, filter, update)
+}
+
+type UpdateRemoveFromActivityParams struct {
+	Id        primitive.ObjectID
+	CompanyId primitive.ObjectID
+
+	Position uint
+	Field    string
+	// Value interface{}
+}
+
+func (q *Queries) UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error) {
+	filter := bson.M{
+		"_id":       arg.Id,
+		"companyId": arg.CompanyId,
+	}
+	update := bson.M{
+		"$unset": bson.M{
+			arg.Field: 1,
+		},
+	}
+
+	return q.updateQuery(ctx, filter, update)
+}
+
+func (q *Queries) updateQuery(ctx context.Context, filter, update bson.M) (*models.Activity, error) {
 	after := options.After
 
 	var activity models.Activity
