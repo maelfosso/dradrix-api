@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -199,13 +201,18 @@ func (handler *AppHandler) DeleteActivity(mux chi.Router, db deleteActivityInter
 }
 
 type updateActivityInterface interface {
-	UpdateActivity(ctx context.Context, arg storage.UpdateActivityParams) (*models.Activity, error)
+	UpdateSetInActivity(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error)
+	UpdateAddToActivity(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error)
+	UpdateRemoveFromActivity(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error)
 }
 
 type UpdateActivityRequest struct {
-	Field string      `json:"field"`
-	Value interface{} `json:"value"`
+	Operation string      `json:"op"`
+	Field     string      `json:"field"`
+	Value     interface{} `json:"value"`
+	Position  uint64      `json:"position"`
 }
+
 type UpdateActivityResponse struct {
 	Activity models.Activity `json:"activity"`
 }
@@ -224,15 +231,56 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 		company := ctx.Value("company").(*models.Company)
 		activity := ctx.Value("activity").(*models.Activity)
 
-		updatedActivity, err := db.UpdateActivity(ctx, storage.UpdateActivityParams{
-			Id:        activity.Id,
-			CompanyId: company.Id,
+		var updatedActivity *models.Activity
+		operation := strings.ToLower(input.Operation)
+		field := strings.ToLower(input.Field)
+		switch operation {
+		case "set":
+			if field == "" {
+				http.Error(w, "ERR_ATVT_UDT_010", http.StatusBadRequest)
+				return
+			}
+			// TODO: check type of input.Value string
+			updatedActivity, err = db.UpdateSetInActivity(ctx, storage.UpdateSetInActivityParams{
+				Id:        activity.Id,
+				CompanyId: company.Id,
 
-			Field: input.Field,
-			Value: input.Value,
-		})
+				Field: field,
+				Value: input.Value,
+			})
+		case "add":
+			if field != "fields" {
+				http.Error(w, "ERR_ATVT_UDT_011", http.StatusBadRequest)
+				return
+			}
+			// TODO: check type of input.Value ActivityFields
+			updatedActivity, err = db.UpdateAddToActivity(ctx, storage.UpdateAddToActivityParams{
+				Id:        activity.Id,
+				CompanyId: company.Id,
+
+				Field: field,
+				Value: input.Value,
+			})
+		case "remove":
+			if match, _ := regexp.MatchString("fields.([0-9]+)", field); !match {
+				http.Error(w, "ERR_ATVT_UDT_012", http.StatusBadRequest)
+				return
+			}
+			// TODO: check type of input.Value Should be emtpy
+
+			updatedActivity, err = db.UpdateRemoveFromActivity(ctx, storage.UpdateRemoveFromActivityParams{
+				Id:        activity.Id,
+				CompanyId: company.Id,
+
+				Field: field,
+			})
+		default:
+			http.Error(w, "ERR_ATVT_UDT_013", http.StatusBadRequest)
+			return
+		}
+
 		if err != nil {
-			http.Error(w, "ERR_ATVT_UDT_01", http.StatusBadRequest)
+			http.Error(w, "ERR_ATVT_UDT_02", http.StatusBadRequest)
 			return
 		}
 

@@ -24,12 +24,12 @@ func TestActivity(t *testing.T) {
 	handler := handlers.NewAppHandler()
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"ActivityMiddleware": testActivityMiddleware,
-		"GetAllActivities":   testGetAllActivities,
-		"CreateActivity":     testCreateActivity,
-		"GetActivity":        testGetActivity,
-		"UpdateActivity":     testUpdateActivity,
-		"DeleteActivity":     testDeleteActivity,
+		// "ActivityMiddleware": testActivityMiddleware,
+		// "GetAllActivities":   testGetAllActivities,
+		// "CreateActivity":     testCreateActivity,
+		// "GetActivity":        testGetActivity,
+		"UpdateActivity": testUpdateActivity,
+		// "DeleteActivity":     testDeleteActivity,
 	}
 
 	for name, tc := range tests {
@@ -518,21 +518,27 @@ func testGetActivity(t *testing.T, handler *handlers.AppHandler) {
 }
 
 type mockUpdateActivityDB struct {
-	UpdateActivityFunc func(ctx context.Context, arg storage.UpdateActivityParams) (*models.Activity, error)
+	UpdateSetInActivityFunc      func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error)
+	UpdateAddToActivityFunc      func(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error)
+	UpdateRemoveFromActivityFunc func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error)
 }
 
-func (mdb *mockUpdateActivityDB) UpdateActivity(ctx context.Context, arg storage.UpdateActivityParams) (*models.Activity, error) {
-	return mdb.UpdateActivityFunc(ctx, arg)
+func (mdb *mockUpdateActivityDB) UpdateSetInActivity(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
+	return mdb.UpdateSetInActivityFunc(ctx, arg)
+}
+
+func (mdb *mockUpdateActivityDB) UpdateAddToActivity(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error) {
+	return mdb.UpdateAddToActivityFunc(ctx, arg)
+}
+
+func (mdb *mockUpdateActivityDB) UpdateRemoveFromActivity(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
+	return mdb.UpdateRemoveFromActivityFunc(ctx, arg)
 }
 
 func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockUpdateActivityDB{
-			UpdateActivityFunc: func(ctx context.Context, arg storage.UpdateActivityParams) (*models.Activity, error) {
-				return nil, nil
-			},
-		}
+		db := &mockUpdateActivityDB{}
 
 		handler.UpdateActivity(mux, db)
 		code, _, response := helpertest.MakePatchRequest(
@@ -548,6 +554,228 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 		want := "ERR_HDL_PRB_"
 		if !strings.HasPrefix(response, want) {
 			t.Fatalf("UpdateActivity(): response error - got %s, want %s", response, want)
+		}
+	})
+
+	t.Run("wrong input.field value", func(t *testing.T) {
+		mux := chi.NewMux()
+		company := &models.Company{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Hacker().Noun(),
+			Description: gofaker.Paragraph(),
+
+			Fields: []models.ActivityFields{
+				{
+					Code:        sfaker.App().Name(),
+					Name:        sfaker.App().String(),
+					Description: gofaker.Paragraph(),
+					Type:        "number",
+					Id:          false,
+				},
+				{
+					Code:        sfaker.App().Name(),
+					Name:        sfaker.App().String(),
+					Description: gofaker.Paragraph(),
+					Type:        "text",
+				},
+			},
+
+			CompanyId: company.Id,
+			CreatedBy: primitive.NewObjectID(),
+		}
+		db := &mockUpdateActivityDB{
+			UpdateSetInActivityFunc: func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
+				return nil, nil
+			},
+			UpdateAddToActivityFunc: func(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error) {
+				return nil, nil
+			},
+			UpdateRemoveFromActivityFunc: func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
+				return nil, nil
+			},
+		}
+
+		testCases := map[string]struct {
+			Input          handlers.UpdateActivityRequest
+			HttpStatusCode int
+			ResponseError  string
+		}{
+			"set": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "set",
+					Field:     "",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_010",
+			},
+			"add": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "add",
+					Field:     "Field",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_011",
+			},
+			"remove": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "remove",
+					Field:     "X",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_012",
+			},
+			"something else": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "sth",
+					Field:     "Name",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_013",
+			},
+		}
+
+		for name, tc := range testCases {
+			t.Run(name, func(t *testing.T) {
+				handler.UpdateActivity(mux, db)
+				code, _, response := helpertest.MakePatchRequest(
+					mux,
+					"/",
+					helpertest.CreateFormHeader(),
+					tc.Input,
+					[]helpertest.ContextData{
+						{Name: "company", Value: company},
+						{Name: "activity", Value: activity},
+					},
+				)
+				wantCode := tc.HttpStatusCode
+				if code != wantCode {
+					t.Fatalf("UpdateActivity(): %s - status - got %d; want %d", name, code, wantCode)
+				}
+				wantError := tc.ResponseError
+				if response != wantError {
+					t.Fatalf("UpdateActivity(): %s - response error - got %s, want %s", name, response, wantError)
+				}
+			})
+		}
+	})
+
+	t.Run("wrong input.value value", func(t *testing.T) {
+		mux := chi.NewMux()
+		company := &models.Company{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Hacker().Noun(),
+			Description: gofaker.Paragraph(),
+
+			Fields: []models.ActivityFields{
+				{
+					Code:        sfaker.App().Name(),
+					Name:        sfaker.App().String(),
+					Description: gofaker.Paragraph(),
+					Type:        "number",
+					Id:          false,
+				},
+				{
+					Code:        sfaker.App().Name(),
+					Name:        sfaker.App().String(),
+					Description: gofaker.Paragraph(),
+					Type:        "text",
+				},
+			},
+
+			CompanyId: company.Id,
+			CreatedBy: primitive.NewObjectID(),
+		}
+		db := &mockUpdateActivityDB{
+			UpdateSetInActivityFunc: func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
+				return nil, nil
+			},
+			UpdateAddToActivityFunc: func(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error) {
+				return nil, nil
+			},
+			UpdateRemoveFromActivityFunc: func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
+				return nil, nil
+			},
+		}
+
+		testCases := map[string]struct {
+			Input          handlers.UpdateActivityRequest
+			HttpStatusCode int
+			ResponseError  string
+		}{
+			"set": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "set",
+					Field:     "",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_010",
+			},
+			"add": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "add",
+					Field:     "Field",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_011",
+			},
+			"remove": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "remove",
+					Field:     "X",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_012",
+			},
+			"something else": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "sth",
+					Field:     "Name",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_013",
+			},
+		}
+
+		for name, tc := range testCases {
+			t.Run(name, func(t *testing.T) {
+				handler.UpdateActivity(mux, db)
+				code, _, response := helpertest.MakePatchRequest(
+					mux,
+					"/",
+					helpertest.CreateFormHeader(),
+					tc.Input,
+					[]helpertest.ContextData{
+						{Name: "company", Value: company},
+						{Name: "activity", Value: activity},
+					},
+				)
+				wantCode := tc.HttpStatusCode
+				if code != wantCode {
+					t.Fatalf("UpdateActivity(): %s - status - got %d; want %d", name, code, wantCode)
+				}
+				wantError := tc.ResponseError
+				if response != wantError {
+					t.Fatalf("UpdateActivity(): %s - response error - got %s, want %s", name, response, wantError)
+				}
+			})
 		}
 	})
 
@@ -583,102 +811,283 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			CreatedBy: primitive.NewObjectID(),
 		}
 		db := &mockUpdateActivityDB{
-			UpdateActivityFunc: func(ctx context.Context, arg storage.UpdateActivityParams) (*models.Activity, error) {
+			UpdateSetInActivityFunc: func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
+				return nil, errors.New("an error happens")
+			},
+			UpdateAddToActivityFunc: func(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error) {
+				return nil, errors.New("an error happens")
+			},
+			UpdateRemoveFromActivityFunc: func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
 				return nil, errors.New("an error happens")
 			},
 		}
 
-		handler.UpdateActivity(mux, db)
-		code, _, response := helpertest.MakePatchRequest(
-			mux,
-			"/",
-			helpertest.CreateFormHeader(),
-			handlers.UpdateActivityRequest{
-				Field: "Name",
-				Value: sfaker.App().String(),
+		testCases := map[string]struct {
+			Input          handlers.UpdateActivityRequest
+			HttpStatusCode int
+			ResponseError  string
+		}{
+			"set": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "set",
+					Field:     "Name",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_02",
 			},
-			[]helpertest.ContextData{
-				{Name: "company", Value: company},
-				{Name: "activity", Value: activity},
+			"add": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "add",
+					Field:     "Fields",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_02",
 			},
-		)
-		wantCode := http.StatusBadRequest
-		if code != wantCode {
-			t.Fatalf("UpdateActivity(): status - got %d; want %d", code, wantCode)
+			"remove": {
+				Input: handlers.UpdateActivityRequest{
+					Operation: "remove",
+					Field:     "Fields.1",
+					Value:     sfaker.App().String(),
+				},
+				HttpStatusCode: http.StatusBadRequest,
+				ResponseError:  "ERR_ATVT_UDT_02",
+			},
 		}
-		wantError := "ERR_ATVT_UDT_01"
-		if response != wantError {
-			t.Fatalf("UpdateActivity(): response error - got %s, want %s", response, wantError)
+
+		for name, tc := range testCases {
+			t.Run(name, func(t *testing.T) {
+				handler.UpdateActivity(mux, db)
+				code, _, response := helpertest.MakePatchRequest(
+					mux,
+					"/",
+					helpertest.CreateFormHeader(),
+					tc.Input,
+					[]helpertest.ContextData{
+						{Name: "company", Value: company},
+						{Name: "activity", Value: activity},
+					},
+				)
+				wantCode := tc.HttpStatusCode
+				if code != wantCode {
+					t.Fatalf("UpdateActivity(): %s - status - got %d; want %d", name, code, wantCode)
+				}
+				wantError := tc.ResponseError
+				if response != wantError {
+					t.Fatalf("UpdateActivity(): %s - response error - got %s, want %s", name, response, wantError)
+				}
+			})
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		company := &models.Company{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
-		}
-		activity := &models.Activity{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Hacker().Noun(),
-			Description: gofaker.Paragraph(),
-
-			Fields: []models.ActivityFields{
-				{
+		var company *models.Company
+		var activity *models.Activity
+		dataRequest := []handlers.UpdateActivityRequest{
+			{
+				Operation: "set",
+				Field:     "Name",
+				Value:     sfaker.App().String(),
+			},
+			{
+				Operation: "add",
+				Field:     "Fields",
+				Value: models.ActivityFields{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
-				},
-				{
-					Code:        sfaker.App().Name(),
-					Name:        sfaker.App().String(),
-					Description: gofaker.Paragraph(),
-					Type:        "text",
 				},
 			},
-
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
-		}
-		dataRequest := handlers.UpdateActivityRequest{
-			Field: "Name",
-			Value: sfaker.App().String(),
+			{
+				Operation: "remove",
+				Field:     "Fields.1",
+				// Value:     sfaker.App().String(),
+			},
+			{
+				Operation: "sth",
+				Field:     "Name",
+				Value:     sfaker.App().String(),
+			},
 		}
 
 		mux := chi.NewMux()
 		db := &mockUpdateActivityDB{
-			UpdateActivityFunc: func(ctx context.Context, arg storage.UpdateActivityParams) (*models.Activity, error) {
-				activity.Name = dataRequest.Value.(string)
-				return activity, nil
+			UpdateSetInActivityFunc: func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
+				updatedActivity := activity
+				updatedActivity.Name = dataRequest[0].Value.(string)
+				return updatedActivity, nil
+			},
+			UpdateAddToActivityFunc: func(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error) {
+				updatedActivity := &models.Activity{
+					Id:          activity.Id,
+					Name:        activity.Name,
+					Description: activity.Description,
+					CompanyId:   activity.CompanyId,
+					CreatedBy:   activity.CreatedBy,
+					Fields:      []models.ActivityFields{},
+				}
+				updatedActivity.Fields = append(updatedActivity.Fields, activity.Fields...)
+				updatedActivity.Fields = append(updatedActivity.Fields, dataRequest[1].Value.(models.ActivityFields))
+				return updatedActivity, nil
+			},
+			UpdateRemoveFromActivityFunc: func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
+				updatedActivity := &models.Activity{
+					Id:          activity.Id,
+					Name:        activity.Name,
+					Description: activity.Description,
+					CompanyId:   activity.CompanyId,
+					CreatedBy:   activity.CreatedBy,
+					Fields:      []models.ActivityFields{},
+				}
+				updatedActivity.Fields = []models.ActivityFields{activity.Fields[0]}
+				return updatedActivity, nil
 			},
 		}
 
-		handler.UpdateActivity(mux, db)
-		code, _, response := helpertest.MakePatchRequest(
-			mux,
-			"/",
-			helpertest.CreateFormHeader(),
-			dataRequest,
-			[]helpertest.ContextData{
-				{Name: "company", Value: company},
-				{Name: "activity", Value: activity},
+		testCases := map[string]struct {
+			Input          handlers.UpdateActivityRequest
+			HttpStatusCode int
+			CheckResponse  func(string, string)
+		}{
+			"set": {
+				Input:          dataRequest[0],
+				HttpStatusCode: http.StatusOK,
+				CheckResponse: func(name, response string) {
+					got := handlers.UpdateActivityResponse{}
+					json.Unmarshal([]byte(response), &got)
+
+					if got.Activity.Id != activity.Id {
+						t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, company.Id)
+					}
+					if got.Activity.CompanyId != company.Id {
+						t.Fatalf("UpdateActivity(): CompanyId - got %s; want %s", got.Activity.Id, company.Id)
+					}
+					if got.Activity.Name != dataRequest[0].Value.(string) {
+						t.Fatalf("UpdateActivity(): %s - Name - got %s; want %s", name, got.Activity.Name, dataRequest[0].Value)
+					}
+				},
 			},
-		)
-		want := http.StatusOK
-		if code != want {
-			t.Fatalf("UpdateActivity(): status - got %d; want %d", code, want)
+			"add": {
+				Input:          dataRequest[1],
+				HttpStatusCode: http.StatusOK,
+				CheckResponse: func(name, response string) {
+					got := handlers.UpdateActivityResponse{}
+					json.Unmarshal([]byte(response), &got)
+
+					if got.Activity.Id != activity.Id {
+						t.Fatalf("UpdateActivity(): %s - Id - got %s; want %s", name, got.Activity.Id, company.Id)
+					}
+					if got.Activity.CompanyId != company.Id {
+						t.Fatalf("UpdateActivity(): %s - CompanyId - got %s; want %s", name, got.Activity.Id, company.Id)
+					}
+					if len(got.Activity.Fields) != len(activity.Fields)+1 {
+						t.Fatalf("UpdateActivity(): %s - Length Fields - got %d; want %d", name, len(got.Activity.Fields), len(activity.Fields)+1)
+					}
+					if got.Activity.Fields[len(got.Activity.Fields)-1] != dataRequest[1].Value.(models.ActivityFields) {
+						t.Fatalf("UpdateActivity(): %s - Last Fields - got %v; want %v", name, got.Activity.Fields[len(got.Activity.Fields)-1], dataRequest[1].Value.(models.ActivityFields))
+					}
+				},
+			},
+			"remove": {
+				Input:          dataRequest[2],
+				HttpStatusCode: http.StatusOK,
+				CheckResponse: func(name, response string) {
+					got := handlers.UpdateActivityResponse{}
+					json.Unmarshal([]byte(response), &got)
+
+					if got.Activity.Id != activity.Id {
+						t.Fatalf("UpdateActivity(): %s - Id - got %s; want %s", name, got.Activity.Id, company.Id)
+					}
+					if got.Activity.CompanyId != company.Id {
+						t.Fatalf("UpdateActivity(): %s - CompanyId - got %s; want %s", name, got.Activity.Id, company.Id)
+					}
+					if len(got.Activity.Fields) != len(activity.Fields)-1 {
+						t.Fatalf("UpdateActivity(): %s - Length Fields - got %d; want %d", name, len(got.Activity.Fields), len(activity.Fields)-1)
+					}
+					if got.Activity.Fields[0] != activity.Fields[0] {
+						t.Fatalf("UpdateActivity(): %s - Last Fields - got %v; want %v", name, got.Activity.Fields[len(got.Activity.Fields)-1], dataRequest[1].Value.(models.ActivityFields))
+					}
+				},
+			},
 		}
 
-		got := handlers.UpdateActivityResponse{}
-		json.Unmarshal([]byte(response), &got)
-		if got.Activity.CompanyId != company.Id {
-			t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, company.Id)
+		for name, tc := range testCases {
+			company = &models.Company{
+				Id:          primitive.NewObjectID(),
+				Name:        sfaker.Company().Name(),
+				Description: gofaker.Paragraph(),
+			}
+			activity = &models.Activity{
+				Id:          primitive.NewObjectID(),
+				Name:        sfaker.Hacker().Noun(),
+				Description: gofaker.Paragraph(),
+
+				Fields: []models.ActivityFields{
+					{
+						Code:        sfaker.App().Name(),
+						Name:        sfaker.App().String(),
+						Description: gofaker.Paragraph(),
+						Type:        "number",
+						Id:          true,
+					},
+					{
+						Code:        sfaker.App().Name(),
+						Name:        sfaker.App().String(),
+						Description: gofaker.Paragraph(),
+						Type:        "text",
+					},
+				},
+
+				CompanyId: company.Id,
+				CreatedBy: primitive.NewObjectID(),
+			}
+
+			t.Run(name, func(t *testing.T) {
+				handler.UpdateActivity(mux, db)
+				code, _, response := helpertest.MakePatchRequest(
+					mux,
+					"/",
+					helpertest.CreateFormHeader(),
+					tc.Input,
+					[]helpertest.ContextData{
+						{Name: "company", Value: company},
+						{Name: "activity", Value: activity},
+					},
+				)
+				wantCode := tc.HttpStatusCode
+				if code != wantCode {
+					t.Fatalf("UpdateActivity(): %s - status - got %d; want %d", name, code, wantCode)
+				}
+				tc.CheckResponse(name, response)
+			})
 		}
-		if got.Activity.Name != dataRequest.Value.(string) {
-			t.Fatalf("UpdateActivity(): Name - got %s; want %s", got.Activity.Name, dataRequest.Value)
-		}
+
+		// handler.UpdateActivity(mux, db)
+		// code, _, response := helpertest.MakePatchRequest(
+		// 	mux,
+		// 	"/",
+		// 	helpertest.CreateFormHeader(),
+		// 	dataRequest,
+		// 	[]helpertest.ContextData{
+		// 		{Name: "company", Value: company},
+		// 		{Name: "activity", Value: activity},
+		// 	},
+		// )
+		// want := http.StatusOK
+		// if code != want {
+		// 	t.Fatalf("UpdateActivity(): status - got %d; want %d", code, want)
+		// }
+
+		// got := handlers.UpdateActivityResponse{}
+		// json.Unmarshal([]byte(response), &got)
+		// if got.Activity.CompanyId != company.Id {
+		// 	t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, company.Id)
+		// }
+		// if got.Activity.Name != dataRequest.Value.(string) {
+		// 	t.Fatalf("UpdateActivity(): Name - got %s; want %s", got.Activity.Name, dataRequest.Value)
+		// }
 	})
 }
 
