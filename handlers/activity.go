@@ -240,7 +240,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				http.Error(w, "ERR_ATVT_UDT_010", http.StatusBadRequest)
 				return
 			}
-			// TODO: check type of input.Value string
+			// TODO: check type of input.Value string|int|bool
+
 			updatedActivity, err = db.UpdateSetInActivity(ctx, storage.UpdateSetInActivityParams{
 				Id:        activity.Id,
 				CompanyId: company.Id,
@@ -253,7 +254,12 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				http.Error(w, "ERR_ATVT_UDT_011", http.StatusBadRequest)
 				return
 			}
-			// TODO: check type of input.Value ActivityFields
+			// if err, ok := input.Value.(models.ActivityFields); !ok {
+			// 	log.Printf("Error : %+v\n%+v\n\n%+v\n\n", err, input.Value, input)
+			// 	http.Error(w, "ERR_ATVT_UDT_014", http.StatusBadRequest)
+			// 	return
+			// }
+
 			updatedActivity, err = db.UpdateAddToActivity(ctx, storage.UpdateAddToActivityParams{
 				Id:        activity.Id,
 				CompanyId: company.Id,
