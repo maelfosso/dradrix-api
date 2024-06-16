@@ -13,7 +13,7 @@ import (
 )
 
 type CreateDataParams struct {
-	Values     map[string]interface{}
+	Values     map[string]any
 	ActivityId primitive.ObjectID
 	CreatedBy  primitive.ObjectID
 }
