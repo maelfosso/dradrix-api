@@ -11,6 +11,41 @@ import (
 	"stockinos.com/api/storage"
 )
 
+type getCompanyCtxInterface interface {
+	GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
+}
+
+func (handler *AppHandler) CompanyMiddleware(mux chi.Router, db getCompanyCtxInterface) {
+	mux.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			companyIdParam := chi.URLParamFromCtx(ctx, "companyId")
+			companyId, err := primitive.ObjectIDFromHex(companyIdParam)
+			if err != nil {
+				http.Error(w, "ERR_CMP_MDW_01", http.StatusBadRequest)
+				return
+			}
+
+			company, err := db.GetCompany(ctx, storage.GetCompanyParams{
+				Id: companyId,
+			})
+			if err != nil {
+				http.Error(w, "ERR_CMP_MDW_02", http.StatusBadRequest)
+				return
+			}
+
+			if company == nil {
+				http.Error(w, "ERR_CMP_MDW_03", http.StatusNotFound)
+				return
+			}
+
+			ctx = context.WithValue(ctx, "company", company)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
+}
+
 type getAllCompaniesInterface interface {
 	GetAllCompanies(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Company, error)
 }
@@ -42,50 +77,6 @@ func (handler *AppHandler) GetAllCompanies(mux chi.Router, db getAllCompaniesInt
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, "ERR_GALL_CMP_END", http.StatusBadRequest)
-			return
-		}
-	})
-}
-
-type getCompanyInterface interface {
-	GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
-}
-
-type GetCompanyResponse struct {
-	Company models.Company `json:"company,omitempty"`
-}
-
-func (handler *AppHandler) GetCompany(mux chi.Router, db getCompanyInterface) {
-	mux.Get("/{companyId}", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		companyIdParam := chi.URLParamFromCtx(ctx, "companyId")
-		companyId, err := primitive.ObjectIDFromHex(companyIdParam)
-		if err != nil {
-			http.Error(w, "ERR_GONE_CMP_01", http.StatusBadRequest)
-			return
-		}
-
-		company, err := db.GetCompany(ctx, storage.GetCompanyParams{
-			Id: companyId,
-		})
-		if err != nil {
-			http.Error(w, "ERR_GONE_CMP_02", http.StatusBadRequest)
-			return
-		}
-		if company == nil {
-			http.Error(w, "ERR_GONE_CMP_03", http.StatusBadRequest)
-			return
-		}
-
-		response := GetCompanyResponse{
-			Company: *company,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "ERR_C_CMP_END", http.StatusBadRequest)
 			return
 		}
 	})
@@ -139,6 +130,33 @@ func (handler *AppHandler) CreateCompany(mux chi.Router, db createCompanyInterfa
 	})
 }
 
+type getCompanyInterface interface {
+	// GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
+}
+
+type GetCompanyResponse struct {
+	Company models.Company `json:"company,omitempty"`
+}
+
+func (handler *AppHandler) GetCompany(mux chi.Router, db getCompanyInterface) {
+	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		company := ctx.Value("company").(*models.Company)
+
+		response := GetCompanyResponse{
+			Company: *company,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_C_CMP_END", http.StatusBadRequest)
+			return
+		}
+	})
+}
+
 type updateCompanyInterface interface {
 	UpdateCompany(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error)
 }
@@ -153,15 +171,8 @@ type UpdateCompanyResponse struct {
 }
 
 func (handler *AppHandler) UpdateCompany(mux chi.Router, db updateCompanyInterface) {
-	mux.Put("/{companyId}", func(w http.ResponseWriter, r *http.Request) {
+	mux.Put("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		companyIdParam := chi.URLParamFromCtx(ctx, "companyId")
-		companyId, err := primitive.ObjectIDFromHex(companyIdParam)
-		if err != nil {
-			http.Error(w, "ERR_U_CMP_01", http.StatusBadRequest)
-			return
-		}
 
 		var input UpdateCompanyRequest
 		httpStatus, err := handler.ParsingRequestBody(w, r, &input)
@@ -170,18 +181,20 @@ func (handler *AppHandler) UpdateCompany(mux chi.Router, db updateCompanyInterfa
 			return
 		}
 
-		company, err := db.UpdateCompany(ctx, storage.UpdateCompanyParams{
-			Id:          companyId,
+		company := ctx.Value("company").(*models.Company)
+
+		updatedCompany, err := db.UpdateCompany(ctx, storage.UpdateCompanyParams{
+			Id:          company.Id,
 			Name:        input.Name,
 			Description: input.Description,
 		})
 		if err != nil {
-			http.Error(w, "ERR_U_CMP_02", http.StatusBadRequest)
+			http.Error(w, "ERR_U_CMP_01", http.StatusBadRequest)
 			return
 		}
 
 		response := UpdateCompanyResponse{
-			Company: *company,
+			Company: *updatedCompany,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -204,18 +217,13 @@ type DeleteCompanyResponse struct {
 }
 
 func (handler *AppHandler) DeleteCompany(mux chi.Router, db deleteCompanyInterface) {
-	mux.Delete("/{companyId}", func(w http.ResponseWriter, r *http.Request) {
+	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		companyIdParam := chi.URLParamFromCtx(ctx, "companyId")
-		companyId, err := primitive.ObjectIDFromHex(companyIdParam)
-		if err != nil {
-			http.Error(w, "ERR_D_CMP_01", http.StatusBadRequest)
-			return
-		}
+		company := ctx.Value("company").(*models.Company)
 
-		err = db.DeleteCompany(ctx, storage.DeleteCompanyParams{
-			Id: companyId,
+		err := db.DeleteCompany(ctx, storage.DeleteCompanyParams{
+			Id: company.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_D_CMP_02", http.StatusBadRequest)
