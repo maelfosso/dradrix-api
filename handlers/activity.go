@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -264,11 +263,13 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				Id:        activity.Id,
 				CompanyId: company.Id,
 
-				Field: field,
-				Value: input.Value,
+				Field:    field,
+				Value:    input.Value,
+				Position: uint(input.Position),
 			})
 		case "remove":
-			if match, _ := regexp.MatchString("fields.([0-9]+)", field); !match {
+			// if match, _ := regexp.MatchString("fields.([0-9]+)", field); !match {
+			if field != "fields" {
 				http.Error(w, "ERR_ATVT_UDT_012", http.StatusBadRequest)
 				return
 			}
@@ -278,7 +279,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				Id:        activity.Id,
 				CompanyId: company.Id,
 
-				Field: field,
+				Field:    field,
+				Position: uint(input.Position),
 			})
 		default:
 			http.Error(w, "ERR_ATVT_UDT_013", http.StatusBadRequest)

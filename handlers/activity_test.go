@@ -849,7 +849,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			"remove": {
 				Input: handlers.UpdateActivityRequest{
 					Operation: "remove",
-					Field:     "Fields.1",
+					Field:     "Fields",
+					Position:  1,
 					Value:     sfaker.App().String(),
 				},
 				HttpStatusCode: http.StatusBadRequest,
@@ -905,7 +906,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			},
 			{
 				Operation: "remove",
-				Field:     "Fields.1",
+				Field:     "Fields",
+				Position:  1,
 				// Value:     sfaker.App().String(),
 			},
 			{
