@@ -25,8 +25,8 @@ func TestData(t *testing.T) {
 	tests := map[string]func(*testing.T, *storage.Database){
 		"CreateData": testCreateData,
 		"DeleteData": testDeleteData,
-		// "UpdateData":   testUpdateData,
-		// "GetAllData": testGetAllData,
+		"UpdateData": testUpdateData,
+		"GetAllData": testGetAllData,
 	}
 
 	for name, tc := range tests {
@@ -301,75 +301,74 @@ func testDeleteData(t *testing.T, db *storage.Database) {
 
 // }
 
-// func testGetAllData(t *testing.T, db *storage.Database) {
-// 	const NUM_ACTIVITIES_CREATED = 3
-// 	companyA := primitive.NewObjectID()
-// 	companyB := primitive.NewObjectID()
+func testGetAllData(t *testing.T, db *storage.Database) {
+	const NUM_DATA_CREATED = 3
+	activityA := primitive.NewObjectID()
+	activityB := primitive.NewObjectID()
 
-// 	var datas []*models.Data
+	var datas []*models.Data
 
-// 	for i := 0; i < NUM_ACTIVITIES_CREATED; i++ {
-// 		data, _ := db.Storage.CreateData(context.Background(), storage.CreateDataParams{
-// 			Name:        sfaker.Company().Name(),
-// 			Description: gofaker.Paragraph(),
+	for i := 0; i < NUM_DATA_CREATED; i++ {
+		data, _ := db.Storage.CreateData(context.Background(), storage.CreateDataParams{
+			Values: map[string]any{
+				"n_devis":    faker.UUIDHyphenated(),
+				"n_os":       faker.UUIDDigit(),
+				"date_os":    faker.Date(),
+				"montant_os": sfaker.Number().Number(7),
+			},
 
-// 			Values: []models.DataValues{
-// 				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "number"},
-// 				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", Id: true},
-// 			},
+			ActivityId: activityA,
+			CreatedBy:  primitive.NewObjectID(),
+		})
+		datas = append(datas, data)
+	}
 
-// 			ActivityId: companyA,
-// 			CreatedBy: primitive.NewObjectID(),
-// 		})
-// 		datas = append(datas, data)
-// 	}
+	got, err := db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
+		ActivityId: activityA,
+	})
+	if err != nil {
+		t.Fatalf("GetAllData(): got error; want nil")
+	}
+	if len(got) != NUM_DATA_CREATED {
+		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), NUM_DATA_CREATED)
+	}
+	if err := dataEq(got[0], datas[0]); err != nil {
+		t.Fatalf("GetAllData(): %v", err)
+	}
+	if err := dataEq(got[1], datas[1]); err != nil {
+		t.Fatalf("GetAllData(): %v", err)
+	}
+	if err := dataEq(got[len(got)-1], datas[len(datas)-1]); err != nil {
+		t.Fatalf("GetAllData(): %v", err)
+	}
 
-// 	got, err := db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
-// 		ActivityId: companyA,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetAllData(): got error; want nil")
-// 	}
-// 	if len(got) != NUM_ACTIVITIES_CREATED {
-// 		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), NUM_ACTIVITIES_CREATED)
-// 	}
-// 	if err := dataEq(got[0], datas[0]); err != nil {
-// 		t.Fatalf("GetAllData(): %v", err)
-// 	}
-// 	if err := dataEq(got[1], datas[1]); err != nil {
-// 		t.Fatalf("GetAllData(): %v", err)
-// 	}
-// 	if err := dataEq(got[len(got)-1], datas[len(datas)-1]); err != nil {
-// 		t.Fatalf("GetAllData(): %v", err)
-// 	}
+	got, err = db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
+		ActivityId: activityB,
+	})
+	if err != nil {
+		t.Fatalf("GetAllData(): got error; want nil")
+	}
+	if len(got) != 0 {
+		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), 0)
+	}
 
-// 	got, err = db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
-// 		ActivityId: companyB,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetAllData(): got error; want nil")
-// 	}
-// 	if len(got) != 0 {
-// 		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), 0)
-// 	}
-
-// 	db.Storage.DeleteData(context.Background(), storage.DeleteDataParams{
-// 		Id:        datas[0].Id,
-// 		ActivityId: companyA,
-// 	})
-// 	got, err = db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
-// 		ActivityId: companyA,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetAllData(): got error; want nil")
-// 	}
-// 	if len(got) != NUM_ACTIVITIES_CREATED-1 {
-// 		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), NUM_ACTIVITIES_CREATED)
-// 	}
-// 	if err := dataEq(got[0], datas[1]); err != nil {
-// 		t.Fatalf("GetAllData(): %v", err)
-// 	}
-// }
+	db.Storage.DeleteData(context.Background(), storage.DeleteDataParams{
+		Id:         datas[0].Id,
+		ActivityId: activityA,
+	})
+	got, err = db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
+		ActivityId: activityA,
+	})
+	if err != nil {
+		t.Fatalf("GetAllData(): got error; want nil")
+	}
+	if len(got) != NUM_DATA_CREATED-1 {
+		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), NUM_DATA_CREATED)
+	}
+	if err := dataEq(got[0], datas[1]); err != nil {
+		t.Fatalf("GetAllData(): %v", err)
+	}
+}
 
 func dataEq(got, want *models.Data) error {
 	if got == want {
