@@ -24,9 +24,9 @@ func TestData(t *testing.T) {
 
 	tests := map[string]func(*testing.T, *storage.Database){
 		"CreateData": testCreateData,
-		// "DeleteData":   testDeleteData,
+		"DeleteData": testDeleteData,
 		// "UpdateData":   testUpdateData,
-		// "GetAllActivities": testGetAllActivities,
+		// "GetAllData": testGetAllData,
 	}
 
 	for name, tc := range tests {
@@ -56,11 +56,11 @@ func testCreateData(t *testing.T, db *storage.Database) {
 		ActivityId: primitive.NewObjectID(),
 		CreatedBy:  primitive.NewObjectID(),
 	}
-	activity, err := db.Storage.CreateData(context.Background(), arg)
+	data, err := db.Storage.CreateData(context.Background(), arg)
 	if err != nil {
 		t.Fatalf("CreateData() err = %v; want nil", err)
 	}
-	if activity.Id.IsZero() {
+	if data.Id.IsZero() {
 		t.Fatalf("CreateData(): Id is nil; want non nil")
 	}
 
@@ -73,71 +73,71 @@ func testCreateData(t *testing.T, db *storage.Database) {
 	}
 
 	got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-		Id:         activity.Id,
+		Id:         data.Id,
 		ActivityId: arg.ActivityId,
 	})
 	if err != nil {
 		t.Fatalf("GetData(): got error %+v; want nit", err.Error())
 	}
-	if err := dataEq(got, activity); err != nil {
+	if err := dataEq(got, data); err != nil {
 		t.Fatalf("GetData(): %v", err.Error())
 	}
 }
 
-// func testDeleteData(t *testing.T, db *storage.Database) {
-// 	arg := storage.CreateDataParams{
-// 		Name:        "a1",
-// 		Description: "Data 1",
-// 		Values: []models.DataValues{
-// 			{Name: "f1", Description: "Description 1", Type: "number"},
-// 			{Name: "f2", Description: "Description 2", Type: "text"},
-// 		},
+func testDeleteData(t *testing.T, db *storage.Database) {
+	arg := storage.CreateDataParams{
+		Values: map[string]any{
+			"n_devis":    faker.UUIDHyphenated(),
+			"n_os":       faker.UUIDDigit(),
+			"date_os":    faker.Date(),
+			"montant_os": sfaker.Number().Number(7),
+		},
 
-// 		ActivityId: primitive.NewObjectID(),
-// 		CreatedBy: primitive.NewObjectID(),
-// 	}
-// 	activity, err := db.Storage.CreateData(context.Background(), arg)
-// 	if err != nil {
-// 		t.Fatalf("CreateData(): err = %v; want nil", err)
-// 	}
+		ActivityId: primitive.NewObjectID(),
+		CreatedBy:  primitive.NewObjectID(),
+	}
+	data, err := db.Storage.CreateData(context.Background(), arg)
+	if err != nil {
+		t.Fatalf("CreateData(): err = %v; want nil", err)
+	}
 
-// 	_, err = db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 		Id:        activity.Id,
-// 		ActivityId: arg.ActivityId,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetData(): got error = %v; want nil", err)
-// 	}
+	err = db.Storage.DeleteData(context.Background(), storage.DeleteDataParams{
+		Id:         data.Id,
+		ActivityId: arg.ActivityId,
+	})
+	if err != nil {
+		t.Fatalf("DeleteDataFromCompany(): got err = %v; want nil", err)
+	}
 
-// 	err = db.Storage.DeleteData(context.Background(), storage.DeleteDataParams{
-// 		Id:        activity.Id,
-// 		ActivityId: arg.ActivityId,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("DeleteDataFromCompany(): got err = %v; want nil", err)
-// 	}
+	data, err = db.Storage.GetData(context.Background(), storage.GetDataParams{
+		Id:         data.Id,
+		ActivityId: arg.ActivityId,
+	})
+	if err != nil {
+		t.Fatalf("GetData(): got error = %v; want nil", err)
+	}
+	if data != nil {
+		t.Fatalf("GetData(): got %v; want nil", data)
+	}
 
-// 	activity, err = db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 		Id:        activity.Id,
-// 		ActivityId: arg.ActivityId,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetData(): got error = %v; want nil", err)
-// 	}
-// 	if activity != nil {
-// 		t.Fatalf("GetData(): got %v; want nil", activity)
-// 	}
-
-// 	datas, err := db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
-// 		ActivityId: arg.ActivityId,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetAllActivitiesFromCompany(): got err = %v; want nil", err)
-// 	}
-// 	if len(datas) != 0 {
-// 		t.Fatalf("GetAllActivitiesFromCompany(): got %d number of datas; want = 0", len(datas))
-// 	}
-// }
+	datas, err := db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
+		ActivityId: arg.ActivityId,
+	})
+	if err != nil {
+		t.Fatalf("GetAllData(): got err = %v; want nil", err)
+	}
+	if len(datas) != 0 {
+		t.Fatalf("GetAllData(): got %d number of datas; want = 0", len(datas))
+	}
+	for _, v := range datas {
+		if v.Id == data.Id {
+			if v.DeletedAt == nil {
+				t.Fatalf("GetAllData(): search created data: got deletedAt nil; want %v", data.DeletedAt)
+			}
+			return
+		}
+	}
+}
 
 // func testUpdateData(t *testing.T, db *storage.Database) {
 // 	arg := storage.CreateDataParams{
@@ -151,17 +151,17 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 		ActivityId: primitive.NewObjectID(),
 // 		CreatedBy: primitive.NewObjectID(),
 // 	}
-// 	activity, err := db.Storage.CreateData(context.Background(), arg)
+// 	data, err := db.Storage.CreateData(context.Background(), arg)
 // 	if err != nil {
 // 		t.Fatalf("CreateData() err = %v; want nil", err)
 // 	}
-// 	if activity.Id.IsZero() {
+// 	if data.Id.IsZero() {
 // 		t.Fatalf("CreateData(): Id is nil; want non nil")
 // 	}
 
 // 	t.Run("set", func(t *testing.T) {
 // 		argForUpdate := storage.UpdateSetInDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 
 // 			Field: "name",
@@ -179,7 +179,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 		}
 
 // 		argForUpdate = storage.UpdateSetInDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 
 // 			Field: "fields.1.code",
@@ -197,7 +197,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 		}
 
 // 		argForUpdate = storage.UpdateSetInDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 
 // 			Field: "fields.1.id",
@@ -215,7 +215,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 		}
 
 // 		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 // 		})
 // 		if err != nil {
@@ -228,7 +228,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 
 // 	t.Run("add", func(t *testing.T) {
 // 		argForUpdate := storage.UpdateAddToDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 
 // 			Field: "fields",
@@ -238,7 +238,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 				Type:        "number",
 // 				Code:        sfaker.App().Name(),
 // 			},
-// 			Position: rand.UintN(uint(len(activity.Values))),
+// 			Position: rand.UintN(uint(len(data.Values))),
 // 		}
 // 		updated, err := db.Storage.UpdateAddToData(context.Background(), argForUpdate)
 // 		if err != nil {
@@ -252,7 +252,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 		}
 
 // 		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 // 		})
 // 		if err != nil {
@@ -262,33 +262,33 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 			t.Fatalf("GetData(): %v", err.Error())
 // 		}
 
-// 		activity = updated
+// 		data = updated
 // 	})
 
 // 	t.Run("remove", func(t *testing.T) {
-// 		activity, _ = db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        activity.Id,
+// 		data, _ = db.Storage.GetData(context.Background(), storage.GetDataParams{
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 // 		})
 // 		argForUpdate := storage.UpdateRemoveFromDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 
 // 			Field:    "fields",
-// 			Position: rand.UintN(uint(len(activity.Values))),
+// 			Position: rand.UintN(uint(len(data.Values))),
 // 		}
 // 		updated, err := db.Storage.UpdateRemoveFromData(context.Background(), argForUpdate)
 // 		if err != nil {
 // 			t.Fatalf("UpdateRemoveFromData(): got error %v; want nil", err)
 // 		}
-// 		if len(updated.Values) != len(activity.Values)-1 {
+// 		if len(updated.Values) != len(data.Values)-1 {
 // 			t.Fatalf(
 // 				"UpdateRemoveFromData(): len fields - got %d; want %d",
-// 				len(updated.Values), len(activity.Values)-1)
+// 				len(updated.Values), len(data.Values)-1)
 // 		}
 
 // 		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        activity.Id,
+// 			Id:        data.Id,
 // 			ActivityId: arg.ActivityId,
 // 		})
 // 		if err != nil {
@@ -301,7 +301,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 
 // }
 
-// func testGetAllActivities(t *testing.T, db *storage.Database) {
+// func testGetAllData(t *testing.T, db *storage.Database) {
 // 	const NUM_ACTIVITIES_CREATED = 3
 // 	companyA := primitive.NewObjectID()
 // 	companyB := primitive.NewObjectID()
@@ -309,7 +309,7 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 	var datas []*models.Data
 
 // 	for i := 0; i < NUM_ACTIVITIES_CREATED; i++ {
-// 		activity, _ := db.Storage.CreateData(context.Background(), storage.CreateDataParams{
+// 		data, _ := db.Storage.CreateData(context.Background(), storage.CreateDataParams{
 // 			Name:        sfaker.Company().Name(),
 // 			Description: gofaker.Paragraph(),
 
@@ -321,53 +321,53 @@ func testCreateData(t *testing.T, db *storage.Database) {
 // 			ActivityId: companyA,
 // 			CreatedBy: primitive.NewObjectID(),
 // 		})
-// 		datas = append(datas, activity)
+// 		datas = append(datas, data)
 // 	}
 
-// 	got, err := db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
+// 	got, err := db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
 // 		ActivityId: companyA,
 // 	})
 // 	if err != nil {
-// 		t.Fatalf("GetAllActivities(): got error; want nil")
+// 		t.Fatalf("GetAllData(): got error; want nil")
 // 	}
 // 	if len(got) != NUM_ACTIVITIES_CREATED {
-// 		t.Fatalf("GetAllActivities(): got %d datas; want %d datas", len(got), NUM_ACTIVITIES_CREATED)
+// 		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), NUM_ACTIVITIES_CREATED)
 // 	}
 // 	if err := dataEq(got[0], datas[0]); err != nil {
-// 		t.Fatalf("GetAllActivities(): %v", err)
+// 		t.Fatalf("GetAllData(): %v", err)
 // 	}
 // 	if err := dataEq(got[1], datas[1]); err != nil {
-// 		t.Fatalf("GetAllActivities(): %v", err)
+// 		t.Fatalf("GetAllData(): %v", err)
 // 	}
 // 	if err := dataEq(got[len(got)-1], datas[len(datas)-1]); err != nil {
-// 		t.Fatalf("GetAllActivities(): %v", err)
+// 		t.Fatalf("GetAllData(): %v", err)
 // 	}
 
-// 	got, err = db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
+// 	got, err = db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
 // 		ActivityId: companyB,
 // 	})
 // 	if err != nil {
-// 		t.Fatalf("GetAllActivities(): got error; want nil")
+// 		t.Fatalf("GetAllData(): got error; want nil")
 // 	}
 // 	if len(got) != 0 {
-// 		t.Fatalf("GetAllActivities(): got %d datas; want %d datas", len(got), 0)
+// 		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), 0)
 // 	}
 
 // 	db.Storage.DeleteData(context.Background(), storage.DeleteDataParams{
 // 		Id:        datas[0].Id,
 // 		ActivityId: companyA,
 // 	})
-// 	got, err = db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
+// 	got, err = db.Storage.GetAllData(context.Background(), storage.GetAllDataParams{
 // 		ActivityId: companyA,
 // 	})
 // 	if err != nil {
-// 		t.Fatalf("GetAllActivities(): got error; want nil")
+// 		t.Fatalf("GetAllData(): got error; want nil")
 // 	}
 // 	if len(got) != NUM_ACTIVITIES_CREATED-1 {
-// 		t.Fatalf("GetAllActivities(): got %d datas; want %d datas", len(got), NUM_ACTIVITIES_CREATED)
+// 		t.Fatalf("GetAllData(): got %d datas; want %d datas", len(got), NUM_ACTIVITIES_CREATED)
 // 	}
 // 	if err := dataEq(got[0], datas[1]); err != nil {
-// 		t.Fatalf("GetAllActivities(): %v", err)
+// 		t.Fatalf("GetAllData(): %v", err)
 // 	}
 // }
 
