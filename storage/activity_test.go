@@ -3,6 +3,7 @@ package storage_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"sort"
 	"testing"
 
@@ -76,10 +77,10 @@ func testCreateActivity(t *testing.T, db *storage.Database) {
 		CompanyId: arg.CompanyId,
 	})
 	if err != nil {
-		t.Fatalf("GetActivityFromCompany(): got error %+v; want nit", err.Error())
+		t.Fatalf("GetActivity(): got error %+v; want nit", err.Error())
 	}
 	if err := activityEq(got, activity); err != nil {
-		t.Fatalf("GetActivityFromCompany(): %v", err.Error())
+		t.Fatalf("GetActivity(): %v", err.Error())
 	}
 }
 
@@ -105,7 +106,7 @@ func testDeleteActivity(t *testing.T, db *storage.Database) {
 		CompanyId: arg.CompanyId,
 	})
 	if err != nil {
-		t.Fatalf("GetActivityFromCompany(): got error = %v; want nil", err)
+		t.Fatalf("GetActivity(): got error = %v; want nil", err)
 	}
 
 	err = db.Storage.DeleteActivity(context.Background(), storage.DeleteActivityParams{
@@ -121,10 +122,10 @@ func testDeleteActivity(t *testing.T, db *storage.Database) {
 		CompanyId: arg.CompanyId,
 	})
 	if err != nil {
-		t.Fatalf("GetActivityFromCompany(): got error = %v; want nil", err)
+		t.Fatalf("GetActivity(): got error = %v; want nil", err)
 	}
 	if activity != nil {
-		t.Fatalf("GetActivityFromCompany(): got %v; want nil", activity)
+		t.Fatalf("GetActivity(): got %v; want nil", activity)
 	}
 
 	activities, err := db.Storage.GetAllActivities(context.Background(), storage.GetAllActivitiesParams{
@@ -139,12 +140,6 @@ func testDeleteActivity(t *testing.T, db *storage.Database) {
 }
 
 func testUpdateActivity(t *testing.T, db *storage.Database) {
-
-	beforeCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
-	if err != nil {
-		t.Fatalf("CountDocuments() Before; err = %v; want nil", err)
-	}
-
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
@@ -164,78 +159,146 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		t.Fatalf("CreateActivity(): Id is nil; want non nil")
 	}
 
-	argForUpdate := storage.UpdateActivityParams{
-		Id:        activity.Id,
-		CompanyId: arg.CompanyId,
+	t.Run("set", func(t *testing.T) {
+		argForUpdate := storage.UpdateSetInActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
 
-		Field: "name",
-		Value: "a2",
-	}
-	updated, err := db.Storage.UpdateActivity(context.Background(), argForUpdate)
-	if err != nil {
-		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
-	}
-	if updated.Name != argForUpdate.Value {
-		t.Fatalf(
-			"UpdateActivity(): updated %s value - got %s; want %s",
-			argForUpdate.Field, updated.Name, argForUpdate.Value,
-		)
-	}
+			Field: "name",
+			Value: "a2",
+		}
+		updated, err := db.Storage.UpdateSetInActivity(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateActivity(): got error %v; want nil", err)
+		}
+		if updated.Name != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateActivity(): updated %s value - got %s; want %s",
+				argForUpdate.Field, updated.Name, argForUpdate.Value,
+			)
+		}
 
-	argForUpdate = storage.UpdateActivityParams{
-		Id:        activity.Id,
-		CompanyId: arg.CompanyId,
+		argForUpdate = storage.UpdateSetInActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
 
-		Field: "fields.1.code",
-		Value: "f1",
-	}
-	updated, err = db.Storage.UpdateActivity(context.Background(), argForUpdate)
-	if err != nil {
-		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
-	}
-	if updated.Fields[1].Code != argForUpdate.Value {
-		t.Fatalf(
-			"UpdateActivity(): updated %s value - got %s; want %s",
-			argForUpdate.Field, updated.Name, argForUpdate.Value,
-		)
-	}
+			Field: "fields.1.code",
+			Value: "f1",
+		}
+		updated, err = db.Storage.UpdateSetInActivity(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateActivity(): got error %v; want nil", err)
+		}
+		if updated.Fields[1].Code != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateActivity(): updated %s value - got %s; want %s",
+				argForUpdate.Field, updated.Name, argForUpdate.Value,
+			)
+		}
 
-	argForUpdate = storage.UpdateActivityParams{
-		Id:        activity.Id,
-		CompanyId: arg.CompanyId,
+		argForUpdate = storage.UpdateSetInActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
 
-		Field: "fields.1.id",
-		Value: false,
-	}
-	updated, err = db.Storage.UpdateActivity(context.Background(), argForUpdate)
-	if err != nil {
-		t.Fatalf("UpdateActivity(): got error %v; want nil", err)
-	}
-	if updated.Fields[0].Id != argForUpdate.Value {
-		t.Fatalf(
-			"UpdateActivity(): updated %s value - got %s; want %s",
-			argForUpdate.Field, updated.Name, argForUpdate.Value,
-		)
-	}
+			Field: "fields.1.id",
+			Value: false,
+		}
+		updated, err = db.Storage.UpdateSetInActivity(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateActivity(): got error %v; want nil", err)
+		}
+		if updated.Fields[0].Id != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateActivity(): updated %s value - got %s; want %s",
+				argForUpdate.Field, updated.Name, argForUpdate.Value,
+			)
+		}
 
-	afterCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
-	if err != nil {
-		t.Fatalf("CountDocuments() After; err = %v; want nil", err)
-	}
-	if afterCount-beforeCount != 1 {
-		t.Fatalf("AfterCount - BeforeCount = %d; want = %d", afterCount-beforeCount, 1)
-	}
-
-	got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
-		Id:        activity.Id,
-		CompanyId: arg.CompanyId,
+		got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
+		})
+		if err != nil {
+			t.Fatalf("GetActivity(): got error %+v; want nit", err.Error())
+		}
+		if err := activityEq(got, updated); err != nil {
+			t.Fatalf("GetActivity(): %v", err.Error())
+		}
 	})
-	if err != nil {
-		t.Fatalf("GetActivityFromCompany(): got error %+v; want nit", err.Error())
-	}
-	if err := activityEq(got, updated); err != nil {
-		t.Fatalf("GetActivityFromCompany(): %v", err.Error())
-	}
+
+	t.Run("add", func(t *testing.T) {
+		argForUpdate := storage.UpdateAddToActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
+
+			Field: "fields",
+			Value: models.ActivityFields{
+				Name:        sfaker.App().String(),
+				Description: gofaker.Paragraph(),
+				Type:        "number",
+				Code:        sfaker.App().Name(),
+			},
+			Position: rand.UintN(uint(len(activity.Fields))),
+		}
+		updated, err := db.Storage.UpdateAddToActivity(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateAddToActivity(): got error %v; want nil", err)
+		}
+		if updated.Fields[argForUpdate.Position] != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateAddToActivity(): updated %s value - got %+v; want %+v",
+				argForUpdate.Field, updated.Fields[argForUpdate.Position], argForUpdate.Value,
+			)
+		}
+
+		got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
+		})
+		if err != nil {
+			t.Fatalf("GetActivity(): got error %+v; want nit", err.Error())
+		}
+		if err = activityEq(got, updated); err != nil {
+			t.Fatalf("GetActivity(): %v", err.Error())
+		}
+
+		activity = updated
+	})
+
+	t.Run("remove", func(t *testing.T) {
+		activity, _ = db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
+		})
+		argForUpdate := storage.UpdateRemoveFromActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
+
+			Field:    "fields",
+			Position: rand.UintN(uint(len(activity.Fields))),
+		}
+		updated, err := db.Storage.UpdateRemoveFromActivity(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateRemoveFromActivity(): got error %v; want nil", err)
+		}
+		if len(updated.Fields) != len(activity.Fields)-1 {
+			t.Fatalf(
+				"UpdateRemoveFromActivity(): len fields - got %d; want %d",
+				len(updated.Fields), len(activity.Fields)-1)
+		}
+
+		got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
+			Id:        activity.Id,
+			CompanyId: arg.CompanyId,
+		})
+		if err != nil {
+			t.Fatalf("GetActivity(): got error %+v; want nit", err.Error())
+		}
+		if err = activityEq(got, updated); err != nil {
+			t.Fatalf("GetActivity(): %v", err.Error())
+		}
+	})
+
 }
 
 func testGetAllActivities(t *testing.T, db *storage.Database) {
@@ -360,155 +423,3 @@ func activityEq(got, want *models.Activity) error {
 
 	return nil
 }
-
-// func TestDeleteActivity(t *testing.T) {
-
-// 	db, cleanup := integrationtest.CreateDatabase()
-// 	defer cleanup()
-
-// 	arg := storage.CreateActivityParams{
-// 		Name:        "a1",
-// 		Description: "Activity 1",
-// 		Fields: []models.ActivityFields{
-// 			{Name: "f1", Description: "Description 1", Type: "number"},
-// 			{Name: "f2", Description: "Description 2", Type: "text"},
-// 		},
-// 	}
-// 	activity, err := db.Storage.CreateActivity(context.Background(), arg)
-// 	if err != nil {
-// 		t.Fatalf("CreateActivity() err = %v; want nil", err)
-// 	}
-
-// 	_, err = db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
-// 		Id: activity.Id,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetActivity() - err = %v; want nil", err)
-// 	}
-
-// 	err = db.Storage.DeleteActivity(context.Background(), storage.DeleteActivityParams{
-// 		Id: activity.Id,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("DeleteActivity() - err = %v; want nil", err)
-// 	}
-
-// 	activities, err := db.Storage.GetAllActivitiesFromUser(context.Background(), storage.GetAllActivitiesFromUserParams{
-// 		CreatedBy: arg.CreatedBy,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetAllActivitiesFromUser() - err = %v; want nil", err)
-// 	}
-// 	if len(activities) != 0 {
-// 		t.Fatalf("GetAllActivitiesFromUser() size - got: %d; want = 0", len(activities))
-// 	}
-// }
-
-// func TestCreateData(t *testing.T) {
-// 	integrationtest.SkipifShort(t)
-
-// 	db, cleanup := integrationtest.CreateDatabase()
-// 	defer cleanup()
-
-// 	beforeCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
-// 	if err != nil {
-// 		t.Fatalf("CountDocuments() Before; err = %v; want nil", err)
-// 	}
-
-// 	arg := storage.CreateActivityParams{
-// 		Name:        "a1",
-// 		Description: "Activity 1",
-// 		Fields: []models.ActivityFields{
-// 			{Name: "f1", Description: "Description 1", Type: "number"},
-// 			{Name: "f2", Description: "Description 2", Type: "text"},
-// 		},
-
-// 		CreatedBy: primitive.NewObjectID(),
-// 	}
-// 	activity, err := db.Storage.CreateActivity(context.Background(), arg)
-// 	if err != nil {
-// 		t.Fatalf("CreateActivity() err = %v; want nil", err)
-// 	}
-// 	if activity.Id.IsZero() {
-// 		t.Fatalf("CreateActivity(); Id is nil; want non nil")
-// 	}
-// 	if len(activity.Name) == 0 && len(activity.Description) == 0 && len(activity.Fields) <= 0 {
-// 		t.Fatalf("CreateActivity(): Properties are not okay; got = (%s, %s, %d); want = (%s, %s, %d)",
-// 			activity.Name, activity.Description, len(activity.Fields),
-// 			arg.Name, arg.Description, len(arg.Fields),
-// 		)
-// 	}
-// 	if activity.CreatedAt.IsZero() || activity.UpdatedAt.IsZero() {
-// 		t.Fatalf("CreateActivity() date - got empty date; want date with values")
-// 	}
-// 	if activity.CreatedBy != arg.CreatedBy {
-// 		t.Fatalf("CreateActivity() createdBy - got: %v; want: %v", activity.CreatedBy, arg.CreatedBy)
-// 	}
-
-// 	afterCount, err := db.GetCollection("activities").CountDocuments(context.Background(), bson.D{}, nil)
-// 	if err != nil {
-// 		t.Fatalf("CountDocuments() After; err = %v; want nil", err)
-// 	}
-// 	if afterCount-beforeCount != 1 {
-// 		t.Fatalf("AfterCount - BeforeCount = %d; want = %d", afterCount-beforeCount, 1)
-// 	}
-
-// 	got, err := db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
-// 		Id: activity.Id,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetActivity() - err = %v; want nil", err)
-// 	}
-// 	if got.Name != arg.Name || got.Description != arg.Description || len(got.Fields) != len(arg.Fields) {
-// 		t.Fatalf("GetActivity - got: (%s, %s, %d); want: (%s, %s, %d)",
-// 			got.Name, got.Description, len(got.Fields),
-// 			arg.Name, arg.Description, len(arg.Fields),
-// 		)
-// 	}
-// 	if got.CreatedBy != arg.CreatedBy {
-// 		t.Fatalf("CreateActivity() createdBy - got: %v; want: %v", got.CreatedBy, arg.CreatedBy)
-// 	}
-// }
-
-// func TestDeleteData(t *testing.T) {
-
-// 	db, cleanup := integrationtest.CreateDatabase()
-// 	defer cleanup()
-
-// 	arg := storage.CreateActivityParams{
-// 		Name:        "a1",
-// 		Description: "Activity 1",
-// 		Fields: []models.ActivityFields{
-// 			{Name: "f1", Description: "Description 1", Type: "number"},
-// 			{Name: "f2", Description: "Description 2", Type: "text"},
-// 		},
-// 	}
-// 	activity, err := db.Storage.CreateActivity(context.Background(), arg)
-// 	if err != nil {
-// 		t.Fatalf("CreateActivity() err = %v; want nil", err)
-// 	}
-
-// 	_, err = db.Storage.GetActivity(context.Background(), storage.GetActivityParams{
-// 		Id: activity.Id,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetActivity() - err = %v; want nil", err)
-// 	}
-
-// 	err = db.Storage.DeleteActivity(context.Background(), storage.DeleteActivityParams{
-// 		Id: activity.Id,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("DeleteActivity() - err = %v; want nil", err)
-// 	}
-
-// 	activities, err := db.Storage.GetAllActivitiesFromUser(context.Background(), storage.GetAllActivitiesFromUserParams{
-// 		CreatedBy: arg.CreatedBy,
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("GetAllActivitiesFromUser() - err = %v; want nil", err)
-// 	}
-// 	if len(activities) != 0 {
-// 		t.Fatalf("GetAllActivitiesFromUser() size - got: %d; want = 0", len(activities))
-// 	}
-// }

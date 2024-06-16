@@ -160,8 +160,8 @@ type UpdateAddToActivityParams struct {
 
 func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivityParams) (*models.Activity, error) {
 	filter := bson.M{
-		"_id":       arg.Id,
-		"companyId": arg.CompanyId,
+		"_id":        arg.Id,
+		"company_id": arg.CompanyId,
 	}
 	update := bson.M{
 		"$push": bson.M{
@@ -188,11 +188,11 @@ type UpdateRemoveFromActivityParams struct {
 
 func (q *Queries) UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error) {
 	filter := bson.M{
-		"_id":       arg.Id,
-		"companyId": arg.CompanyId,
+		"_id":        arg.Id,
+		"company_id": arg.CompanyId,
 	}
 	update := bson.M{
-		"$unset": bson.M{
+		"$pop": bson.M{
 			arg.Field: 1,
 		},
 	}
