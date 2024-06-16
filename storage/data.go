@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,15 +40,17 @@ func (q *Queries) CreateData(ctx context.Context, arg CreateDataParams) (*models
 }
 
 type GetDataParams struct {
-	Id primitive.ObjectID
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
 }
 
 func (q *Queries) GetData(ctx context.Context, arg GetDataParams) (*models.Data, error) {
 	var data models.Data
 
 	filter := bson.M{
-		"_id":        arg.Id,
-		"deleted_at": nil,
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
+		"deleted_at":  nil,
 	}
 	err := q.datasCollections.FindOne(ctx, filter).Decode(&data)
 	if err != nil {
@@ -60,11 +63,11 @@ func (q *Queries) GetData(ctx context.Context, arg GetDataParams) (*models.Data,
 	return &data, nil
 }
 
-type GetAllDataFromActivityParams struct {
+type GetAllDataParams struct {
 	ActivityId primitive.ObjectID
 }
 
-func (q *Queries) GetAllDataFromActivity(ctx context.Context, arg GetAllDataFromActivityParams) ([]*models.Data, error) {
+func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error) {
 	var data []*models.Data
 
 	filter := bson.M{
@@ -86,12 +89,14 @@ func (q *Queries) GetAllDataFromActivity(ctx context.Context, arg GetAllDataFrom
 }
 
 type DeleteDataParams struct {
-	Id primitive.ObjectID
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
 }
 
 func (q *Queries) DeleteData(ctx context.Context, arg DeleteDataParams) error {
 	filter := bson.M{
-		"_id": arg.Id,
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
 	}
 	update := bson.M{
 		"$set": bson.M{
@@ -109,4 +114,84 @@ func (q *Queries) DeleteData(ctx context.Context, arg DeleteDataParams) error {
 	}
 
 	return nil
+}
+
+type UpdateSetInDataParams struct {
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
+
+	Field string
+	Value interface{}
+}
+
+func (q *Queries) UpdateSetInData(ctx context.Context, arg UpdateSetInDataParams) (*models.Data, error) {
+	filter := bson.M{
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"values": bson.M{
+				arg.Field: arg.Value,
+			},
+		},
+	}
+
+	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
+}
+
+type UpdateAddToDataParams struct {
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
+
+	Position uint
+	Field    string
+	Value    interface{}
+}
+
+func (q *Queries) UpdateAddToData(ctx context.Context, arg UpdateAddToDataParams) (*models.Data, error) {
+	filter := bson.M{
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
+	}
+	update := bson.M{
+		"$push": bson.M{
+			"values": bson.M{
+				arg.Field: bson.M{
+					"$each": bson.A{
+						arg.Value,
+					},
+					"$position": arg.Position,
+				},
+			},
+		},
+	}
+
+	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
+}
+
+type UpdateRemoveFromDataParams struct {
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
+
+	Position uint
+	Field    string
+	// Value interface{}
+}
+
+func (q *Queries) UpdateRemoveFromData(ctx context.Context, arg UpdateRemoveFromDataParams) (*models.Data, error) {
+	field := fmt.Sprintf("%s.%d", arg.Field, arg.Position)
+	filter := bson.M{
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
+	}
+	update := bson.M{
+		"$pop": bson.M{
+			"values": bson.M{
+				field: 1,
+			},
+		},
+	}
+
+	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
 }
