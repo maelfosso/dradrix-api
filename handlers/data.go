@@ -132,3 +132,66 @@ func (handler *AppHandler) GetAllData(mux chi.Router, db getAllDataInterface) {
 		}
 	})
 }
+
+type getDataInterface interface {
+}
+
+type GetDataResponse struct {
+	Data models.Data
+}
+
+func (handler *AppHandler) GetData(mux chi.Router, db getDataInterface) {
+	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		data := ctx.Value("data").(*models.Data)
+
+		response := GetDataResponse{
+			Data: *data,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_DATA_GONE_END", http.StatusBadRequest)
+			return
+		}
+	})
+}
+
+type deleteDataInterface interface {
+	DeleteData(ctx context.Context, arg storage.DeleteDataParams) error
+}
+
+type DeleteDataResponse struct {
+	Deleted bool `json:"deleted"`
+}
+
+func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface) {
+	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		activity := ctx.Value("activity").(*models.Activity)
+		data := ctx.Value("data").(*models.Data)
+
+		err := db.DeleteData(ctx, storage.DeleteDataParams{
+			Id:         data.Id,
+			ActivityId: activity.Id,
+		})
+		if err != nil {
+			http.Error(w, "ERR_DATA_DLT_01", http.StatusBadRequest)
+			return
+		}
+
+		response := DeleteDataResponse{
+			Deleted: true,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_DATA_DLT_END", http.StatusBadRequest)
+			return
+		}
+	})
+}

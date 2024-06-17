@@ -461,6 +461,152 @@ func testGetAllData(t *testing.T, handler *handlers.AppHandler) {
 	})
 }
 
+func testGetData(t *testing.T, handler *handlers.AppHandler) {
+
+	t.Run("success", func(t *testing.T) {
+		mux := chi.NewMux()
+		data := &models.Data{
+			Values: map[string]any{
+				"n_devis":    gofaker.UUIDHyphenated(),
+				"n_os":       gofaker.UUIDDigit(),
+				"date_os":    gofaker.Date(),
+				"montant_os": sfaker.Number().Number(7),
+			},
+
+			ActivityId: primitive.NewObjectID(),
+			CreatedBy:  primitive.NewObjectID(),
+		}
+
+		db := &struct{}{}
+
+		handler.GetData(mux, db)
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			"/",
+			[]helpertest.ContextData{
+				{
+					Name:  "data",
+					Value: data,
+				},
+			},
+		)
+		code := w.StatusCode
+		if code != http.StatusOK {
+			t.Fatalf("GetData(): status - got %d; want %d", code, http.StatusOK)
+		}
+
+		got := handlers.GetDataResponse{}
+		json.Unmarshal([]byte(response), &got)
+		if err := dataEq(&got.Data, data); err != nil {
+			t.Fatalf("GetData(): %v", err)
+		}
+	})
+}
+
+type mockDeleteDataDB struct {
+	DeleteDataFunc func(ctx context.Context, arg storage.DeleteDataParams) error
+}
+
+func (mdb *mockDeleteDataDB) DeleteData(ctx context.Context, arg storage.DeleteDataParams) error {
+	return mdb.DeleteDataFunc(ctx, arg)
+}
+
+func testDeleteData(t *testing.T, handler *handlers.AppHandler) {
+	t.Run("error from db", func(t *testing.T) {
+		mux := chi.NewMux()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		data := &models.Data{
+			Id: primitive.NewObjectID(),
+			Values: map[string]any{
+				"n_devis":    gofaker.UUIDHyphenated(),
+				"n_os":       gofaker.UUIDDigit(),
+				"date_os":    gofaker.Date(),
+				"montant_os": sfaker.Number().Number(7),
+			},
+
+			ActivityId: activity.Id,
+			CreatedBy:  primitive.NewObjectID(),
+		}
+		db := &mockDeleteDataDB{
+			DeleteDataFunc: func(ctx context.Context, arg storage.DeleteDataParams) error {
+				return errors.New("an error happens")
+			},
+		}
+
+		handler.DeleteData(mux, db)
+		code, _, response := helpertest.MakeDeleteRequest(
+			mux,
+			"/",
+			helpertest.CreateFormHeader(),
+			nil,
+			[]helpertest.ContextData{
+				{Name: "activity", Value: activity},
+				{Name: "data", Value: data},
+			},
+		)
+		wantCode := http.StatusBadRequest
+		if code != wantCode {
+			t.Fatalf("DeleteData(): status - got %d; want %d", code, wantCode)
+		}
+		wantError := "ERR_DATA_DLT_01"
+		if response != wantError {
+			t.Fatalf("DeleteData(): response error - got %s, want %s", response, wantError)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		mux := chi.NewMux()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		data := &models.Data{
+			Id: primitive.NewObjectID(),
+			Values: map[string]any{
+				"n_devis":    gofaker.UUIDHyphenated(),
+				"n_os":       gofaker.UUIDDigit(),
+				"date_os":    gofaker.Date(),
+				"montant_os": sfaker.Number().Number(7),
+			},
+
+			ActivityId: activity.Id,
+			CreatedBy:  primitive.NewObjectID(),
+		}
+		db := &mockDeleteDataDB{
+			DeleteDataFunc: func(ctx context.Context, arg storage.DeleteDataParams) error {
+				return nil
+			},
+		}
+
+		handler.DeleteData(mux, db)
+		code, _, response := helpertest.MakeDeleteRequest(
+			mux,
+			"/",
+			helpertest.CreateFormHeader(),
+			nil,
+			[]helpertest.ContextData{
+				{Name: "activity", Value: activity},
+				{Name: "data", Value: data},
+			},
+		)
+		want := http.StatusOK
+		if code != want {
+			t.Fatalf("DeleteData(): status - got %d; want %d", code, want)
+		}
+
+		got := handlers.DeleteDataResponse{}
+		json.Unmarshal([]byte(response), &got)
+		if !got.Deleted {
+			t.Fatalf("DeleteData(): deleted - got %v; want %v", got.Deleted, true)
+		}
+	})
+}
+
 func dataEq(got, want *models.Data) error {
 	if got == want {
 		return nil

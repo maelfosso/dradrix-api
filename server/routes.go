@@ -65,6 +65,9 @@ func (s *Server) setupRoutes() {
 
 							r.Route("{dataId}", func(r chi.Router) {
 								appHandler.DataMiddleware(r, s.database.Storage)
+
+								appHandler.GetData(r, s.database.Storage)
+								appHandler.DeleteData(r, s.database.Storage)
 							})
 						})
 					})
