@@ -3,7 +3,10 @@ package storage_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -139,167 +142,181 @@ func testDeleteData(t *testing.T, db *storage.Database) {
 	}
 }
 
-// func testUpdateData(t *testing.T, db *storage.Database) {
-// 	arg := storage.CreateDataParams{
-// 		Name:        "a1",
-// 		Description: "Data 1",
-// 		Values: []models.DataValues{
-// 			{Name: "f1", Description: "Description 1", Type: "number"},
-// 			{Name: "f2", Description: "Description 2", Type: "text", Id: true},
-// 		},
+func testUpdateData(t *testing.T, db *storage.Database) {
+	arg := storage.CreateDataParams{
+		Values: map[string]any{
+			"n_devis":    faker.UUIDHyphenated(),
+			"n_os":       faker.UUIDDigit(),
+			"date_os":    faker.Date(),
+			"montant_os": sfaker.Number().Number(7),
+			"images": []string{
+				sfaker.Company().Logo(),
+				sfaker.Company().Logo(),
+				sfaker.Company().Logo(),
+				sfaker.Company().Logo(),
+			},
+		},
 
-// 		ActivityId: primitive.NewObjectID(),
-// 		CreatedBy: primitive.NewObjectID(),
-// 	}
-// 	data, err := db.Storage.CreateData(context.Background(), arg)
-// 	if err != nil {
-// 		t.Fatalf("CreateData() err = %v; want nil", err)
-// 	}
-// 	if data.Id.IsZero() {
-// 		t.Fatalf("CreateData(): Id is nil; want non nil")
-// 	}
+		ActivityId: primitive.NewObjectID(),
+		CreatedBy:  primitive.NewObjectID(),
+	}
+	data, err := db.Storage.CreateData(context.Background(), arg)
+	if err != nil {
+		t.Fatalf("CreateData() err = %v; want nil", err)
+	}
+	if data.Id.IsZero() {
+		t.Fatalf("CreateData(): Id is nil; want non nil")
+	}
 
-// 	t.Run("set", func(t *testing.T) {
-// 		argForUpdate := storage.UpdateSetInDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
+	s := reflect.ValueOf(arg.Values["images"])
+	images := make([]string, s.Len())
+	for i := 0; i < s.Len(); i++ {
+		v := s.Index(i).Interface()
+		images[i] = v.(string)
+	}
 
-// 			Field: "name",
-// 			Value: "a2",
-// 		}
-// 		updated, err := db.Storage.UpdateSetInData(context.Background(), argForUpdate)
-// 		if err != nil {
-// 			t.Fatalf("UpdateData(): got error %v; want nil", err)
-// 		}
-// 		if updated.Name != argForUpdate.Value {
-// 			t.Fatalf(
-// 				"UpdateData(): updated %s value - got %s; want %s",
-// 				argForUpdate.Field, updated.Name, argForUpdate.Value,
-// 			)
-// 		}
+	t.Run("set", func(t *testing.T) {
+		argForUpdate := storage.UpdateSetInDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
 
-// 		argForUpdate = storage.UpdateSetInDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
+			Field: "n_devis",
+			Value: faker.UUIDHyphenated(),
+		}
+		updated, err := db.Storage.UpdateSetInData(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateData(): got error %v; want nil", err)
+		}
+		if updated.Values[argForUpdate.Field] != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateData(): updated %s value - got %s; want %s",
+				argForUpdate.Field, updated.Values[argForUpdate.Field], argForUpdate.Value,
+			)
+		}
 
-// 			Field: "fields.1.code",
-// 			Value: "f1",
-// 		}
-// 		updated, err = db.Storage.UpdateSetInData(context.Background(), argForUpdate)
-// 		if err != nil {
-// 			t.Fatalf("UpdateData(): got error %v; want nil", err)
-// 		}
-// 		if updated.Values[1].Code != argForUpdate.Value {
-// 			t.Fatalf(
-// 				"UpdateData(): updated %s value - got %s; want %s",
-// 				argForUpdate.Field, updated.Name, argForUpdate.Value,
-// 			)
-// 		}
+		argForUpdate = storage.UpdateSetInDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
 
-// 		argForUpdate = storage.UpdateSetInDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
+			Field: "images.1",
+			Value: sfaker.Avatar().String(),
+		}
+		updated, err = db.Storage.UpdateSetInData(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateData(): got error %v; want nil", err)
+		}
 
-// 			Field: "fields.1.id",
-// 			Value: false,
-// 		}
-// 		updated, err = db.Storage.UpdateSetInData(context.Background(), argForUpdate)
-// 		if err != nil {
-// 			t.Fatalf("UpdateData(): got error %v; want nil", err)
-// 		}
-// 		if updated.Values[0].Id != argForUpdate.Value {
-// 			t.Fatalf(
-// 				"UpdateData(): updated %s value - got %s; want %s",
-// 				argForUpdate.Field, updated.Name, argForUpdate.Value,
-// 			)
-// 		}
+		ss := strings.Split(argForUpdate.Field, ".")
+		field := ss[0]
+		position, _ := strconv.Atoi(ss[1])
+		s := reflect.ValueOf(updated.Values[field])
+		images := make([]string, s.Len())
+		for i := 0; i < s.Len(); i++ {
+			v := s.Index(i).Interface()
+			images[i] = v.(string)
+		}
+		if images[position] != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateData(): updated %s value - got %s; want %s",
+				argForUpdate.Field, (updated.Values[field].([]interface{}))[position], argForUpdate.Value,
+			)
+		}
 
-// 		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("GetData(): got error %+v; want nit", err.Error())
-// 		}
-// 		if err := dataEq(got, updated); err != nil {
-// 			t.Fatalf("GetData(): %v", err.Error())
-// 		}
-// 	})
+		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
+		})
+		if err != nil {
+			t.Fatalf("GetData(): got error %+v; want nit", err.Error())
+		}
+		if err := dataEq(got, updated); err != nil {
+			t.Fatalf("GetData(): %v", err.Error())
+		}
+	})
 
-// 	t.Run("add", func(t *testing.T) {
-// 		argForUpdate := storage.UpdateAddToDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
+	t.Run("add", func(t *testing.T) {
+		argForUpdate := storage.UpdateAddToDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
 
-// 			Field: "fields",
-// 			Value: models.DataValues{
-// 				Name:        sfaker.App().String(),
-// 				Description: gofaker.Paragraph(),
-// 				Type:        "number",
-// 				Code:        sfaker.App().Name(),
-// 			},
-// 			Position: rand.UintN(uint(len(data.Values))),
-// 		}
-// 		updated, err := db.Storage.UpdateAddToData(context.Background(), argForUpdate)
-// 		if err != nil {
-// 			t.Fatalf("UpdateAddToData(): got error %v; want nil", err)
-// 		}
-// 		if updated.Values[argForUpdate.Position] != argForUpdate.Value {
-// 			t.Fatalf(
-// 				"UpdateAddToData(): updated %s value - got %+v; want %+v",
-// 				argForUpdate.Field, updated.Values[argForUpdate.Position], argForUpdate.Value,
-// 			)
-// 		}
+			Field:    "images",
+			Value:    sfaker.Company().Logo(),
+			Position: rand.UintN(uint(len(images))),
+		}
+		updated, err := db.Storage.UpdateAddToData(context.Background(), argForUpdate)
+		if err != nil {
+			t.Fatalf("UpdateAddToData(): got error %v; want nil", err)
+		}
 
-// 		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("GetData(): got error %+v; want nit", err.Error())
-// 		}
-// 		if err = dataEq(got, updated); err != nil {
-// 			t.Fatalf("GetData(): %v", err.Error())
-// 		}
+		s = reflect.ValueOf(updated.Values["images"])
+		images = make([]string, s.Len())
+		for i := 0; i < s.Len(); i++ {
+			v := s.Index(i).Interface()
+			images[i] = v.(string)
+		}
+		if images[argForUpdate.Position] != argForUpdate.Value {
+			t.Fatalf(
+				"UpdateAddToData(): updated %s value - got %+v; want %+v",
+				argForUpdate.Field, images[argForUpdate.Position], argForUpdate.Value,
+			)
+		}
 
-// 		data = updated
-// 	})
+		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
+		})
+		if err != nil {
+			t.Fatalf("GetData(): got error %+v; want nit", err.Error())
+		}
+		if err = dataEq(got, updated); err != nil {
+			t.Fatalf("GetData(): %v", err.Error())
+		}
 
-// 	t.Run("remove", func(t *testing.T) {
-// 		data, _ = db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
-// 		})
-// 		argForUpdate := storage.UpdateRemoveFromDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
+		data = updated
+	})
 
-// 			Field:    "fields",
-// 			Position: rand.UintN(uint(len(data.Values))),
-// 		}
-// 		updated, err := db.Storage.UpdateRemoveFromData(context.Background(), argForUpdate)
-// 		if err != nil {
-// 			t.Fatalf("UpdateRemoveFromData(): got error %v; want nil", err)
-// 		}
-// 		if len(updated.Values) != len(data.Values)-1 {
-// 			t.Fatalf(
-// 				"UpdateRemoveFromData(): len fields - got %d; want %d",
-// 				len(updated.Values), len(data.Values)-1)
-// 		}
+	t.Run("remove", func(t *testing.T) {
+		data, _ = db.Storage.GetData(context.Background(), storage.GetDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
+		})
+		argForUpdate := storage.UpdateRemoveFromDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
 
-// 		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
-// 			Id:        data.Id,
-// 			ActivityId: arg.ActivityId,
-// 		})
-// 		if err != nil {
-// 			t.Fatalf("GetData(): got error %+v; want nit", err.Error())
-// 		}
-// 		if err = dataEq(got, updated); err != nil {
-// 			t.Fatalf("GetData(): %v", err.Error())
-// 		}
-// 	})
+			Field:    "images",
+			Position: rand.UintN(uint(len(images))),
+		}
+		updated, err := db.Storage.UpdateRemoveFromData(context.Background(), argForUpdate)
 
-// }
+		s = reflect.ValueOf(updated.Values["images"])
+		imagesUpdated := make([]string, s.Len())
+		for i := 0; i < s.Len(); i++ {
+			v := s.Index(i).Interface()
+			imagesUpdated[i] = v.(string)
+		}
+		if err != nil {
+			t.Fatalf("UpdateRemoveFromData(): got error %v; want nil", err)
+		}
+		if len(imagesUpdated) != len(images)-1 {
+			t.Fatalf(
+				"UpdateRemoveFromData(): len fields - got %d; want %d",
+				len(imagesUpdated), len(images)-1)
+		}
+
+		got, err := db.Storage.GetData(context.Background(), storage.GetDataParams{
+			Id:         data.Id,
+			ActivityId: arg.ActivityId,
+		})
+		if err != nil {
+			t.Fatalf("GetData(): got error %+v; want nit", err.Error())
+		}
+		if err = dataEq(got, updated); err != nil {
+			t.Fatalf("GetData(): %v", err.Error())
+		}
+	})
+
+}
 
 func testGetAllData(t *testing.T, db *storage.Database) {
 	const NUM_DATA_CREATED = 3

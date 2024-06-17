@@ -125,15 +125,14 @@ type UpdateSetInDataParams struct {
 }
 
 func (q *Queries) UpdateSetInData(ctx context.Context, arg UpdateSetInDataParams) (*models.Data, error) {
+	field := fmt.Sprintf("values.%s", arg.Field)
 	filter := bson.M{
 		"_id":         arg.Id,
 		"activity_id": arg.ActivityId,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"values": bson.M{
-				arg.Field: arg.Value,
-			},
+			field: arg.Value,
 		},
 	}
 
@@ -150,19 +149,18 @@ type UpdateAddToDataParams struct {
 }
 
 func (q *Queries) UpdateAddToData(ctx context.Context, arg UpdateAddToDataParams) (*models.Data, error) {
+	field := fmt.Sprintf("values.%s", arg.Field)
 	filter := bson.M{
 		"_id":         arg.Id,
 		"activity_id": arg.ActivityId,
 	}
 	update := bson.M{
 		"$push": bson.M{
-			"values": bson.M{
-				arg.Field: bson.M{
-					"$each": bson.A{
-						arg.Value,
-					},
-					"$position": arg.Position,
+			field: bson.M{
+				"$each": bson.A{
+					arg.Value,
 				},
+				"$position": arg.Position,
 			},
 		},
 	}
@@ -176,22 +174,29 @@ type UpdateRemoveFromDataParams struct {
 
 	Position uint
 	Field    string
-	// Value interface{}
 }
 
 func (q *Queries) UpdateRemoveFromData(ctx context.Context, arg UpdateRemoveFromDataParams) (*models.Data, error) {
-	field := fmt.Sprintf("%s.%d", arg.Field, arg.Position)
+	field := fmt.Sprintf("values.%s", arg.Field)
+	fieldWithPosition := fmt.Sprintf("%s.%d", field, arg.Position)
 	filter := bson.M{
 		"_id":         arg.Id,
 		"activity_id": arg.ActivityId,
 	}
 	update := bson.M{
-		"$pop": bson.M{
-			"values": bson.M{
-				field: 1,
-			},
+		"$unset": bson.M{
+			fieldWithPosition: 1,
 		},
 	}
+	_, err := CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
+	if err != nil {
+		return nil, err
+	}
 
+	update = bson.M{
+		"$pull": bson.M{
+			field: nil,
+		},
+	}
 	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
 }
