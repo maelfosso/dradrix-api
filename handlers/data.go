@@ -59,3 +59,38 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 		}
 	})
 }
+
+type getAllDataInterface interface {
+	GetAllData(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error)
+}
+
+type GetAllDataResponse struct {
+	Data []*models.Data `json:"data,omitempty"`
+}
+
+func (handler *AppHandler) GetAllData(mux chi.Router, db getAllDataInterface) {
+	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		activity := ctx.Value("activity").(*models.Data)
+
+		data, err := db.GetAllData(ctx, storage.GetAllDataParams{
+			ActivityId: activity.Id,
+		})
+		if err != nil {
+			http.Error(w, "ERR_ATVT_GALL_01", http.StatusBadRequest)
+			return
+		}
+
+		response := GetAllDataResponse{
+			Data: data,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_ATVT_GALL_END", http.StatusBadRequest)
+			return
+		}
+	})
+}

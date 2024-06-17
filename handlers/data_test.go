@@ -182,6 +182,123 @@ func testCreateData(t *testing.T, handler *handlers.AppHandler) {
 
 }
 
+type mockGetAllData struct {
+	GetAllDataFunc func(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error)
+}
+
+func (mdb *mockGetAllData) GetAllData(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error) {
+	return mdb.GetAllDataFunc(ctx, arg)
+}
+
+func testGetAllData(t *testing.T, handler *handlers.AppHandler) {
+	mockDb := &mockGetAllData{}
+
+	t.Run("error from db", func(t *testing.T) {
+		mux := chi.NewMux()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		mockDb.GetAllDataFunc = func(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error) {
+			return []*models.Data{}, errors.New("error from db")
+		}
+
+		handler.GetAllData(mux, mockDb)
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			"/",
+			[]helpertest.ContextData{
+				{
+					Name:  "activity",
+					Value: activity,
+				},
+			},
+		)
+		code := w.StatusCode
+		wantCode := http.StatusBadRequest
+		if code != wantCode {
+			t.Fatalf("GetAllData(): status - got %d; want %d", code, wantCode)
+		}
+		wantError := "ERR_DATA_GALL_01"
+		if response != wantError {
+			t.Fatalf("GetAllData(): status - got %s; want %s", response, wantError)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		mux := chi.NewMux()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+
+		data := []*models.Data{
+			{
+				Values: map[string]any{
+					"n_devis":    gofaker.UUIDHyphenated(),
+					"n_os":       gofaker.UUIDDigit(),
+					"date_os":    gofaker.Date(),
+					"montant_os": sfaker.Number().Number(7),
+				},
+
+				ActivityId: activity.Id,
+				CreatedBy:  primitive.NewObjectID(),
+			},
+			{
+				Values: map[string]any{
+					"n_devis":    gofaker.UUIDHyphenated(),
+					"n_os":       gofaker.UUIDDigit(),
+					"date_os":    gofaker.Date(),
+					"montant_os": sfaker.Number().Number(7),
+				},
+
+				ActivityId: activity.Id,
+				CreatedBy:  primitive.NewObjectID(),
+			},
+		}
+
+		mockDb.GetAllDataFunc = func(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error) {
+			return data, nil
+		}
+
+		handler.GetAllData(mux, mockDb)
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			"/",
+			[]helpertest.ContextData{
+				{
+					Name:  "activity",
+					Value: activity,
+				},
+			},
+		)
+		code := w.StatusCode
+		wantCode := http.StatusOK
+		if code != wantCode {
+			t.Fatalf("GetAllData(): status - got %d; want %d", code, wantCode)
+		}
+
+		got := handlers.GetAllDataResponse{}
+		json.Unmarshal([]byte(response), &got)
+		if len(got.Data) != len(data) {
+			t.Fatalf("GetAllData(): Id - got %d; want %d", len(got.Data), len(data))
+		}
+		for i := 0; i < len(got.Data); i++ {
+			if err := dataEq(got.Data[i], data[i]); err != nil {
+				t.Fatalf("GetAllData(): %v", err)
+			}
+			if got.Data[i].ActivityId != activity.Id {
+				t.Fatalf("GetAllData(): activityId#%d - got %s; want %s", i, got.Data[i].ActivityId, activity.Id)
+			}
+			if got.Data[i].CreatedBy != authenticatedUser.Id {
+				t.Fatalf("GetAllData(): createdBy#%d - got %s; want %s", i, got.Data[i].CreatedBy, authenticatedUser.Id)
+			}
+		}
+	})
+}
+
 func dataEq(got, want *models.Data) error {
 	if got == want {
 		return nil
