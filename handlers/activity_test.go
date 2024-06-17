@@ -25,12 +25,12 @@ func TestActivity(t *testing.T) {
 	handler := handlers.NewAppHandler()
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		// "ActivityMiddleware": testActivityMiddleware,
-		// "GetAllActivities":   testGetAllActivities,
-		// "CreateActivity":     testCreateActivity,
-		// "GetActivity":        testGetActivity,
-		"UpdateActivity": testUpdateActivity,
-		// "DeleteActivity":     testDeleteActivity,
+		"ActivityMiddleware": testActivityMiddleware,
+		"GetAllActivities":   testGetAllActivities,
+		"CreateActivity":     testCreateActivity,
+		"GetActivity":        testGetActivity,
+		"UpdateActivity":     testUpdateActivity,
+		"DeleteActivity":     testDeleteActivity,
 	}
 
 	for name, tc := range tests {

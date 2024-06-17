@@ -58,6 +58,10 @@ func (s *Server) setupRoutes() {
 						appHandler.GetActivity(r, s.database.Storage)
 						appHandler.DeleteActivity(r, s.database.Storage)
 						appHandler.UpdateCompany(r, s.database.Storage)
+
+						r.Route("/data", func(r chi.Router) {
+							appHandler.CreateData(r, s.database.Storage)
+						})
 					})
 				})
 			})
