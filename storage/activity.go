@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -186,13 +187,24 @@ type UpdateRemoveFromActivityParams struct {
 }
 
 func (q *Queries) UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error) {
+	fieldWithPosition := fmt.Sprintf("%s.%d", arg.Field, arg.Position)
 	filter := bson.M{
 		"_id":        arg.Id,
 		"company_id": arg.CompanyId,
 	}
 	update := bson.M{
-		"$pop": bson.M{
-			arg.Field: 1,
+		"$unset": bson.M{
+			fieldWithPosition: 1,
+		},
+	}
+	_, err := CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	update = bson.M{
+		"$pull": bson.M{
+			arg.Field: nil,
 		},
 	}
 
