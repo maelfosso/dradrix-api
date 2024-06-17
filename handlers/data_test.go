@@ -33,9 +33,9 @@ func TestData(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		// "DataMiddleware":   testDataMiddleware,
-		// "GetAllActivities": testGetAllActivities,
-		"CreateData": testCreateData,
+		"DataMiddleware": testDataMiddleware,
+		"GetAllData":     testGetAllData,
+		"CreateData":     testCreateData,
 		// "GetData":          testGetData,
 		// "UpdateData":       testUpdateData,
 		// "DeleteData":       testDeleteData,
@@ -46,6 +46,168 @@ func TestData(t *testing.T) {
 			tc(t, handler)
 		})
 	}
+}
+
+type mockDataMiddlewareDB struct {
+	GetDataFunc func(ctx context.Context, arg storage.GetDataParams) (*models.Data, error)
+}
+
+func (mdb *mockDataMiddlewareDB) GetData(ctx context.Context, arg storage.GetDataParams) (*models.Data, error) {
+	return mdb.GetDataFunc(ctx, arg)
+}
+
+func testDataMiddleware(t *testing.T, handler *handlers.AppHandler) {
+	t.Run("invalid data id", func(t *testing.T) {
+		mux := chi.NewRouter()
+		db := &mockDataMiddlewareDB{}
+		db.GetDataFunc = func(ctx context.Context, arg storage.GetDataParams) (*models.Data, error) {
+			return nil, nil
+		}
+
+		mux.Route("/{dataId}", func(r chi.Router) {
+			handler.DataMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+		})
+
+		_, w, response := helpertest.MakeGetRequest(mux, "/1", []helpertest.ContextData{})
+		code := w.StatusCode
+		wantStatusCode := http.StatusBadRequest
+		if code != wantStatusCode {
+			t.Fatalf("DataMiddleware(): status - got %d; want %d", code, wantStatusCode)
+		}
+		wantError := "ERR_DATA_MDW_01"
+		if response != wantError {
+			t.Fatalf("DataMiddleware(): response error - got %s; want %s", response, wantError)
+		}
+	})
+
+	t.Run("error from db", func(t *testing.T) {
+		mux := chi.NewRouter()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		db := &mockDataMiddlewareDB{}
+		db.GetDataFunc = func(ctx context.Context, arg storage.GetDataParams) (*models.Data, error) {
+			return nil, errors.New("error from db")
+		}
+
+		mux.Route("/{dataId}", func(r chi.Router) {
+			handler.DataMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+		})
+
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			[]helpertest.ContextData{
+				{
+					Name:  "activity",
+					Value: activity,
+				},
+			})
+		code := w.StatusCode
+		wantStatusCode := http.StatusBadRequest
+		if code != wantStatusCode {
+			t.Fatalf("DataMiddleware(): status - got %d; want %d", code, wantStatusCode)
+		}
+		wantError := "ERR_DATA_MDW_02"
+		if response != wantError {
+			t.Fatalf("DataMiddleware(): response error - got %s; want %s", response, wantError)
+		}
+	})
+
+	t.Run("no data found", func(t *testing.T) {
+		mux := chi.NewRouter()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		db := &mockDataMiddlewareDB{}
+		db.GetDataFunc = func(ctx context.Context, arg storage.GetDataParams) (*models.Data, error) {
+			return nil, nil
+		}
+
+		mux.Route("/{dataId}", func(r chi.Router) {
+			handler.DataMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+		})
+
+		_, w, response := helpertest.MakeGetRequest(
+			mux,
+			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			[]helpertest.ContextData{
+				{
+					Name:  "activity",
+					Value: activity,
+				},
+			})
+		code := w.StatusCode
+		wantStatusCode := http.StatusNotFound
+		if code != wantStatusCode {
+			t.Fatalf("DataMiddleware(): status - got %d; want %d", code, wantStatusCode)
+		}
+		wantError := "ERR_DATA_MDW_03"
+		if response != wantError {
+			t.Fatalf("DataMiddleware(): response error - got %s; want %s", response, wantError)
+		}
+	})
+
+	t.Run("data found", func(t *testing.T) {
+		mux := chi.NewRouter()
+		activity := &models.Activity{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.App().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		data := &models.Data{
+			Id: primitive.NewObjectID(),
+			Values: map[string]any{
+				"n_devis":    gofaker.UUIDHyphenated(),
+				"n_os":       gofaker.UUIDDigit(),
+				"date_os":    gofaker.Date(),
+				"montant_os": sfaker.Number().Number(7),
+			},
+
+			ActivityId: activity.Id,
+			CreatedBy:  primitive.NewObjectID(),
+		}
+		db := &mockDataMiddlewareDB{}
+		db.GetDataFunc = func(ctx context.Context, arg storage.GetDataParams) (*models.Data, error) {
+			return data, nil
+		}
+
+		mux.Route("/{dataId}", func(r chi.Router) {
+			handler.DataMiddleware(r, db)
+
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				gotData := r.Context().Value("data").(*models.Data)
+				if err := dataEq(gotData, data); err != nil {
+					t.Fatalf("DataMiddleware(): %v", err)
+				}
+			})
+		})
+
+		_, w, _ := helpertest.MakeGetRequest(
+			mux,
+			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
+			[]helpertest.ContextData{
+				{
+					Name:  "activity",
+					Value: activity,
+				},
+			})
+		code := w.StatusCode
+		wantStatusCode := http.StatusOK
+		if code != wantStatusCode {
+			t.Fatalf("DataMiddleware(): status - got %d; want %d", code, wantStatusCode)
+		}
+	})
 }
 
 type mockCreateDataDB struct {
@@ -244,7 +406,7 @@ func testGetAllData(t *testing.T, handler *handlers.AppHandler) {
 				},
 
 				ActivityId: activity.Id,
-				CreatedBy:  primitive.NewObjectID(),
+				CreatedBy:  authenticatedUser.Id,
 			},
 			{
 				Values: map[string]any{
@@ -255,7 +417,7 @@ func testGetAllData(t *testing.T, handler *handlers.AppHandler) {
 				},
 
 				ActivityId: activity.Id,
-				CreatedBy:  primitive.NewObjectID(),
+				CreatedBy:  authenticatedUser.Id,
 			},
 		}
 
