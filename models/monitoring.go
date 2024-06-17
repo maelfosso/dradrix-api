@@ -41,7 +41,7 @@ type Data struct {
 	// key: code of the field
 	// value: the value entered by the user
 	// value type: depends on the type associated to the field when creating the activity
-	Values map[string]interface{} `bson:"values" json:"values,omitempty"`
+	Values map[string]any `bson:"values" json:"values,omitempty"`
 
 	CreatedAt time.Time  `bson:"created_at" json:"created_at,omitempty"`
 	UpdatedAt time.Time  `bson:"updated_at" json:"updated_at,omitempty"`

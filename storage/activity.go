@@ -3,12 +3,12 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"stockinos.com/api/models"
 )
 
@@ -146,7 +146,7 @@ func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivi
 		},
 	}
 
-	return q.updateQuery(ctx, filter, update)
+	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
 }
 
 type UpdateAddToActivityParams struct {
@@ -174,7 +174,7 @@ func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivi
 		},
 	}
 
-	return q.updateQuery(ctx, filter, update)
+	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
 }
 
 type UpdateRemoveFromActivityParams struct {
@@ -187,38 +187,26 @@ type UpdateRemoveFromActivityParams struct {
 }
 
 func (q *Queries) UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error) {
+	fieldWithPosition := fmt.Sprintf("%s.%d", arg.Field, arg.Position)
 	filter := bson.M{
 		"_id":        arg.Id,
 		"company_id": arg.CompanyId,
 	}
 	update := bson.M{
-		"$pop": bson.M{
-			arg.Field: 1,
+		"$unset": bson.M{
+			fieldWithPosition: 1,
 		},
 	}
-
-	return q.updateQuery(ctx, filter, update)
-}
-
-func (q *Queries) updateQuery(ctx context.Context, filter, update bson.M) (*models.Activity, error) {
-	after := options.After
-
-	var activity models.Activity
-	err := q.activitiesCollection.FindOneAndUpdate(
-		ctx,
-		filter,
-		update,
-		&options.FindOneAndUpdateOptions{
-			ReturnDocument: &after,
-		},
-	).Decode(&activity)
+	_, err := CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	return &activity, nil
+	update = bson.M{
+		"$pull": bson.M{
+			arg.Field: nil,
+		},
+	}
+
+	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
 }
