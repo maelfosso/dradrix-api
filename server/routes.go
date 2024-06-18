@@ -58,6 +58,18 @@ func (s *Server) setupRoutes() {
 						appHandler.GetActivity(r, s.database.Storage)
 						appHandler.DeleteActivity(r, s.database.Storage)
 						appHandler.UpdateCompany(r, s.database.Storage)
+
+						r.Route("/data", func(r chi.Router) {
+							appHandler.CreateData(r, s.database.Storage)
+							appHandler.GetAllData(r, s.database.Storage)
+
+							r.Route("{dataId}", func(r chi.Router) {
+								appHandler.DataMiddleware(r, s.database.Storage)
+
+								appHandler.GetData(r, s.database.Storage)
+								appHandler.DeleteData(r, s.database.Storage)
+							})
+						})
 					})
 				})
 			})

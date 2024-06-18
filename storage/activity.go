@@ -15,7 +15,7 @@ import (
 type CreateActivityParams struct {
 	Name        string
 	Description string
-	Fields      []models.ActivityFields
+	Fields      []models.ActivityField
 
 	CompanyId primitive.ObjectID
 	CreatedBy primitive.ObjectID
