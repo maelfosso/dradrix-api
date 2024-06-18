@@ -48,7 +48,7 @@ func testCreateActivity(t *testing.T, db *storage.Database) {
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
-		Fields: []models.ActivityFields{
+		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
 			{Name: "f2", Description: "Description 2", Type: "text"},
 		},
@@ -88,7 +88,7 @@ func testDeleteActivity(t *testing.T, db *storage.Database) {
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
-		Fields: []models.ActivityFields{
+		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
 			{Name: "f2", Description: "Description 2", Type: "text"},
 		},
@@ -143,7 +143,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
-		Fields: []models.ActivityFields{
+		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
 			{Name: "f2", Description: "Description 2", Type: "text", Id: true},
 		},
@@ -232,7 +232,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 			CompanyId: arg.CompanyId,
 
 			Field: "fields",
-			Value: models.ActivityFields{
+			Value: models.ActivityField{
 				Name:        sfaker.App().String(),
 				Description: gofaker.Paragraph(),
 				Type:        "number",
@@ -313,7 +313,7 @@ func testGetAllActivities(t *testing.T, db *storage.Database) {
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "number"},
 				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", Id: true},
 			},

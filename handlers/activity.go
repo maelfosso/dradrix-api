@@ -89,9 +89,9 @@ type createActivityInterface interface {
 }
 
 type CreateActivityRequest struct {
-	Name        string                  `json:"name,omitempty"`
-	Description string                  `json:"description,omitempty"`
-	Fields      []models.ActivityFields `json:"fields,omitempty"`
+	Name        string                 `json:"name,omitempty"`
+	Description string                 `json:"description,omitempty"`
+	Fields      []models.ActivityField `json:"fields,omitempty"`
 }
 
 type CreateActivityResponse struct {

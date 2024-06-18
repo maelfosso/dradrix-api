@@ -162,7 +162,7 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
@@ -271,7 +271,7 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 				Name:        sfaker.Hacker().Noun(),
 				Description: gofaker.Paragraph(),
 
-				Fields: []models.ActivityFields{
+				Fields: []models.ActivityField{
 					{
 						Code:        sfaker.App().Name(),
 						Name:        sfaker.App().String(),
@@ -409,7 +409,7 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
@@ -472,7 +472,7 @@ func testGetActivity(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
@@ -570,7 +570,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
@@ -792,7 +792,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
@@ -896,7 +896,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			{
 				Operation: "add",
 				Field:     "Fields",
-				Value: models.ActivityFields{
+				Value: models.ActivityField{
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
@@ -931,10 +931,10 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					Description: activity.Description,
 					CompanyId:   activity.CompanyId,
 					CreatedBy:   activity.CreatedBy,
-					Fields:      []models.ActivityFields{},
+					Fields:      []models.ActivityField{},
 				}
 				updatedActivity.Fields = append(updatedActivity.Fields, activity.Fields...)
-				updatedActivity.Fields = append(updatedActivity.Fields, dataRequest[1].Value.(models.ActivityFields))
+				updatedActivity.Fields = append(updatedActivity.Fields, dataRequest[1].Value.(models.ActivityField))
 				return updatedActivity, nil
 			},
 			UpdateRemoveFromActivityFunc: func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
@@ -944,9 +944,9 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					Description: activity.Description,
 					CompanyId:   activity.CompanyId,
 					CreatedBy:   activity.CreatedBy,
-					Fields:      []models.ActivityFields{},
+					Fields:      []models.ActivityField{},
 				}
-				updatedActivity.Fields = []models.ActivityFields{activity.Fields[0]}
+				updatedActivity.Fields = []models.ActivityField{activity.Fields[0]}
 				return updatedActivity, nil
 			},
 		}
@@ -990,8 +990,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					if len(got.Activity.Fields) != len(activity.Fields)+1 {
 						t.Fatalf("UpdateActivity(): %s - Length Fields - got %d; want %d", name, len(got.Activity.Fields), len(activity.Fields)+1)
 					}
-					if got.Activity.Fields[len(got.Activity.Fields)-1] != dataRequest[1].Value.(models.ActivityFields) {
-						t.Fatalf("UpdateActivity(): %s - Last Fields - got %+v; want %+v", name, got.Activity.Fields[len(got.Activity.Fields)-1], dataRequest[1].Value.(models.ActivityFields))
+					if got.Activity.Fields[len(got.Activity.Fields)-1] != dataRequest[1].Value.(models.ActivityField) {
+						t.Fatalf("UpdateActivity(): %s - Last Fields - got %+v; want %+v", name, got.Activity.Fields[len(got.Activity.Fields)-1], dataRequest[1].Value.(models.ActivityField))
 					}
 				},
 			},
@@ -1012,7 +1012,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 						t.Fatalf("UpdateActivity(): %s - Length Fields - got %d; want %d", name, len(got.Activity.Fields), len(activity.Fields)-1)
 					}
 					if got.Activity.Fields[0] != activity.Fields[0] {
-						t.Fatalf("UpdateActivity(): %s - Last Fields - got %v; want %v", name, got.Activity.Fields[len(got.Activity.Fields)-1], dataRequest[1].Value.(models.ActivityFields))
+						t.Fatalf("UpdateActivity(): %s - Last Fields - got %v; want %v", name, got.Activity.Fields[len(got.Activity.Fields)-1], dataRequest[1].Value.(models.ActivityField))
 					}
 				},
 			},
@@ -1029,7 +1029,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 				Name:        sfaker.Hacker().Noun(),
 				Description: gofaker.Paragraph(),
 
-				Fields: []models.ActivityFields{
+				Fields: []models.ActivityField{
 					{
 						Code:        sfaker.App().Name(),
 						Name:        sfaker.App().String(),
@@ -1118,7 +1118,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
@@ -1176,7 +1176,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 			Name:        sfaker.Hacker().Noun(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{
 					Code:        sfaker.App().Name(),
 					Name:        sfaker.App().String(),
