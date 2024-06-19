@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -91,6 +92,45 @@ func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) 
 		"$set": bson.M{
 			"first_name": arg.FirstName,
 			"last_name":  arg.LastName,
+		},
+	}
+	after := options.After
+
+	var user models.User
+	err := q.usersCollection.FindOneAndUpdate(
+		ctx,
+		filter,
+		update,
+		&options.FindOneAndUpdateOptions{
+			ReturnDocument: &after,
+		},
+	).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+type UpdateUserPreferencesParams struct {
+	Id primitive.ObjectID
+
+	Name  string
+	Value any
+}
+
+func (q *Queries) UpdateUserPreferences(ctx context.Context, arg UpdateUserPreferencesParams) (*models.User, error) {
+	field := fmt.Sprintf("preferences.%s", arg.Name)
+	filter := bson.M{
+		"_id": arg.Id,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			field: arg.Value,
 		},
 	}
 	after := options.After
