@@ -10,10 +10,12 @@ import (
 	"stockinos.com/api/services"
 )
 
-type GetCurrentUserResult struct {
+type GetCurrentUserResponse struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	PhoneNumber string `json:"phone_number,omitempty"`
+
+	Preferences any `json:"preferences,omitempty"`
 }
 
 func GetCurrentUser(mux chi.Router) {
@@ -27,14 +29,17 @@ func GetCurrentUser(mux chi.Router) {
 			return
 		}
 
-		var currentUserResult GetCurrentUserResult
-		currentUserResult.Name = currentUser.Name
-		currentUserResult.PhoneNumber = currentUser.PhoneNumber
-		currentUserResult.ID = currentUser.Id.String()
+		response := GetCurrentUserResponse{
+			Name:        currentUser.Name,
+			PhoneNumber: currentUser.PhoneNumber,
+			ID:          currentUser.Id.String(),
+
+			Preferences: currentUser.Preferences,
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(currentUserResult); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, "error encoding the result", http.StatusBadRequest)
 			return
 		}
