@@ -10,6 +10,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (*models.User, error)
 	DoesUserExists(ctx context.Context, arg DoesUserExistsParams) (*models.User, error)
 	GetUserByPhoneNumber(ctx context.Context, arg GetUserByPhoneNumberParams) (*models.User, error)
+	UpdateUserName(ctx context.Context, arg UpdateUserNameParams) (*models.User, error)
 
 	// OTP
 	CheckOTP(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
