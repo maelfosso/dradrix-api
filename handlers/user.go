@@ -17,7 +17,7 @@ type GetCurrentUserResult struct {
 }
 
 func GetCurrentUser(mux chi.Router) {
-	mux.Get("/user", func(w http.ResponseWriter, req *http.Request) {
+	mux.Get("/", func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
 		currentUser := ctx.Value(services.JwtUserKey).(*models.User)

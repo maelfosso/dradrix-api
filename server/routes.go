@@ -35,7 +35,15 @@ func (s *Server) setupRoutes() {
 		r.Use(services.Authenticator)
 		r.Use(s.convertJWTTokenToMember)
 
-		handlers.GetCurrentUser(r)
+		r.Route("/user", func(r chi.Router) {
+			handlers.GetCurrentUser(r)
+
+			r.Route("/onboarding", func(r chi.Router) {
+				appHandler.SetName(r, s.database.Storage)
+				appHandler.FirstCompany(r, s.database.Storage)
+				appHandler.EndOfOnboarding(r, s.database.Storage)
+			})
+		})
 
 		r.Route("/companies", func(r chi.Router) {
 			appHandler.GetAllCompanies(r, s.database.Storage)
