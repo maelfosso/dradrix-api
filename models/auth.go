@@ -2,19 +2,23 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
-type Preferences struct {
-	Company struct {
-		Id   primitive.ObjectID `bson:"_id" json:"id,omitempty"`
-		Name string             `bson:"name" json:"name,omitempty"`
-	} `bson:"company" json:"company,omitempty"`
-	CurrentOnboardingStep int `bson:"current_onboarding_step" json:"current_onboarding_step,omitempty"`
+type UserPreferencesCompany struct {
+	Id   primitive.ObjectID `bson:"_id" json:"id,omitempty"`
+	Name string             `bson:"name" json:"name,omitempty"`
 }
+
+type UserPreferences struct {
+	Company               UserPreferencesCompany `bson:"company" json:"company,omitempty"`
+	CurrentOnboardingStep int                    `bson:"current_onboarding_step" json:"current_onboarding_step,omitempty"`
+}
+
 type User struct {
 	Id          primitive.ObjectID `bson:"_id" json:"id"`
 	PhoneNumber string             `bson:"phone_number" json:"phone_number,omitempty"`
-	Name        string             `bson:"name,omitempty" json:"name,omitempty"`
+	FirstName   string             `bson:"first_name,omitempty" json:"name,omitempty"`
+	LastName    string             `bson:"last_name,omitempty" json:"name,omitempty"`
 
-	Preferences Preferences `bson:"preferences" json:"preferences,omitempty"`
+	Preferences UserPreferences `bson:"preferences" json:"preferences,omitempty"`
 }
 
 type OTP struct {
