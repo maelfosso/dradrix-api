@@ -59,14 +59,16 @@ func (q *Queries) GetUserByPhoneNumber(ctx context.Context, arg GetUserByPhoneNu
 
 type CreateUserParams struct {
 	PhoneNumber string
-	Name        string
+	FirstName   string
+	LastName    string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models.User, error) {
 	var user models.User = models.User{
 		Id:          primitive.NewObjectID(),
 		PhoneNumber: arg.PhoneNumber,
-		Name:        arg.Name,
+		FirstName:   arg.FirstName,
+		LastName:    arg.LastName,
 	}
 
 	result, err := q.usersCollection.InsertOne(ctx, user)
@@ -119,19 +121,21 @@ func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) 
 type UpdateUserPreferencesParams struct {
 	Id primitive.ObjectID
 
-	Name  string
-	Value any
+	Changes map[string]any
 }
 
 func (q *Queries) UpdateUserPreferences(ctx context.Context, arg UpdateUserPreferencesParams) (*models.User, error) {
-	field := fmt.Sprintf("preferences.%s", arg.Name)
+	set := bson.M{}
+	for name, value := range arg.Changes {
+		field := fmt.Sprintf("preferences.%s", name)
+		set[field] = value
+	}
+
 	filter := bson.M{
 		"_id": arg.Id,
 	}
 	update := bson.M{
-		"$set": bson.M{
-			field: arg.Value,
-		},
+		"$set": set,
 	}
 	after := options.After
 

@@ -15,8 +15,8 @@ type UserPreferences struct {
 type User struct {
 	Id          primitive.ObjectID `bson:"_id" json:"id"`
 	PhoneNumber string             `bson:"phone_number" json:"phone_number,omitempty"`
-	FirstName   string             `bson:"first_name,omitempty" json:"name,omitempty"`
-	LastName    string             `bson:"last_name,omitempty" json:"name,omitempty"`
+	FirstName   string             `bson:"first_name,omitempty" json:"last_name,omitempty"`
+	LastName    string             `bson:"last_name,omitempty" json:"first_name,omitempty"`
 
 	Preferences UserPreferences `bson:"preferences" json:"preferences,omitempty"`
 }

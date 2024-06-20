@@ -33,7 +33,8 @@ func TestOnboarding(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"SetName": testSetName,
+		"SetName":      testSetName,
+		"FirstCompany": testFirstCompany,
 	}
 
 	for name, tc := range tests {
@@ -211,6 +212,177 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 		json.Unmarshal([]byte(response), &got)
 		if !got.Done {
 			t.Fatalf("SetName(): response done - got %+v; want true", got.Done)
+		}
+	})
+}
+
+type mockFirstCompanyDB struct {
+	CreateCompanyFunc         func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error)
+	UpdateUserPreferencesFunc func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
+}
+
+func (mdb *mockFirstCompanyDB) CreateCompany(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+	return mdb.CreateCompanyFunc(ctx, arg)
+}
+
+func (mdb *mockFirstCompanyDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+	return mdb.UpdateUserPreferencesFunc(ctx, arg)
+}
+
+func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
+	t.Run("invalid input data", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockFirstCompanyDB{
+			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+				return nil, nil
+			},
+			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+				return nil, nil
+			},
+		}
+
+		handler.FirstCompany(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/company",
+			helpertest.CreateFormHeader(),
+			"{\"test\": \"that\"}",
+			[]helpertest.ContextData{},
+		)
+		if code != http.StatusBadRequest {
+			t.Fatalf("FirstCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+		}
+		want := "ERR_HDL_PRB_"
+		if !strings.HasPrefix(response, want) {
+			t.Fatalf("FirstCompany(): response error - got %s, want %s", response, want)
+		}
+	})
+
+	t.Run("error creating company", func(t *testing.T) {
+		dataRequest := handlers.FirstCompanyRequest{
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		mux := chi.NewMux()
+		db := &mockFirstCompanyDB{
+			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+				return nil, errors.New("create company error")
+			},
+			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+				return nil, nil
+			},
+		}
+
+		handler.FirstCompany(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/company",
+			helpertest.CreateFormHeader(),
+			dataRequest,
+			[]helpertest.ContextData{},
+		)
+		if code != http.StatusBadRequest {
+			t.Fatalf("FirstCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+		}
+		want := "ERR_OBD_CPN_01"
+		if response != want {
+			t.Fatalf("FirstCompany(): response error - got %s, want %s", response, want)
+		}
+	})
+
+	t.Run("error update user preferences", func(t *testing.T) {
+		dataRequest := handlers.FirstCompanyRequest{
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		company := &models.Company{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+
+			CreatedBy: authenticatedUser.Id,
+		}
+
+		mux := chi.NewMux()
+		db := &mockFirstCompanyDB{
+			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+				return company, nil
+			},
+			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+				return nil, errors.New("update company preferences error")
+			},
+		}
+
+		handler.FirstCompany(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/company",
+			helpertest.CreateFormHeader(),
+			dataRequest,
+			[]helpertest.ContextData{},
+		)
+		wantCode := http.StatusBadRequest
+		if code != wantCode {
+			t.Fatalf("FirstCompany(): code - got %d; want %d", code, wantCode)
+		}
+		wantError := "ERR_OBD_CPN_02"
+		if !strings.HasPrefix(response, wantError) {
+			t.Fatalf("FirstCompany(): response error - got %s; want %s", response, wantError)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		dataRequest := handlers.FirstCompanyRequest{
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		company := models.Company{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		updatedUser := models.User{
+			Id:          authenticatedUser.Id,
+			PhoneNumber: gofaker.Phonenumber(),
+			FirstName:   gofaker.FirstName(),
+			LastName:    gofaker.LastName(),
+
+			Preferences: models.UserPreferences{
+				Company: models.UserPreferencesCompany{
+					Id:   company.Id,
+					Name: company.Description,
+				},
+				CurrentOnboardingStep: 1,
+			},
+		}
+
+		mux := chi.NewMux()
+		db := &mockFirstCompanyDB{
+			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+				return &company, nil
+			},
+			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+				return &updatedUser, nil
+			},
+		}
+
+		handler.FirstCompany(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/company",
+			helpertest.CreateFormHeader(),
+			dataRequest,
+			[]helpertest.ContextData{},
+		)
+		want := http.StatusOK
+		if code != want {
+			t.Fatalf("FirstCompany(): status - got %d; want %d", code, want)
+		}
+
+		got := handlers.FirstCompanyResponse{}
+		json.Unmarshal([]byte(response), &got)
+		if !got.Done {
+			t.Fatalf("FirstCompany(): response done - got %+v; want true", got.Done)
 		}
 	})
 }

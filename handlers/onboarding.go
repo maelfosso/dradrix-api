@@ -50,8 +50,9 @@ func (appHandler *AppHandler) SetName(mux chi.Router, db SetNameInterface) {
 		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: currentAuthUser.Id,
 
-			Name:  "current_onboarding_step",
-			Value: 2,
+			Changes: map[string]any{
+				"current_onboarding_step": 2,
+			},
 		})
 		if err != nil {
 			http.Error(w, "ERR_OBD_SN_02", http.StatusBadRequest)
@@ -111,25 +112,16 @@ func (appHandler *AppHandler) FirstCompany(mux chi.Router, db FirstCompanyInterf
 		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: currentAuthUser.Id,
 
-			Name: "company",
-			Value: map[string]any{
-				"_id":  company.Id,
-				"name": company.Name,
+			Changes: map[string]any{
+				"company": map[string]any{
+					"_id":  company.Id,
+					"name": company.Name,
+				},
+				"current_onboarding_step": 3,
 			},
 		})
 		if err != nil {
 			http.Error(w, "ERR_OBD_CPN_02", http.StatusBadRequest)
-			return
-		}
-
-		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
-			Id: currentAuthUser.Id,
-
-			Name:  "current_onboarding_step",
-			Value: 3,
-		})
-		if err != nil {
-			http.Error(w, "ERR_OBD_CPN_03", http.StatusBadRequest)
 			return
 		}
 
@@ -169,9 +161,9 @@ func (appHandler *AppHandler) EndOfOnboarding(mux chi.Router, db EndOfOnboarding
 
 		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: currentAuthUser.Id,
-
-			Name:  "current_onboarding_step",
-			Value: -1,
+			Changes: map[string]any{
+				"current_onboarding_step": -1,
+			},
 		})
 		if err != nil {
 			http.Error(w, "ERR_OBD_END_01", http.StatusBadRequest)
