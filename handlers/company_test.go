@@ -24,7 +24,8 @@ func TestCompany(t *testing.T) {
 	handler.GetAuthenticatedUser = func(req *http.Request) *models.User {
 		return &models.User{
 			Id:          primitive.NewObjectID(),
-			Name:        gofaker.Name(),
+			FirstName:   gofaker.FirstName(),
+			LastName:    gofaker.LastName(),
 			PhoneNumber: gofaker.Phonenumber(),
 		}
 	}

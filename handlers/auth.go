@@ -74,7 +74,8 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 		if user == nil {
 			_, err := svc.CreateUser(ctx, storage.CreateUserParams{
 				PhoneNumber: input.PhoneNumber,
-				Name:        "",
+				FirstName:   "",
+				LastName:    "",
 			})
 			if err != nil {
 				log.Println("Error at CreateUser", err)
@@ -171,8 +172,9 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 		_, err = svc.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: user.Id,
 
-			Name:  "current_onboarding_step",
-			Value: 1,
+			Changes: map[string]any{
+				"current_onboarding_step": 1,
+			},
 		})
 		if err != nil {
 			http.Error(w, "ERR_CHECK_OTP_", http.StatusBadRequest)

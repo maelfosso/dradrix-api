@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -30,7 +31,7 @@ func GetCurrentUser(mux chi.Router) {
 		}
 
 		response := GetCurrentUserResponse{
-			Name:        currentUser.Name,
+			Name:        fmt.Sprintf("%s %s", currentUser.LastName, currentUser.FirstName),
 			PhoneNumber: currentUser.PhoneNumber,
 			ID:          currentUser.Id.String(),
 
