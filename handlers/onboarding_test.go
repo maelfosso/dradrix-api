@@ -33,8 +33,9 @@ func TestOnboarding(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"SetName":      testSetName,
-		"FirstCompany": testFirstCompany,
+		"SetName":         testSetName,
+		"FirstCompany":    testFirstCompany,
+		"EndOfOnboarding": testEndOfOnboarding,
 	}
 
 	for name, tc := range tests {
@@ -383,6 +384,90 @@ func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
 		json.Unmarshal([]byte(response), &got)
 		if !got.Done {
 			t.Fatalf("FirstCompany(): response done - got %+v; want true", got.Done)
+		}
+	})
+}
+
+type mockEndOfOnboardingDB struct {
+	UpdateUserPreferencesFunc func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
+}
+
+func (mdb *mockEndOfOnboardingDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+	return mdb.UpdateUserPreferencesFunc(ctx, arg)
+}
+
+func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
+	t.Run("error update user preferences", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockEndOfOnboardingDB{
+			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+				return nil, errors.New("update company preferences error")
+			},
+		}
+
+		handler.EndOfOnboarding(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/end",
+			helpertest.CreateFormHeader(),
+			"{}",
+			[]helpertest.ContextData{},
+		)
+		wantCode := http.StatusBadRequest
+		if code != wantCode {
+			t.Fatalf("EndOfOnboarding(): code - got %d; want %d", code, wantCode)
+		}
+		wantError := "ERR_OBD_END_01"
+		if !strings.HasPrefix(response, wantError) {
+			t.Fatalf("EndOfOnboarding(): response error - got %s; want %s", response, wantError)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		company := models.Company{
+			Id:          primitive.NewObjectID(),
+			Name:        sfaker.Company().Name(),
+			Description: gofaker.Paragraph(),
+		}
+		updatedUser := models.User{
+			Id:          authenticatedUser.Id,
+			PhoneNumber: gofaker.Phonenumber(),
+			FirstName:   gofaker.FirstName(),
+			LastName:    gofaker.LastName(),
+
+			Preferences: models.UserPreferences{
+				Company: models.UserPreferencesCompany{
+					Id:   company.Id,
+					Name: company.Description,
+				},
+				CurrentOnboardingStep: -1,
+			},
+		}
+
+		mux := chi.NewMux()
+		db := &mockEndOfOnboardingDB{
+			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+				return &updatedUser, nil
+			},
+		}
+
+		handler.EndOfOnboarding(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/end",
+			helpertest.CreateFormHeader(),
+			"{}",
+			[]helpertest.ContextData{},
+		)
+		want := http.StatusOK
+		if code != want {
+			t.Fatalf("EndOfOnboarding(): status - got %d; want %d", code, want)
+		}
+
+		got := handlers.EndOfOnboardingResponse{}
+		json.Unmarshal([]byte(response), &got)
+		if !got.Done {
+			t.Fatalf("EndOfOnboarding(): response done - got %+v; want true", got.Done)
 		}
 	})
 }

@@ -152,14 +152,7 @@ func (appHandler *AppHandler) EndOfOnboarding(mux chi.Router, db EndOfOnboarding
 
 		currentAuthUser := appHandler.GetAuthenticatedUser(r)
 
-		var input CreateCompanyRequest
-		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
-		if err != nil {
-			http.Error(w, err.Error(), httpStatus)
-			return
-		}
-
-		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
+		_, err := db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: currentAuthUser.Id,
 			Changes: map[string]any{
 				"current_onboarding_step": -1,
