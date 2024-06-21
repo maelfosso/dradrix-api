@@ -7,16 +7,17 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stockinos.com/api/models"
 	"stockinos.com/api/services"
 )
 
 type GetCurrentUserResponse struct {
-	ID          string `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	PhoneNumber string `json:"phone_number,omitempty"`
+	ID          primitive.ObjectID `json:"id,omitempty"`
+	Name        string             `json:"name,omitempty"`
+	PhoneNumber string             `json:"phone_number,omitempty"`
 
-	Preferences any `json:"preferences,omitempty"`
+	Preferences models.UserPreferences `json:"preferences,omitempty"`
 }
 
 func GetCurrentUser(mux chi.Router) {
@@ -33,7 +34,7 @@ func GetCurrentUser(mux chi.Router) {
 		response := GetCurrentUserResponse{
 			Name:        fmt.Sprintf("%s %s", currentUser.LastName, currentUser.FirstName),
 			PhoneNumber: currentUser.PhoneNumber,
-			ID:          currentUser.Id.String(),
+			ID:          currentUser.Id,
 
 			Preferences: currentUser.Preferences,
 		}

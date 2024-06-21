@@ -3,13 +3,13 @@ package models
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type UserPreferencesCompany struct {
-	Id   primitive.ObjectID `bson:"_id" json:"id,omitempty"`
-	Name string             `bson:"name" json:"name,omitempty"`
+	Id   primitive.ObjectID `bson:"_id" json:"id"`
+	Name string             `bson:"name" json:"name"`
 }
 
 type UserPreferences struct {
-	Company               UserPreferencesCompany `bson:"company" json:"company,omitempty"`
-	CurrentOnboardingStep int                    `bson:"current_onboarding_step" json:"current_onboarding_step,omitempty"`
+	Company        UserPreferencesCompany `bson:"company" json:"company,omitempty"`
+	OnboardingStep int                    `bson:"onboarding_step" json:"onboarding_step"`
 }
 
 type User struct {

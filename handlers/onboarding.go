@@ -51,7 +51,7 @@ func (appHandler *AppHandler) SetName(mux chi.Router, db SetNameInterface) {
 			Id: currentAuthUser.Id,
 
 			Changes: map[string]any{
-				"current_onboarding_step": 2,
+				"onboarding_step": 2,
 			},
 		})
 		if err != nil {
@@ -117,7 +117,7 @@ func (appHandler *AppHandler) FirstCompany(mux chi.Router, db FirstCompanyInterf
 					"_id":  company.Id,
 					"name": company.Name,
 				},
-				"current_onboarding_step": 3,
+				"onboarding_step": 3,
 			},
 		})
 		if err != nil {
@@ -155,7 +155,7 @@ func (appHandler *AppHandler) EndOfOnboarding(mux chi.Router, db EndOfOnboarding
 		_, err := db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: currentAuthUser.Id,
 			Changes: map[string]any{
-				"current_onboarding_step": -1,
+				"onboarding_step": -1,
 			},
 		})
 		if err != nil {

@@ -110,7 +110,6 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 type checkOTPInterface interface {
 	DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
 	CheckOTPTx(ctx context.Context, arg storage.CheckOTPParams) (*models.OTP, error)
-	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
 type CheckOTPRequest struct {
@@ -165,18 +164,6 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 		}
 		if otp == nil {
 			log.Println("error when checking the otp - no corresponding otp found: ", err)
-			http.Error(w, "ERR_CHECK_OTP_", http.StatusBadRequest)
-			return
-		}
-
-		_, err = svc.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
-			Id: user.Id,
-
-			Changes: map[string]any{
-				"current_onboarding_step": 1,
-			},
-		})
-		if err != nil {
 			http.Error(w, "ERR_CHECK_OTP_", http.StatusBadRequest)
 			return
 		}

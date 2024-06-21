@@ -136,7 +136,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 					Id:   primitive.NewObjectID(),
 					Name: sfaker.Company().Name(),
 				},
-				CurrentOnboardingStep: 1,
+				OnboardingStep: 1,
 			},
 		}
 		mux := chi.NewMux()
@@ -183,7 +183,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 					Id:   primitive.NewObjectID(),
 					Name: sfaker.Company().Name(),
 				},
-				CurrentOnboardingStep: 1,
+				OnboardingStep: 1,
 			},
 		}
 		mux := chi.NewMux()
@@ -353,7 +353,7 @@ func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
 					Id:   company.Id,
 					Name: company.Description,
 				},
-				CurrentOnboardingStep: 1,
+				OnboardingStep: 1,
 			},
 		}
 
@@ -440,7 +440,7 @@ func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
 					Id:   company.Id,
 					Name: company.Description,
 				},
-				CurrentOnboardingStep: -1,
+				OnboardingStep: -1,
 			},
 		}
 
