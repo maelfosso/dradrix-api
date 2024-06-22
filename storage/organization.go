@@ -12,15 +12,15 @@ import (
 	"stockinos.com/api/models"
 )
 
-type CreateCompanyParams struct {
+type CreateOrganizationParams struct {
 	Name        string
 	Description string
 
 	CreatedBy primitive.ObjectID
 }
 
-func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (*models.Company, error) {
-	var company models.Company = models.Company{
+func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error) {
+	var organization models.Organization = models.Organization{
 		Id:          primitive.NewObjectID(),
 		Name:        arg.Name,
 		Description: arg.Description,
@@ -31,11 +31,11 @@ func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (*
 		CreatedBy: arg.CreatedBy,
 	}
 
-	_, err := q.companiesCollection.InsertOne(ctx, company)
+	_, err := q.organizationsCollection.InsertOne(ctx, organization)
 	if err != nil {
 		return nil, err
 	} else {
-		return &company, nil
+		return &organization, nil
 	}
 }
 
@@ -43,35 +43,35 @@ type GetAllCompaniesParams struct {
 	UserId primitive.ObjectID
 }
 
-func (q *Queries) GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Company, error) {
-	var companies []*models.Company
+func (q *Queries) GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Organization, error) {
+	var organizations []*models.Organization
 
 	filter := bson.M{
 		"created_by": arg.UserId,
 		"deleted_at": nil,
 	}
-	cursor, err := q.companiesCollection.Find(ctx, filter)
+	cursor, err := q.organizationsCollection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	if err = cursor.All(ctx, &companies); err != nil {
+	if err = cursor.All(ctx, &organizations); err != nil {
 		return nil, err
 	}
-	return companies, nil
+	return organizations, nil
 }
 
-type GetCompanyParams struct {
+type GetOrganizationParams struct {
 	Id primitive.ObjectID
 }
 
-func (q *Queries) GetCompany(ctx context.Context, arg GetCompanyParams) (*models.Company, error) {
-	var company models.Company
+func (q *Queries) GetOrganization(ctx context.Context, arg GetOrganizationParams) (*models.Organization, error) {
+	var organization models.Organization
 
 	filter := bson.M{
 		"_id":        arg.Id,
 		"deleted_at": nil,
 	}
-	err := q.companiesCollection.FindOne(ctx, filter).Decode(&company)
+	err := q.organizationsCollection.FindOne(ctx, filter).Decode(&organization)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -79,16 +79,16 @@ func (q *Queries) GetCompany(ctx context.Context, arg GetCompanyParams) (*models
 			return nil, err
 		}
 	}
-	return &company, nil
+	return &organization, nil
 }
 
-type UpdateCompanyParams struct {
+type UpdateOrganizationParams struct {
 	Id          primitive.ObjectID
 	Name        string
 	Description string
 }
 
-func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (*models.Company, error) {
+func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (*models.Organization, error) {
 	filter := bson.M{
 		"_id": arg.Id,
 	}
@@ -100,15 +100,15 @@ func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (*
 	}
 	after := options.After
 
-	var company models.Company
-	err := q.companiesCollection.FindOneAndUpdate(
+	var organization models.Organization
+	err := q.organizationsCollection.FindOneAndUpdate(
 		ctx,
 		filter,
 		update,
 		&options.FindOneAndUpdateOptions{
 			ReturnDocument: &after,
 		},
-	).Decode(&company)
+	).Decode(&organization)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -117,14 +117,14 @@ func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (*
 		}
 	}
 
-	return &company, nil
+	return &organization, nil
 }
 
-type DeleteCompanyParams struct {
+type DeleteOrganizationParams struct {
 	Id primitive.ObjectID
 }
 
-func (q *Queries) DeleteCompany(ctx context.Context, arg DeleteCompanyParams) error {
+func (q *Queries) DeleteOrganization(ctx context.Context, arg DeleteOrganizationParams) error {
 	filter := bson.M{
 		"_id":        arg.Id,
 		"deleted_at": nil,
@@ -136,15 +136,15 @@ func (q *Queries) DeleteCompany(ctx context.Context, arg DeleteCompanyParams) er
 	}
 	after := options.After
 
-	var company models.Company
-	err := q.companiesCollection.FindOneAndUpdate(
+	var organization models.Organization
+	err := q.organizationsCollection.FindOneAndUpdate(
 		ctx,
 		filter,
 		update,
 		&options.FindOneAndUpdateOptions{
 			ReturnDocument: &after,
 		},
-	).Decode(&company)
+	).Decode(&organization)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil

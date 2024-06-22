@@ -33,9 +33,9 @@ func TestOnboarding(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"SetProfile":      testSetProfile,
-		"FirstCompany":    testFirstCompany,
-		"EndOfOnboarding": testEndOfOnboarding,
+		"SetProfile":        testSetProfile,
+		"FirstOrganization": testFirstOrganization,
+		"EndOfOnboarding":   testEndOfOnboarding,
 	}
 
 	for name, tc := range tests {
@@ -132,7 +132,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 			LastName:    dataRequest.LastName,
 
 			Preferences: models.UserPreferences{
-				Company: models.UserPreferencesCompany{
+				Organization: models.UserPreferencesOrganization{
 					Id:   primitive.NewObjectID(),
 					Name: sfaker.Company().Name(),
 				},
@@ -179,7 +179,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 			LastName:    dataRequest.LastName,
 
 			Preferences: models.UserPreferences{
-				Company: models.UserPreferencesCompany{
+				Organization: models.UserPreferencesOrganization{
 					Id:   primitive.NewObjectID(),
 					Name: sfaker.Company().Name(),
 				},
@@ -217,24 +217,24 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 	})
 }
 
-type mockFirstCompanyDB struct {
-	CreateCompanyFunc         func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error)
+type mockFirstOrganizationDB struct {
+	CreateOrganizationFunc    func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error)
 	UpdateUserPreferencesFunc func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
-func (mdb *mockFirstCompanyDB) CreateCompany(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
-	return mdb.CreateCompanyFunc(ctx, arg)
+func (mdb *mockFirstOrganizationDB) CreateOrganization(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
+	return mdb.CreateOrganizationFunc(ctx, arg)
 }
 
-func (mdb *mockFirstCompanyDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+func (mdb *mockFirstOrganizationDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
 	return mdb.UpdateUserPreferencesFunc(ctx, arg)
 }
 
-func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
+func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockFirstCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+		db := &mockFirstOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
 				return nil, nil
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
@@ -242,61 +242,61 @@ func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 
-		handler.FirstCompany(mux, db)
+		handler.FirstOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
-			"/company",
+			"/organization",
 			helpertest.CreateFormHeader(),
 			"{\"test\": \"that\"}",
 			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
-			t.Fatalf("FirstCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("FirstOrganization(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_HDL_PRB_"
 		if !strings.HasPrefix(response, want) {
-			t.Fatalf("FirstCompany(): response error - got %s, want %s", response, want)
+			t.Fatalf("FirstOrganization(): response error - got %s, want %s", response, want)
 		}
 	})
 
-	t.Run("error creating company", func(t *testing.T) {
-		dataRequest := handlers.FirstCompanyRequest{
+	t.Run("error creating organization", func(t *testing.T) {
+		dataRequest := handlers.FirstOrganizationRequest{
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 		}
 		mux := chi.NewMux()
-		db := &mockFirstCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
-				return nil, errors.New("create company error")
+		db := &mockFirstOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
+				return nil, errors.New("create organization error")
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
 				return nil, nil
 			},
 		}
 
-		handler.FirstCompany(mux, db)
+		handler.FirstOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
-			"/company",
+			"/organization",
 			helpertest.CreateFormHeader(),
 			dataRequest,
 			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
-			t.Fatalf("FirstCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("FirstOrganization(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_OBD_CPN_01"
 		if response != want {
-			t.Fatalf("FirstCompany(): response error - got %s, want %s", response, want)
+			t.Fatalf("FirstOrganization(): response error - got %s, want %s", response, want)
 		}
 	})
 
 	t.Run("error update user preferences", func(t *testing.T) {
-		dataRequest := handlers.FirstCompanyRequest{
+		dataRequest := handlers.FirstOrganizationRequest{
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 		}
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -305,39 +305,39 @@ func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
 		}
 
 		mux := chi.NewMux()
-		db := &mockFirstCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
-				return company, nil
+		db := &mockFirstOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
+				return organization, nil
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
-				return nil, errors.New("update company preferences error")
+				return nil, errors.New("update organization preferences error")
 			},
 		}
 
-		handler.FirstCompany(mux, db)
+		handler.FirstOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
-			"/company",
+			"/organization",
 			helpertest.CreateFormHeader(),
 			dataRequest,
 			[]helpertest.ContextData{},
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
-			t.Fatalf("FirstCompany(): code - got %d; want %d", code, wantCode)
+			t.Fatalf("FirstOrganization(): code - got %d; want %d", code, wantCode)
 		}
 		wantError := "ERR_OBD_CPN_02"
 		if !strings.HasPrefix(response, wantError) {
-			t.Fatalf("FirstCompany(): response error - got %s; want %s", response, wantError)
+			t.Fatalf("FirstOrganization(): response error - got %s; want %s", response, wantError)
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		dataRequest := handlers.FirstCompanyRequest{
+		dataRequest := handlers.FirstOrganizationRequest{
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 		}
-		company := models.Company{
+		organization := models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -349,41 +349,41 @@ func testFirstCompany(t *testing.T, handler *handlers.AppHandler) {
 			LastName:    gofaker.LastName(),
 
 			Preferences: models.UserPreferences{
-				Company: models.UserPreferencesCompany{
-					Id:   company.Id,
-					Name: company.Description,
+				Organization: models.UserPreferencesOrganization{
+					Id:   organization.Id,
+					Name: organization.Description,
 				},
 				OnboardingStep: 1,
 			},
 		}
 
 		mux := chi.NewMux()
-		db := &mockFirstCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
-				return &company, nil
+		db := &mockFirstOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
+				return &organization, nil
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
 				return &updatedUser, nil
 			},
 		}
 
-		handler.FirstCompany(mux, db)
+		handler.FirstOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
-			"/company",
+			"/organization",
 			helpertest.CreateFormHeader(),
 			dataRequest,
 			[]helpertest.ContextData{},
 		)
 		want := http.StatusOK
 		if code != want {
-			t.Fatalf("FirstCompany(): status - got %d; want %d", code, want)
+			t.Fatalf("FirstOrganization(): status - got %d; want %d", code, want)
 		}
 
-		got := handlers.FirstCompanyResponse{}
+		got := handlers.FirstOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
 		if !got.Done {
-			t.Fatalf("FirstCompany(): response done - got %+v; want true", got.Done)
+			t.Fatalf("FirstOrganization(): response done - got %+v; want true", got.Done)
 		}
 	})
 }
@@ -401,7 +401,7 @@ func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
 		mux := chi.NewMux()
 		db := &mockEndOfOnboardingDB{
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
-				return nil, errors.New("update company preferences error")
+				return nil, errors.New("update organization preferences error")
 			},
 		}
 
@@ -424,7 +424,7 @@ func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		company := models.Company{
+		organization := models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -436,9 +436,9 @@ func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
 			LastName:    gofaker.LastName(),
 
 			Preferences: models.UserPreferences{
-				Company: models.UserPreferencesCompany{
-					Id:   company.Id,
-					Name: company.Description,
+				Organization: models.UserPreferencesOrganization{
+					Id:   organization.Id,
+					Name: organization.Description,
 				},
 				OnboardingStep: -1,
 			},

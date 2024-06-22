@@ -74,34 +74,34 @@ func (appHandler *AppHandler) SetProfile(mux chi.Router, db SetProfileInterface)
 	})
 }
 
-type FirstCompanyInterface interface {
-	CreateCompany(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error)
+type FirstOrganizationInterface interface {
+	CreateOrganization(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error)
 	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
-type FirstCompanyRequest struct {
+type FirstOrganizationRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-type FirstCompanyResponse struct {
+type FirstOrganizationResponse struct {
 	Done bool `json:"done,omitempty"`
 }
 
-func (appHandler *AppHandler) FirstCompany(mux chi.Router, db FirstCompanyInterface) {
+func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganizationInterface) {
 	mux.Post("/organization", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		currentAuthUser := appHandler.GetAuthenticatedUser(r)
 
-		var input CreateCompanyRequest
+		var input CreateOrganizationRequest
 		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
 		if err != nil {
 			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
-		company, err := db.CreateCompany(ctx, storage.CreateCompanyParams{
+		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
 			Name:        input.Name,
 			Description: input.Description,
 			CreatedBy:   currentAuthUser.Id,
@@ -115,9 +115,9 @@ func (appHandler *AppHandler) FirstCompany(mux chi.Router, db FirstCompanyInterf
 			Id: currentAuthUser.Id,
 
 			Changes: map[string]any{
-				"company": map[string]any{
-					"_id":  company.Id,
-					"name": company.Name,
+				"organization": map[string]any{
+					"_id":  organization.Id,
+					"name": organization.Name,
 				},
 				"onboarding_step": 3,
 			},
@@ -127,7 +127,7 @@ func (appHandler *AppHandler) FirstCompany(mux chi.Router, db FirstCompanyInterf
 			return
 		}
 
-		response := FirstCompanyResponse{
+		response := FirstOrganizationResponse{
 			Done: true,
 		}
 

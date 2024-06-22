@@ -76,7 +76,7 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewRouter()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -97,8 +97,8 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			})
 		code := w.StatusCode
@@ -114,7 +114,7 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("no activity found", func(t *testing.T) {
 		mux := chi.NewRouter()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -135,8 +135,8 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			})
 		code := w.StatusCode
@@ -152,7 +152,7 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("activity found", func(t *testing.T) {
 		mux := chi.NewRouter()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -178,8 +178,8 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: organization.Id,
+			CreatedBy:      primitive.NewObjectID(),
 		}
 		db := &mockAcitivityMiddlewareDB{}
 		db.GetActivityFunc = func(ctx context.Context, arg storage.GetActivityParams) (*models.Activity, error) {
@@ -202,8 +202,8 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 			fmt.Sprintf("/%s", primitive.NewObjectID().Hex()),
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			})
 		code := w.StatusCode
@@ -227,7 +227,7 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -242,8 +242,8 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			},
 		)
@@ -260,7 +260,7 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -287,8 +287,8 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 					},
 				},
 
-				CompanyId: company.Id,
-				CreatedBy: primitive.NewObjectID(),
+				OrganizationId: organization.Id,
+				CreatedBy:      primitive.NewObjectID(),
 			},
 		}
 
@@ -302,8 +302,8 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			},
 		)
@@ -362,7 +362,7 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -384,8 +384,8 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 			},
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			},
 		)
@@ -399,7 +399,7 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -425,8 +425,8 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: organization.Id,
+			CreatedBy:      primitive.NewObjectID(),
 		}
 
 		mux := chi.NewMux()
@@ -442,10 +442,10 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			helpertest.CreateFormHeader(),
 			handlers.CreateActivityRequest{
-				Name:        company.Name,
-				Description: company.Description,
+				Name:        organization.Name,
+				Description: organization.Description,
 			},
-			[]helpertest.ContextData{{Name: "company", Value: company}},
+			[]helpertest.ContextData{{Name: "organization", Value: organization}},
 		)
 		want := http.StatusOK
 		if code != want {
@@ -457,8 +457,8 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 		if err := activityEq(&got.Activity, activity); err != nil {
 			t.Fatalf("CreateActivity(): %v", err)
 		}
-		if got.Activity.CompanyId != company.Id {
-			t.Fatalf("CreateActivity(): companyId - got %s; want %s", got.Activity.CompanyId, company.Id)
+		if got.Activity.OrganizationId != organization.Id {
+			t.Fatalf("CreateActivity(): organizationId - got %s; want %s", got.Activity.OrganizationId, organization.Id)
 		}
 	})
 }
@@ -488,8 +488,8 @@ func testGetActivity(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: primitive.NewObjectID(),
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: primitive.NewObjectID(),
+			CreatedBy:      primitive.NewObjectID(),
 		}
 
 		db := &struct{}{}
@@ -560,7 +560,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("wrong input.field value", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -586,8 +586,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: organization.Id,
+			CreatedBy:      primitive.NewObjectID(),
 		}
 		db := &mockUpdateActivityDB{
 			UpdateSetInActivityFunc: func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
@@ -653,7 +653,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					helpertest.CreateFormHeader(),
 					tc.Input,
 					[]helpertest.ContextData{
-						{Name: "company", Value: company},
+						{Name: "organization", Value: organization},
 						{Name: "activity", Value: activity},
 					},
 				)
@@ -671,7 +671,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 	// t.Run("wrong input.value value", func(t *testing.T) {
 	// 	mux := chi.NewMux()
-	// 	company := &models.Company{
+	// 	organization := &models.Organization{
 	// 		Id:          primitive.NewObjectID(),
 	// 		Name:        sfaker.Company().Name(),
 	// 		Description: gofaker.Paragraph(),
@@ -697,7 +697,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 	// 			},
 	// 		},
 
-	// 		CompanyId: company.Id,
+	// 		OrganizationId: organization.Id,
 	// 		CreatedBy: primitive.NewObjectID(),
 	// 	}
 	// 	db := &mockUpdateActivityDB{
@@ -764,7 +764,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 	// 				helpertest.CreateFormHeader(),
 	// 				tc.Input,
 	// 				[]helpertest.ContextData{
-	// 					{Name: "company", Value: company},
+	// 					{Name: "organization", Value: organization},
 	// 					{Name: "activity", Value: activity},
 	// 				},
 	// 			)
@@ -782,7 +782,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -808,8 +808,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: organization.Id,
+			CreatedBy:      primitive.NewObjectID(),
 		}
 		db := &mockUpdateActivityDB{
 			UpdateSetInActivityFunc: func(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error) {
@@ -867,7 +867,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					helpertest.CreateFormHeader(),
 					tc.Input,
 					[]helpertest.ContextData{
-						{Name: "company", Value: company},
+						{Name: "organization", Value: organization},
 						{Name: "activity", Value: activity},
 					},
 				)
@@ -884,7 +884,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		var company *models.Company
+		var organization *models.Organization
 		var activity *models.Activity
 
 		dataRequest := []handlers.UpdateActivityRequest{
@@ -926,12 +926,12 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			},
 			UpdateAddToActivityFunc: func(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error) {
 				updatedActivity := &models.Activity{
-					Id:          activity.Id,
-					Name:        activity.Name,
-					Description: activity.Description,
-					CompanyId:   activity.CompanyId,
-					CreatedBy:   activity.CreatedBy,
-					Fields:      []models.ActivityFields{},
+					Id:             activity.Id,
+					Name:           activity.Name,
+					Description:    activity.Description,
+					OrganizationId: activity.OrganizationId,
+					CreatedBy:      activity.CreatedBy,
+					Fields:         []models.ActivityFields{},
 				}
 				updatedActivity.Fields = append(updatedActivity.Fields, activity.Fields...)
 				updatedActivity.Fields = append(updatedActivity.Fields, dataRequest[1].Value.(models.ActivityFields))
@@ -939,12 +939,12 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 			},
 			UpdateRemoveFromActivityFunc: func(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error) {
 				updatedActivity := &models.Activity{
-					Id:          activity.Id,
-					Name:        activity.Name,
-					Description: activity.Description,
-					CompanyId:   activity.CompanyId,
-					CreatedBy:   activity.CreatedBy,
-					Fields:      []models.ActivityFields{},
+					Id:             activity.Id,
+					Name:           activity.Name,
+					Description:    activity.Description,
+					OrganizationId: activity.OrganizationId,
+					CreatedBy:      activity.CreatedBy,
+					Fields:         []models.ActivityFields{},
 				}
 				updatedActivity.Fields = []models.ActivityFields{activity.Fields[0]}
 				return updatedActivity, nil
@@ -964,10 +964,10 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					json.Unmarshal([]byte(response), &got)
 
 					if got.Activity.Id != activity.Id {
-						t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, company.Id)
+						t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, organization.Id)
 					}
-					if got.Activity.CompanyId != company.Id {
-						t.Fatalf("UpdateActivity(): CompanyId - got %s; want %s", got.Activity.Id, company.Id)
+					if got.Activity.OrganizationId != organization.Id {
+						t.Fatalf("UpdateActivity(): OrganizationId - got %s; want %s", got.Activity.Id, organization.Id)
 					}
 					if got.Activity.Name != dataRequest[0].Value.(string) {
 						t.Fatalf("UpdateActivity(): %s - Name - got %s; want %s", name, got.Activity.Name, dataRequest[0].Value)
@@ -982,10 +982,10 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					json.Unmarshal([]byte(response), &got)
 
 					if got.Activity.Id != activity.Id {
-						t.Fatalf("UpdateActivity(): %s - Id - got %s; want %s", name, got.Activity.Id, company.Id)
+						t.Fatalf("UpdateActivity(): %s - Id - got %s; want %s", name, got.Activity.Id, organization.Id)
 					}
-					if got.Activity.CompanyId != company.Id {
-						t.Fatalf("UpdateActivity(): %s - CompanyId - got %s; want %s", name, got.Activity.Id, company.Id)
+					if got.Activity.OrganizationId != organization.Id {
+						t.Fatalf("UpdateActivity(): %s - OrganizationId - got %s; want %s", name, got.Activity.Id, organization.Id)
 					}
 					if len(got.Activity.Fields) != len(activity.Fields)+1 {
 						t.Fatalf("UpdateActivity(): %s - Length Fields - got %d; want %d", name, len(got.Activity.Fields), len(activity.Fields)+1)
@@ -1003,10 +1003,10 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					json.Unmarshal([]byte(response), &got)
 
 					if got.Activity.Id != activity.Id {
-						t.Fatalf("UpdateActivity(): %s - Id - got %s; want %s", name, got.Activity.Id, company.Id)
+						t.Fatalf("UpdateActivity(): %s - Id - got %s; want %s", name, got.Activity.Id, organization.Id)
 					}
-					if got.Activity.CompanyId != company.Id {
-						t.Fatalf("UpdateActivity(): %s - CompanyId - got %s; want %s", name, got.Activity.Id, company.Id)
+					if got.Activity.OrganizationId != organization.Id {
+						t.Fatalf("UpdateActivity(): %s - OrganizationId - got %s; want %s", name, got.Activity.Id, organization.Id)
 					}
 					if len(got.Activity.Fields) != len(activity.Fields)-1 {
 						t.Fatalf("UpdateActivity(): %s - Length Fields - got %d; want %d", name, len(got.Activity.Fields), len(activity.Fields)-1)
@@ -1019,7 +1019,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 		}
 
 		for name, tc := range testCases {
-			company = &models.Company{
+			organization = &models.Organization{
 				Id:          primitive.NewObjectID(),
 				Name:        sfaker.Company().Name(),
 				Description: gofaker.Paragraph(),
@@ -1045,8 +1045,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					},
 				},
 
-				CompanyId: company.Id,
-				CreatedBy: primitive.NewObjectID(),
+				OrganizationId: organization.Id,
+				CreatedBy:      primitive.NewObjectID(),
 			}
 
 			t.Run(name, func(t *testing.T) {
@@ -1057,7 +1057,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					helpertest.CreateFormHeader(),
 					tc.Input,
 					[]helpertest.ContextData{
-						{Name: "company", Value: company},
+						{Name: "organization", Value: organization},
 						{Name: "activity", Value: activity},
 					},
 				)
@@ -1077,7 +1077,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 		// 	helpertest.CreateFormHeader(),
 		// 	dataRequest,
 		// 	[]helpertest.ContextData{
-		// 		{Name: "company", Value: company},
+		// 		{Name: "organization", Value: organization},
 		// 		{Name: "activity", Value: activity},
 		// 	},
 		// )
@@ -1088,8 +1088,8 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 		// got := handlers.UpdateActivityResponse{}
 		// json.Unmarshal([]byte(response), &got)
-		// if got.Activity.CompanyId != company.Id {
-		// 	t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, company.Id)
+		// if got.Activity.OrganizationId != organization.Id {
+		// 	t.Fatalf("UpdateActivity(): Id - got %s; want %s", got.Activity.Id, organization.Id)
 		// }
 		// if got.Activity.Name != dataRequest.Value.(string) {
 		// 	t.Fatalf("UpdateActivity(): Name - got %s; want %s", got.Activity.Name, dataRequest.Value)
@@ -1108,7 +1108,7 @@ func (mdb *mockDeleteActivityDB) DeleteActivity(ctx context.Context, arg storage
 func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -1134,8 +1134,8 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: organization.Id,
+			CreatedBy:      primitive.NewObjectID(),
 		}
 		db := &mockDeleteActivityDB{
 			DeleteActivityFunc: func(ctx context.Context, arg storage.DeleteActivityParams) error {
@@ -1150,7 +1150,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 			helpertest.CreateFormHeader(),
 			nil,
 			[]helpertest.ContextData{
-				{Name: "company", Value: company},
+				{Name: "organization", Value: organization},
 				{Name: "activity", Value: activity},
 			},
 		)
@@ -1166,7 +1166,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -1192,8 +1192,8 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 				},
 			},
 
-			CompanyId: company.Id,
-			CreatedBy: primitive.NewObjectID(),
+			OrganizationId: organization.Id,
+			CreatedBy:      primitive.NewObjectID(),
 		}
 		db := &mockDeleteActivityDB{
 			DeleteActivityFunc: func(ctx context.Context, arg storage.DeleteActivityParams) error {
@@ -1208,7 +1208,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 			helpertest.CreateFormHeader(),
 			nil,
 			[]helpertest.ContextData{
-				{Name: "company", Value: company},
+				{Name: "organization", Value: organization},
 				{Name: "activity", Value: activity},
 			},
 		)

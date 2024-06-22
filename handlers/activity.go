@@ -12,11 +12,11 @@ import (
 	"stockinos.com/api/storage"
 )
 
-type companyMiddlewareInterface interface {
+type organizationMiddlewareInterface interface {
 	GetActivity(ctx context.Context, arg storage.GetActivityParams) (*models.Activity, error)
 }
 
-func (handler *AppHandler) ActivityMiddleware(mux chi.Router, db companyMiddlewareInterface) {
+func (handler *AppHandler) ActivityMiddleware(mux chi.Router, db organizationMiddlewareInterface) {
 	mux.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -28,11 +28,11 @@ func (handler *AppHandler) ActivityMiddleware(mux chi.Router, db companyMiddlewa
 				return
 			}
 
-			company := ctx.Value("company").(*models.Company)
+			organization := ctx.Value("organization").(*models.Organization)
 
 			activity, err := db.GetActivity(ctx, storage.GetActivityParams{
-				Id:        activityId,
-				CompanyId: company.Id,
+				Id:             activityId,
+				OrganizationId: organization.Id,
 			})
 			if err != nil {
 				http.Error(w, "ERR_ATVT_MDW_02", http.StatusBadRequest)
@@ -61,10 +61,10 @@ func (handler *AppHandler) GetAllActivities(mux chi.Router, db getAllActivitiesI
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 
 		activities, err := db.GetAllActivities(ctx, storage.GetAllActivitiesParams{
-			CompanyId: company.Id,
+			OrganizationId: organization.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_ATVT_GALL_01", http.StatusBadRequest)
@@ -109,14 +109,14 @@ func (handler *AppHandler) CreateActivity(mux chi.Router, db createActivityInter
 			return
 		}
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 
 		activity, err := db.CreateActivity(ctx, storage.CreateActivityParams{
 			Name:        input.Name,
 			Description: input.Description,
 			Fields:      input.Fields,
 
-			CompanyId: company.Id,
+			OrganizationId: organization.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_ATVT_CRT_01", http.StatusBadRequest)
@@ -174,12 +174,12 @@ func (handler *AppHandler) DeleteActivity(mux chi.Router, db deleteActivityInter
 	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 		activity := ctx.Value("activity").(*models.Activity)
 
 		err := db.DeleteActivity(ctx, storage.DeleteActivityParams{
-			Id:        activity.Id,
-			CompanyId: company.Id,
+			Id:             activity.Id,
+			OrganizationId: organization.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_ATVT_DLT_01", http.StatusBadRequest)
@@ -227,7 +227,7 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			return
 		}
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 		activity := ctx.Value("activity").(*models.Activity)
 
 		var updatedActivity *models.Activity
@@ -242,8 +242,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			// TODO: check type of input.Value string|int|bool
 
 			updatedActivity, err = db.UpdateSetInActivity(ctx, storage.UpdateSetInActivityParams{
-				Id:        activity.Id,
-				CompanyId: company.Id,
+				Id:             activity.Id,
+				OrganizationId: organization.Id,
 
 				Field: field,
 				Value: input.Value,
@@ -260,8 +260,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			// }
 
 			updatedActivity, err = db.UpdateAddToActivity(ctx, storage.UpdateAddToActivityParams{
-				Id:        activity.Id,
-				CompanyId: company.Id,
+				Id:             activity.Id,
+				OrganizationId: organization.Id,
 
 				Field:    field,
 				Value:    input.Value,
@@ -276,8 +276,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			// TODO: check type of input.Value Should be emtpy
 
 			updatedActivity, err = db.UpdateRemoveFromActivity(ctx, storage.UpdateRemoveFromActivityParams{
-				Id:        activity.Id,
-				CompanyId: company.Id,
+				Id:             activity.Id,
+				OrganizationId: organization.Id,
 
 				Field:    field,
 				Position: uint(input.Position),

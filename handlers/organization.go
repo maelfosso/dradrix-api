@@ -11,57 +11,57 @@ import (
 	"stockinos.com/api/storage"
 )
 
-type getCompanyCtxInterface interface {
-	GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
+type getOrganizationCtxInterface interface {
+	GetOrganization(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error)
 }
 
-func (handler *AppHandler) CompanyMiddleware(mux chi.Router, db getCompanyCtxInterface) {
+func (handler *AppHandler) OrganizationMiddleware(mux chi.Router, db getOrganizationCtxInterface) {
 	mux.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			companyIdParam := chi.URLParamFromCtx(ctx, "companyId")
-			companyId, err := primitive.ObjectIDFromHex(companyIdParam)
+			organizationIdParam := chi.URLParamFromCtx(ctx, "organizationId")
+			organizationId, err := primitive.ObjectIDFromHex(organizationIdParam)
 			if err != nil {
 				http.Error(w, "ERR_CMP_MDW_01", http.StatusBadRequest)
 				return
 			}
 
-			company, err := db.GetCompany(ctx, storage.GetCompanyParams{
-				Id: companyId,
+			organization, err := db.GetOrganization(ctx, storage.GetOrganizationParams{
+				Id: organizationId,
 			})
 			if err != nil {
 				http.Error(w, "ERR_CMP_MDW_02", http.StatusBadRequest)
 				return
 			}
 
-			if company == nil {
+			if organization == nil {
 				http.Error(w, "ERR_CMP_MDW_03", http.StatusNotFound)
 				return
 			}
 
-			ctx = context.WithValue(ctx, "company", company)
+			ctx = context.WithValue(ctx, "organization", organization)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	})
 }
 
 type getAllCompaniesInterface interface {
-	GetAllCompanies(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Company, error)
+	GetAllCompanies(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Organization, error)
 }
 
 type GetAllCompaniesResponse struct {
-	Companies []*models.Company `json:"companies,omitempty"`
+	Companies []*models.Organization `json:"organizations,omitempty"`
 }
 
 func (handler *AppHandler) GetAllCompanies(mux chi.Router, db getAllCompaniesInterface) {
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		var companies []*models.Company
+		var organizations []*models.Organization
 
 		ctx := r.Context()
 		authUser := handler.GetAuthenticatedUser(r)
 
-		companies, err := db.GetAllCompanies(ctx, storage.GetAllCompaniesParams{
+		organizations, err := db.GetAllCompanies(ctx, storage.GetAllCompaniesParams{
 			UserId: authUser.Id,
 		})
 		if err != nil {
@@ -70,7 +70,7 @@ func (handler *AppHandler) GetAllCompanies(mux chi.Router, db getAllCompaniesInt
 		}
 
 		response := GetAllCompaniesResponse{
-			Companies: companies,
+			Companies: organizations,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -82,32 +82,32 @@ func (handler *AppHandler) GetAllCompanies(mux chi.Router, db getAllCompaniesInt
 	})
 }
 
-type createCompanyInterface interface {
-	CreateCompany(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error)
+type createOrganizationInterface interface {
+	CreateOrganization(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error)
 }
 
-type CreateCompanyRequest struct {
+type CreateOrganizationRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-type CreateCompanyResponse struct {
-	Company models.Company `json:"company,omitempty"`
+type CreateOrganizationResponse struct {
+	Organization models.Organization `json:"organization,omitempty"`
 }
 
-func (handler *AppHandler) CreateCompany(mux chi.Router, db createCompanyInterface) {
+func (handler *AppHandler) CreateOrganization(mux chi.Router, db createOrganizationInterface) {
 	mux.Post("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		authUser := handler.GetAuthenticatedUser(r)
 
-		var input CreateCompanyRequest
+		var input CreateOrganizationRequest
 		httpStatus, err := handler.ParsingRequestBody(w, r, &input)
 		if err != nil {
 			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
-		company, err := db.CreateCompany(ctx, storage.CreateCompanyParams{
+		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
 			Name:        input.Name,
 			Description: input.Description,
 			CreatedBy:   authUser.Id,
@@ -117,8 +117,8 @@ func (handler *AppHandler) CreateCompany(mux chi.Router, db createCompanyInterfa
 			return
 		}
 
-		response := CreateCompanyResponse{
-			Company: *company,
+		response := CreateOrganizationResponse{
+			Organization: *organization,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -130,22 +130,22 @@ func (handler *AppHandler) CreateCompany(mux chi.Router, db createCompanyInterfa
 	})
 }
 
-type getCompanyInterface interface {
-	// GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
+type getOrganizationInterface interface {
+	// GetOrganization(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error)
 }
 
-type GetCompanyResponse struct {
-	Company models.Company `json:"company,omitempty"`
+type GetOrganizationResponse struct {
+	Organization models.Organization `json:"organization,omitempty"`
 }
 
-func (handler *AppHandler) GetCompany(mux chi.Router, db getCompanyInterface) {
+func (handler *AppHandler) GetOrganization(mux chi.Router, db getOrganizationInterface) {
 	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 
-		response := GetCompanyResponse{
-			Company: *company,
+		response := GetOrganizationResponse{
+			Organization: *organization,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -157,34 +157,34 @@ func (handler *AppHandler) GetCompany(mux chi.Router, db getCompanyInterface) {
 	})
 }
 
-type updateCompanyInterface interface {
-	UpdateCompany(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error)
+type updateOrganizationInterface interface {
+	UpdateOrganization(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error)
 }
 
-type UpdateCompanyRequest struct {
+type UpdateOrganizationRequest struct {
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 }
 
-type UpdateCompanyResponse struct {
-	Company models.Company `json:"company,omitempty"`
+type UpdateOrganizationResponse struct {
+	Organization models.Organization `json:"organization,omitempty"`
 }
 
-func (handler *AppHandler) UpdateCompany(mux chi.Router, db updateCompanyInterface) {
+func (handler *AppHandler) UpdateOrganization(mux chi.Router, db updateOrganizationInterface) {
 	mux.Put("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var input UpdateCompanyRequest
+		var input UpdateOrganizationRequest
 		httpStatus, err := handler.ParsingRequestBody(w, r, &input)
 		if err != nil {
 			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 
-		updatedCompany, err := db.UpdateCompany(ctx, storage.UpdateCompanyParams{
-			Id:          company.Id,
+		updatedOrganization, err := db.UpdateOrganization(ctx, storage.UpdateOrganizationParams{
+			Id:          organization.Id,
 			Name:        input.Name,
 			Description: input.Description,
 		})
@@ -193,8 +193,8 @@ func (handler *AppHandler) UpdateCompany(mux chi.Router, db updateCompanyInterfa
 			return
 		}
 
-		response := UpdateCompanyResponse{
-			Company: *updatedCompany,
+		response := UpdateOrganizationResponse{
+			Organization: *updatedOrganization,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -206,31 +206,31 @@ func (handler *AppHandler) UpdateCompany(mux chi.Router, db updateCompanyInterfa
 	})
 }
 
-type deleteCompanyInterface interface {
-	DeleteCompany(ctx context.Context, arg storage.DeleteCompanyParams) error
+type deleteOrganizationInterface interface {
+	DeleteOrganization(ctx context.Context, arg storage.DeleteOrganizationParams) error
 }
 
-type DeleteCompanyRequest struct{}
+type DeleteOrganizationRequest struct{}
 
-type DeleteCompanyResponse struct {
+type DeleteOrganizationResponse struct {
 	Deleted bool `json:"deleted,omitempty"`
 }
 
-func (handler *AppHandler) DeleteCompany(mux chi.Router, db deleteCompanyInterface) {
+func (handler *AppHandler) DeleteOrganization(mux chi.Router, db deleteOrganizationInterface) {
 	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		company := ctx.Value("company").(*models.Company)
+		organization := ctx.Value("organization").(*models.Organization)
 
-		err := db.DeleteCompany(ctx, storage.DeleteCompanyParams{
-			Id: company.Id,
+		err := db.DeleteOrganization(ctx, storage.DeleteOrganizationParams{
+			Id: organization.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_D_CMP_02", http.StatusBadRequest)
 			return
 		}
 
-		response := DeleteCompanyResponse{
+		response := DeleteOrganizationResponse{
 			Deleted: true,
 		}
 

@@ -19,7 +19,7 @@ import (
 	sfaker "syreclabs.com/go/faker"
 )
 
-func TestCompany(t *testing.T) {
+func TestOrganization(t *testing.T) {
 	handler := handlers.NewAppHandler()
 	handler.GetAuthenticatedUser = func(req *http.Request) *models.User {
 		return &models.User{
@@ -31,12 +31,12 @@ func TestCompany(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"CompanyMiddleware": testCompanyMiddleware,
-		"GetAllCompanies":   testGetAllCompanies,
-		"GetCompany":        testGetCompany,
-		"CreateCompany":     testCreateCompany,
-		"UpdateCompany":     testUpdateCompany,
-		"DeleteCompany":     testDeleteCompany,
+		"OrganizationMiddleware": testOrganizationMiddleware,
+		"GetAllCompanies":        testGetAllCompanies,
+		"GetOrganization":        testGetOrganization,
+		"CreateOrganization":     testCreateOrganization,
+		"UpdateOrganization":     testUpdateOrganization,
+		"DeleteOrganization":     testDeleteOrganization,
 	}
 
 	for name, tc := range tests {
@@ -46,25 +46,25 @@ func TestCompany(t *testing.T) {
 	}
 }
 
-type mockCompanyMiddlewareDB struct {
-	GetCompanyFunc func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error)
+type mockOrganizationMiddlewareDB struct {
+	GetOrganizationFunc func(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error)
 }
 
-func (mdb *mockCompanyMiddlewareDB) GetCompany(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-	return mdb.GetCompanyFunc(ctx, arg)
+func (mdb *mockOrganizationMiddlewareDB) GetOrganization(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error) {
+	return mdb.GetOrganizationFunc(ctx, arg)
 }
 
-func testCompanyMiddleware(t *testing.T, handler *handlers.AppHandler) {
-	t.Run("invalid company id", func(t *testing.T) {
+func testOrganizationMiddleware(t *testing.T, handler *handlers.AppHandler) {
+	t.Run("invalid organization id", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockCompanyMiddlewareDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+		db := &mockOrganizationMiddlewareDB{
+			GetOrganizationFunc: func(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error) {
 				return nil, nil
 			},
 		}
 
-		mux.Route("/{companyId}", func(r chi.Router) {
-			handler.CompanyMiddleware(r, db)
+		mux.Route("/{organizationId}", func(r chi.Router) {
+			handler.OrganizationMiddleware(r, db)
 
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
@@ -74,24 +74,24 @@ func testCompanyMiddleware(t *testing.T, handler *handlers.AppHandler) {
 		_, w, response := helpertest.MakeGetRequest(mux, "/1", []helpertest.ContextData{})
 		code := w.StatusCode
 		if code != http.StatusBadRequest {
-			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("OrganizationMiddleware(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_CMP_MDW_01"
 		if response != want {
-			t.Fatalf("CompanyMiddleware(): response error - got %s, want %s", response, want)
+			t.Fatalf("OrganizationMiddleware(): response error - got %s, want %s", response, want)
 		}
 	})
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockCompanyMiddlewareDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+		db := &mockOrganizationMiddlewareDB{
+			GetOrganizationFunc: func(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error) {
 				return nil, errors.New("an error happens")
 			},
 		}
 
-		mux.Route("/{companyId}", func(r chi.Router) {
-			handler.CompanyMiddleware(r, db)
+		mux.Route("/{organizationId}", func(r chi.Router) {
+			handler.OrganizationMiddleware(r, db)
 
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
@@ -105,24 +105,24 @@ func testCompanyMiddleware(t *testing.T, handler *handlers.AppHandler) {
 		)
 		code := w.StatusCode
 		if code != http.StatusBadRequest {
-			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("OrganizationMiddleware(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_CMP_MDW_02"
 		if response != want {
-			t.Fatalf("CompanyMiddleware(): response error - got %s, want %s", response, want)
+			t.Fatalf("OrganizationMiddleware(): response error - got %s, want %s", response, want)
 		}
 	})
 
-	t.Run("no company found", func(t *testing.T) {
+	t.Run("no organization found", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockCompanyMiddlewareDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
+		db := &mockOrganizationMiddlewareDB{
+			GetOrganizationFunc: func(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error) {
 				return nil, nil
 			},
 		}
 
-		mux.Route("/{companyId}", func(r chi.Router) {
-			handler.CompanyMiddleware(r, db)
+		mux.Route("/{organizationId}", func(r chi.Router) {
+			handler.OrganizationMiddleware(r, db)
 
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
@@ -137,34 +137,34 @@ func testCompanyMiddleware(t *testing.T, handler *handlers.AppHandler) {
 		code := w.StatusCode
 
 		if code != http.StatusNotFound {
-			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusNotFound)
+			t.Fatalf("OrganizationMiddleware(): status - got %d; want %d", code, http.StatusNotFound)
 		}
 		want := "ERR_CMP_MDW_03"
 		if response != want {
-			t.Fatalf("CompanyMiddleware(): response error - got %s, want %s", response, want)
+			t.Fatalf("OrganizationMiddleware(): response error - got %s, want %s", response, want)
 		}
 	})
 
-	t.Run("company found", func(t *testing.T) {
-		company := &models.Company{
+	t.Run("organization found", func(t *testing.T) {
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 		}
 		mux := chi.NewMux()
-		db := &mockCompanyMiddlewareDB{
-			GetCompanyFunc: func(ctx context.Context, arg storage.GetCompanyParams) (*models.Company, error) {
-				return company, nil
+		db := &mockOrganizationMiddlewareDB{
+			GetOrganizationFunc: func(ctx context.Context, arg storage.GetOrganizationParams) (*models.Organization, error) {
+				return organization, nil
 			},
 		}
 
-		mux.Route("/{companyId}", func(r chi.Router) {
-			handler.CompanyMiddleware(r, db)
+		mux.Route("/{organizationId}", func(r chi.Router) {
+			handler.OrganizationMiddleware(r, db)
 
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				got := r.Context().Value("company").(*models.Company)
-				if err := companyEq(got, company); err != nil {
-					t.Fatalf("CompanyMiddleware(): %v", err)
+				got := r.Context().Value("organization").(*models.Organization)
+				if err := organizationEq(got, organization); err != nil {
+					t.Fatalf("OrganizationMiddleware(): %v", err)
 				}
 			})
 		})
@@ -176,17 +176,17 @@ func testCompanyMiddleware(t *testing.T, handler *handlers.AppHandler) {
 		)
 		code := w.StatusCode
 		if code != http.StatusOK {
-			t.Fatalf("CompanyMiddleware(): status - got %d; want %d", code, http.StatusOK)
+			t.Fatalf("OrganizationMiddleware(): status - got %d; want %d", code, http.StatusOK)
 		}
 	})
 
 }
 
 type mockGetAllCompaniesDB struct {
-	GetAllCompaniesFunc func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Company, error)
+	GetAllCompaniesFunc func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Organization, error)
 }
 
-func (mdb *mockGetAllCompaniesDB) GetAllCompanies(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Company, error) {
+func (mdb *mockGetAllCompaniesDB) GetAllCompanies(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Organization, error) {
 	return mdb.GetAllCompaniesFunc(ctx, arg)
 }
 
@@ -194,7 +194,7 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
 		db := &mockGetAllCompaniesDB{
-			GetAllCompaniesFunc: func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Company, error) {
+			GetAllCompaniesFunc: func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Organization, error) {
 				return nil, errors.New("an error happens")
 			},
 		}
@@ -212,22 +212,22 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		var companies []*models.Company
+		var organizations []*models.Organization
 
 		const NUM_COMPANIES_CREATED = 3
 		mux := chi.NewMux()
 
 		db := &mockGetAllCompaniesDB{
-			GetAllCompaniesFunc: func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Company, error) {
+			GetAllCompaniesFunc: func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Organization, error) {
 				for i := 0; i < NUM_COMPANIES_CREATED; i++ {
-					company := &models.Company{
+					organization := &models.Organization{
 						Id:          primitive.NewObjectID(),
 						Name:        sfaker.Company().Name(),
 						Description: gofaker.Paragraph(),
 					}
-					companies = append(companies, company)
+					organizations = append(organizations, organization)
 				}
-				return companies, nil
+				return organizations, nil
 			},
 		}
 
@@ -241,18 +241,18 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 		got := handlers.GetAllCompaniesResponse{}
 		json.Unmarshal([]byte(response), &got)
 		for i, c := range got.Companies {
-			if err := companyEq(c, companies[i]); err != nil {
-				t.Fatalf("GetCompany(): %d - %v", i, err)
+			if err := organizationEq(c, organizations[i]); err != nil {
+				t.Fatalf("GetOrganization(): %d - %v", i, err)
 			}
 		}
 	})
 }
 
-func testGetCompany(t *testing.T, handler *handlers.AppHandler) {
+func testGetOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
@@ -260,48 +260,48 @@ func testGetCompany(t *testing.T, handler *handlers.AppHandler) {
 
 		db := &struct{}{}
 
-		handler.GetCompany(mux, db)
+		handler.GetOrganization(mux, db)
 		_, w, response := helpertest.MakeGetRequest(
 			mux,
 			"/",
 			[]helpertest.ContextData{
 				{
-					Name:  "company",
-					Value: company,
+					Name:  "organization",
+					Value: organization,
 				},
 			},
 		)
 		code := w.StatusCode
 		if code != http.StatusOK {
-			t.Fatalf("GetCompany(): status - got %d; want %d", code, http.StatusOK)
+			t.Fatalf("GetOrganization(): status - got %d; want %d", code, http.StatusOK)
 		}
 
-		got := handlers.GetCompanyResponse{}
+		got := handlers.GetOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
-		if err := companyEq(&got.Company, company); err != nil {
-			t.Fatalf("GetCompany(): %v", err)
+		if err := organizationEq(&got.Organization, organization); err != nil {
+			t.Fatalf("GetOrganization(): %v", err)
 		}
 	})
 }
 
-type mockCreateCompanyDB struct {
-	CreateCompanyFunc func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error)
+type mockCreateOrganizationDB struct {
+	CreateOrganizationFunc func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error)
 }
 
-func (mdb *mockCreateCompanyDB) CreateCompany(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
-	return mdb.CreateCompanyFunc(ctx, arg)
+func (mdb *mockCreateOrganizationDB) CreateOrganization(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
+	return mdb.CreateOrganizationFunc(ctx, arg)
 }
 
-func testCreateCompany(t *testing.T, handler *handlers.AppHandler) {
+func testCreateOrganization(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockCreateCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+		db := &mockCreateOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
 				return nil, nil
 			},
 		}
 
-		handler.CreateCompany(mux, db)
+		handler.CreateOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/",
@@ -310,7 +310,7 @@ func testCreateCompany(t *testing.T, handler *handlers.AppHandler) {
 			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
-			t.Fatalf("CreateCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("CreateOrganization(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_HDL_PRB_"
 		if !strings.HasPrefix(response, want) {
@@ -320,88 +320,88 @@ func testCreateCompany(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockCreateCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
+		db := &mockCreateOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
 				return nil, errors.New("an error happens")
 			},
 		}
 
-		handler.CreateCompany(mux, db)
+		handler.CreateOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/",
 			helpertest.CreateFormHeader(),
-			handlers.CreateCompanyRequest{
+			handlers.CreateOrganizationRequest{
 				Name:        sfaker.Company().Name(),
 				Description: gofaker.Paragraph(),
 			},
 			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
-			t.Fatalf("CreateCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("CreateOrganization(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_C_CMP_01"
 		if response != want {
-			t.Fatalf("CreateCompany(): response error - got %s, want %s", response, want)
+			t.Fatalf("CreateOrganization(): response error - got %s, want %s", response, want)
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 		}
 
 		mux := chi.NewMux()
-		db := &mockCreateCompanyDB{
-			CreateCompanyFunc: func(ctx context.Context, arg storage.CreateCompanyParams) (*models.Company, error) {
-				return company, nil
+		db := &mockCreateOrganizationDB{
+			CreateOrganizationFunc: func(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error) {
+				return organization, nil
 			},
 		}
 
-		handler.CreateCompany(mux, db)
+		handler.CreateOrganization(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/",
 			helpertest.CreateFormHeader(),
-			handlers.CreateCompanyRequest{
-				Name:        company.Name,
-				Description: company.Description,
+			handlers.CreateOrganizationRequest{
+				Name:        organization.Name,
+				Description: organization.Description,
 			},
 			[]helpertest.ContextData{},
 		)
 		want := http.StatusOK
 		if code != want {
-			t.Fatalf("CreateCompany(): status - got %d; want %d", code, want)
+			t.Fatalf("CreateOrganization(): status - got %d; want %d", code, want)
 		}
 
-		got := handlers.CreateCompanyResponse{}
+		got := handlers.CreateOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
-		if err := companyEq(&got.Company, company); err != nil {
-			t.Fatalf("GetCompany(): %v", err)
+		if err := organizationEq(&got.Organization, organization); err != nil {
+			t.Fatalf("GetOrganization(): %v", err)
 		}
 	})
 }
 
-type mockUpdateCompanyDB struct {
-	UpdateCompanyFunc func(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error)
+type mockUpdateOrganizationDB struct {
+	UpdateOrganizationFunc func(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error)
 }
 
-func (mdb *mockUpdateCompanyDB) UpdateCompany(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error) {
-	return mdb.UpdateCompanyFunc(ctx, arg)
+func (mdb *mockUpdateOrganizationDB) UpdateOrganization(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error) {
+	return mdb.UpdateOrganizationFunc(ctx, arg)
 }
 
-func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
+func testUpdateOrganization(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockUpdateCompanyDB{
-			UpdateCompanyFunc: func(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error) {
+		db := &mockUpdateOrganizationDB{
+			UpdateOrganizationFunc: func(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error) {
 				return nil, nil
 			},
 		}
 
-		handler.UpdateCompany(mux, db)
+		handler.UpdateOrganization(mux, db)
 		code, _, response := helpertest.MakePutRequest(
 			mux,
 			"/",
@@ -410,7 +410,7 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 			[]helpertest.ContextData{},
 		)
 		if code != http.StatusBadRequest {
-			t.Fatalf("UpdateCompany(): status - got %d; want %d", code, http.StatusBadRequest)
+			t.Fatalf("UpdateOrganization(): status - got %d; want %d", code, http.StatusBadRequest)
 		}
 		want := "ERR_HDL_PRB_"
 		if !strings.HasPrefix(response, want) {
@@ -420,23 +420,23 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockUpdateCompanyDB{
-			UpdateCompanyFunc: func(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error) {
+		db := &mockUpdateOrganizationDB{
+			UpdateOrganizationFunc: func(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error) {
 				return nil, errors.New("an error happens")
 			},
 		}
 
-		handler.UpdateCompany(mux, db)
+		handler.UpdateOrganization(mux, db)
 		code, _, response := helpertest.MakePutRequest(
 			mux,
 			"/",
 			helpertest.CreateFormHeader(),
-			handlers.UpdateCompanyRequest{
+			handlers.UpdateOrganizationRequest{
 				Name:        sfaker.Company().Name(),
 				Description: gofaker.Paragraph(),
 			},
 			[]helpertest.ContextData{
-				{Name: "company", Value: &models.Company{
+				{Name: "organization", Value: &models.Organization{
 					Id:          primitive.NewObjectID(),
 					Name:        sfaker.Company().Name(),
 					Description: gofaker.Paragraph(),
@@ -445,85 +445,85 @@ func testUpdateCompany(t *testing.T, handler *handlers.AppHandler) {
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
-			t.Fatalf("UpdateCompany(): status - got %d; want %d", code, wantCode)
+			t.Fatalf("UpdateOrganization(): status - got %d; want %d", code, wantCode)
 		}
 		wantError := "ERR_U_CMP_02"
 		if response != wantError {
-			t.Fatalf("UpdateCompany(): response error - got %s, want %s", response, wantError)
+			t.Fatalf("UpdateOrganization(): response error - got %s, want %s", response, wantError)
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		company := &models.Company{
+		organization := &models.Organization{
 			Id:          primitive.NewObjectID(),
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 		}
 
 		mux := chi.NewMux()
-		db := &mockUpdateCompanyDB{
-			UpdateCompanyFunc: func(ctx context.Context, arg storage.UpdateCompanyParams) (*models.Company, error) {
-				return &models.Company{
-					Id:          company.Id,
+		db := &mockUpdateOrganizationDB{
+			UpdateOrganizationFunc: func(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error) {
+				return &models.Organization{
+					Id:          organization.Id,
 					Name:        sfaker.Company().Name(),
 					Description: gofaker.Paragraph(),
 				}, nil
 			},
 		}
 
-		handler.UpdateCompany(mux, db)
+		handler.UpdateOrganization(mux, db)
 		code, _, response := helpertest.MakePutRequest(
 			mux,
 			"/",
 			helpertest.CreateFormHeader(),
-			handlers.UpdateCompanyRequest{
-				Name:        company.Name,
-				Description: company.Description,
+			handlers.UpdateOrganizationRequest{
+				Name:        organization.Name,
+				Description: organization.Description,
 			},
 			[]helpertest.ContextData{
 				{
-					Name: "company", Value: company,
+					Name: "organization", Value: organization,
 				},
 			},
 		)
 		want := http.StatusOK
 		if code != want {
-			t.Fatalf("UpdateCompany(): status - got %d; want %d", code, want)
+			t.Fatalf("UpdateOrganization(): status - got %d; want %d", code, want)
 		}
 
-		got := handlers.UpdateCompanyResponse{}
+		got := handlers.UpdateOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
-		if got.Company.Id != company.Id {
-			t.Fatalf("UpdatedCompany(): Id - got %s; want %s", got.Company.Id, company.Id)
+		if got.Organization.Id != organization.Id {
+			t.Fatalf("UpdatedOrganization(): Id - got %s; want %s", got.Organization.Id, organization.Id)
 		}
 	})
 }
 
-type mockDeleteCompanyDB struct {
-	DeleteCompanyFunc func(ctx context.Context, arg storage.DeleteCompanyParams) error
+type mockDeleteOrganizationDB struct {
+	DeleteOrganizationFunc func(ctx context.Context, arg storage.DeleteOrganizationParams) error
 }
 
-func (mdb *mockDeleteCompanyDB) DeleteCompany(ctx context.Context, arg storage.DeleteCompanyParams) error {
-	return mdb.DeleteCompanyFunc(ctx, arg)
+func (mdb *mockDeleteOrganizationDB) DeleteOrganization(ctx context.Context, arg storage.DeleteOrganizationParams) error {
+	return mdb.DeleteOrganizationFunc(ctx, arg)
 }
 
-func testDeleteCompany(t *testing.T, handler *handlers.AppHandler) {
+func testDeleteOrganization(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockDeleteCompanyDB{
-			DeleteCompanyFunc: func(ctx context.Context, arg storage.DeleteCompanyParams) error {
+		db := &mockDeleteOrganizationDB{
+			DeleteOrganizationFunc: func(ctx context.Context, arg storage.DeleteOrganizationParams) error {
 				return errors.New("an error happens")
 			},
 		}
 
-		handler.DeleteCompany(mux, db)
+		handler.DeleteOrganization(mux, db)
 		code, _, response := helpertest.MakeDeleteRequest(
 			mux,
 			"/",
 			helpertest.CreateFormHeader(),
 			nil,
 			[]helpertest.ContextData{
-				{Name: "company", Value: &models.Company{
+				{Name: "organization", Value: &models.Organization{
 					Id:          primitive.NewObjectID(),
 					Name:        sfaker.Company().Name(),
 					Description: gofaker.Paragraph(),
@@ -532,30 +532,30 @@ func testDeleteCompany(t *testing.T, handler *handlers.AppHandler) {
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
-			t.Fatalf("DeleteCompany(): status - got %d; want %d", code, wantCode)
+			t.Fatalf("DeleteOrganization(): status - got %d; want %d", code, wantCode)
 		}
 		wantError := "ERR_D_CMP_02"
 		if response != wantError {
-			t.Fatalf("DeleteCompany(): response error - got %s, want %s", response, wantError)
+			t.Fatalf("DeleteOrganization(): response error - got %s, want %s", response, wantError)
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockDeleteCompanyDB{
-			DeleteCompanyFunc: func(ctx context.Context, arg storage.DeleteCompanyParams) error {
+		db := &mockDeleteOrganizationDB{
+			DeleteOrganizationFunc: func(ctx context.Context, arg storage.DeleteOrganizationParams) error {
 				return nil
 			},
 		}
 
-		handler.DeleteCompany(mux, db)
+		handler.DeleteOrganization(mux, db)
 		code, _, response := helpertest.MakeDeleteRequest(
 			mux,
 			"/",
 			helpertest.CreateFormHeader(),
 			nil,
 			[]helpertest.ContextData{
-				{Name: "company", Value: &models.Company{
+				{Name: "organization", Value: &models.Organization{
 					Id:          primitive.NewObjectID(),
 					Name:        sfaker.Company().Name(),
 					Description: gofaker.Paragraph(),
@@ -564,18 +564,18 @@ func testDeleteCompany(t *testing.T, handler *handlers.AppHandler) {
 		)
 		want := http.StatusOK
 		if code != want {
-			t.Fatalf("DeleteCompany(): status - got %d; want %d", code, want)
+			t.Fatalf("DeleteOrganization(): status - got %d; want %d", code, want)
 		}
 
-		got := handlers.DeleteCompanyResponse{}
+		got := handlers.DeleteOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
 		if !got.Deleted {
-			t.Fatalf("DeleteCompany(): got %v; want %v", got.Deleted, true)
+			t.Fatalf("DeleteOrganization(): got %v; want %v", got.Deleted, true)
 		}
 	})
 }
 
-func companyEq(got, want *models.Company) error {
+func organizationEq(got, want *models.Organization) error {
 	if got == want {
 		return nil
 	}
