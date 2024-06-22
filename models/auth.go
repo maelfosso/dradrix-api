@@ -17,6 +17,7 @@ type User struct {
 	PhoneNumber string             `bson:"phone_number" json:"phone_number,omitempty"`
 	FirstName   string             `bson:"first_name,omitempty" json:"last_name,omitempty"`
 	LastName    string             `bson:"last_name,omitempty" json:"first_name,omitempty"`
+	Email       string             `bson:"email,omitempty" json:"email,omitempty"`
 
 	Preferences UserPreferences `bson:"preferences" json:"preferences,omitempty"`
 }

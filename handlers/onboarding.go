@@ -53,7 +53,7 @@ func (appHandler *AppHandler) SetProfile(mux chi.Router, db SetProfileInterface)
 			Id: currentAuthUser.Id,
 
 			Changes: map[string]any{
-				"onboarding_step": 2,
+				"onboarding_step": 1,
 			},
 		})
 		if err != nil {

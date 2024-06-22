@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -14,10 +13,12 @@ import (
 
 type GetCurrentUserResponse struct {
 	ID          primitive.ObjectID `json:"id,omitempty"`
-	Name        string             `json:"name,omitempty"`
-	PhoneNumber string             `json:"phone_number,omitempty"`
+	FirstName   string             `json:"first_name"`
+	LastName    string             `json:"last_name"`
+	Email       string             `json:"email"`
+	PhoneNumber string             `json:"phone_number"`
 
-	Preferences models.UserPreferences `json:"preferences,omitempty"`
+	Preferences models.UserPreferences `json:"preferences"`
 }
 
 func GetCurrentUser(mux chi.Router) {
@@ -32,7 +33,9 @@ func GetCurrentUser(mux chi.Router) {
 		}
 
 		response := GetCurrentUserResponse{
-			Name:        fmt.Sprintf("%s %s", currentUser.LastName, currentUser.FirstName),
+			FirstName:   currentUser.FirstName,
+			LastName:    currentUser.LastName,
+			Email:       currentUser.Email,
 			PhoneNumber: currentUser.PhoneNumber,
 			ID:          currentUser.Id,
 
