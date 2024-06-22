@@ -11,13 +11,14 @@ import (
 )
 
 type SetProfileInterface interface {
-	UpdateUserName(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error)
+	UpdateUserProfile(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error)
 	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
 type SetProfileRequest struct {
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
+	Email     string `json:"email,omitempty"`
 }
 
 type SetProfileResponse struct {
@@ -37,10 +38,11 @@ func (appHandler *AppHandler) SetProfile(mux chi.Router, db SetProfileInterface)
 
 		currentAuthUser := appHandler.GetAuthenticatedUser(r)
 
-		_, err = db.UpdateUserName(ctx, storage.UpdateUserNameParams{
+		_, err = db.UpdateUserProfile(ctx, storage.UpdateUserProfileParams{
 			Id:        currentAuthUser.Id,
 			FirstName: input.FirstName,
 			LastName:  input.LastName,
+			Email:     input.Email,
 		})
 		if err != nil {
 			http.Error(w, "ERR_OBD_SN_01", http.StatusBadRequest)

@@ -80,13 +80,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models
 	}
 }
 
-type UpdateUserNameParams struct {
+type UpdateUserProfileParams struct {
 	Id        primitive.ObjectID
 	FirstName string
 	LastName  string
+	Email     string
 }
 
-func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) (*models.User, error) {
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (*models.User, error) {
 	filter := bson.M{
 		"_id": arg.Id,
 	}
@@ -94,6 +95,7 @@ func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) 
 		"$set": bson.M{
 			"first_name": arg.FirstName,
 			"last_name":  arg.LastName,
+			"email":      arg.Email,
 		},
 	}
 	after := options.After

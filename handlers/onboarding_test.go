@@ -46,12 +46,12 @@ func TestOnboarding(t *testing.T) {
 }
 
 type mockSetProfileDB struct {
-	UpdateUserNameFunc        func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error)
+	UpdateUserProfileFunc     func(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error)
 	UpdateUserPreferencesFunc func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
-func (mdb *mockSetProfileDB) UpdateUserName(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
-	return mdb.UpdateUserNameFunc(ctx, arg)
+func (mdb *mockSetProfileDB) UpdateUserProfile(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error) {
+	return mdb.UpdateUserProfileFunc(ctx, arg)
 }
 
 func (mdb *mockSetProfileDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
@@ -62,7 +62,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
 		db := &mockSetProfileDB{
-			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
+			UpdateUserProfileFunc: func(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error) {
 				return nil, nil
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
@@ -91,7 +91,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error update user name", func(t *testing.T) {
 		mux := chi.NewMux()
 		db := &mockSetProfileDB{
-			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
+			UpdateUserProfileFunc: func(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error) {
 				return nil, errors.New("update user's name failed")
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
@@ -141,7 +141,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 		}
 		mux := chi.NewMux()
 		db := &mockSetProfileDB{
-			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
+			UpdateUserProfileFunc: func(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error) {
 				return &updatedUser, nil
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
@@ -188,7 +188,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 		}
 		mux := chi.NewMux()
 		db := &mockSetProfileDB{
-			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
+			UpdateUserProfileFunc: func(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error) {
 				return &updatedUser, nil
 			},
 			UpdateUserPreferencesFunc: func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
