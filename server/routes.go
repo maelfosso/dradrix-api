@@ -39,7 +39,7 @@ func (s *Server) setupRoutes() {
 			handlers.GetCurrentUser(r)
 
 			r.Route("/onboarding", func(r chi.Router) {
-				appHandler.SetName(r, s.database.Storage)
+				appHandler.SetProfile(r, s.database.Storage)
 				appHandler.FirstCompany(r, s.database.Storage)
 				appHandler.EndOfOnboarding(r, s.database.Storage)
 			})

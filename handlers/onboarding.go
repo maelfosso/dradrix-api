@@ -10,25 +10,25 @@ import (
 	"stockinos.com/api/storage"
 )
 
-type SetNameInterface interface {
+type SetProfileInterface interface {
 	UpdateUserName(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error)
 	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
-type SetNameRequest struct {
+type SetProfileRequest struct {
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
 }
 
-type SetNameResponse struct {
+type SetProfileResponse struct {
 	Done bool `json:"done,omitempty"`
 }
 
-func (appHandler *AppHandler) SetName(mux chi.Router, db SetNameInterface) {
-	mux.Post("/name", func(w http.ResponseWriter, r *http.Request) {
+func (appHandler *AppHandler) SetProfile(mux chi.Router, db SetProfileInterface) {
+	mux.Post("/profile", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var input SetNameRequest
+		var input SetProfileRequest
 		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
 		if err != nil {
 			http.Error(w, err.Error(), httpStatus)
@@ -59,7 +59,7 @@ func (appHandler *AppHandler) SetName(mux chi.Router, db SetNameInterface) {
 			return
 		}
 
-		response := SetNameResponse{
+		response := SetProfileResponse{
 			Done: true,
 		}
 
@@ -87,7 +87,7 @@ type FirstCompanyResponse struct {
 }
 
 func (appHandler *AppHandler) FirstCompany(mux chi.Router, db FirstCompanyInterface) {
-	mux.Post("/company", func(w http.ResponseWriter, r *http.Request) {
+	mux.Post("/organization", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		currentAuthUser := appHandler.GetAuthenticatedUser(r)

@@ -33,7 +33,7 @@ func TestOnboarding(t *testing.T) {
 	}
 
 	tests := map[string]func(*testing.T, *handlers.AppHandler){
-		"SetName":         testSetName,
+		"SetProfile":      testSetProfile,
 		"FirstCompany":    testFirstCompany,
 		"EndOfOnboarding": testEndOfOnboarding,
 	}
@@ -45,23 +45,23 @@ func TestOnboarding(t *testing.T) {
 	}
 }
 
-type mockSetNameDB struct {
+type mockSetProfileDB struct {
 	UpdateUserNameFunc        func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error)
 	UpdateUserPreferencesFunc func(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
-func (mdb *mockSetNameDB) UpdateUserName(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
+func (mdb *mockSetProfileDB) UpdateUserName(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
 	return mdb.UpdateUserNameFunc(ctx, arg)
 }
 
-func (mdb *mockSetNameDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+func (mdb *mockSetProfileDB) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
 	return mdb.UpdateUserPreferencesFunc(ctx, arg)
 }
 
-func testSetName(t *testing.T, handler *handlers.AppHandler) {
+func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("invalid input data", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockSetNameDB{
+		db := &mockSetProfileDB{
 			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
 				return nil, nil
 			},
@@ -70,7 +70,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 
-		handler.SetName(mux, db)
+		handler.SetProfile(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/name",
@@ -80,17 +80,17 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
-			t.Fatalf("SetName(): code - got %d; want %d", code, wantCode)
+			t.Fatalf("SetProfile(): code - got %d; want %d", code, wantCode)
 		}
 		wantError := "ERR_HDL_PRB_"
 		if !strings.HasPrefix(response, wantError) {
-			t.Fatalf("SetName(): response error - got %s; want %s", response, wantError)
+			t.Fatalf("SetProfile(): response error - got %s; want %s", response, wantError)
 		}
 	})
 
 	t.Run("error update user name", func(t *testing.T) {
 		mux := chi.NewMux()
-		db := &mockSetNameDB{
+		db := &mockSetProfileDB{
 			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
 				return nil, errors.New("update user's name failed")
 			},
@@ -99,12 +99,12 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 
-		handler.SetName(mux, db)
+		handler.SetProfile(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/name",
 			helpertest.CreateFormHeader(),
-			handlers.SetNameRequest{
+			handlers.SetProfileRequest{
 				FirstName: gofaker.FirstName(),
 				LastName:  gofaker.LastName(),
 			},
@@ -112,16 +112,16 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
-			t.Fatalf("SetName(): code - got %d; want %d", code, wantCode)
+			t.Fatalf("SetProfile(): code - got %d; want %d", code, wantCode)
 		}
 		wantError := "ERR_OBD_SN_01"
 		if !strings.HasPrefix(response, wantError) {
-			t.Fatalf("SetName(): response error - got %s; want %s", response, wantError)
+			t.Fatalf("SetProfile(): response error - got %s; want %s", response, wantError)
 		}
 	})
 
 	t.Run("error update user preferences", func(t *testing.T) {
-		dataRequest := handlers.SetNameRequest{
+		dataRequest := handlers.SetProfileRequest{
 			FirstName: gofaker.FirstName(),
 			LastName:  gofaker.LastName(),
 		}
@@ -140,7 +140,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 		mux := chi.NewMux()
-		db := &mockSetNameDB{
+		db := &mockSetProfileDB{
 			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
 				return &updatedUser, nil
 			},
@@ -149,7 +149,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 
-		handler.SetName(mux, db)
+		handler.SetProfile(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/name",
@@ -159,16 +159,16 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 		)
 		wantCode := http.StatusBadRequest
 		if code != wantCode {
-			t.Fatalf("SetName(): code - got %d; want %d", code, wantCode)
+			t.Fatalf("SetProfile(): code - got %d; want %d", code, wantCode)
 		}
 		wantError := "ERR_OBD_SN_02"
 		if !strings.HasPrefix(response, wantError) {
-			t.Fatalf("SetName(): response error - got %s; want %s", response, wantError)
+			t.Fatalf("SetProfile(): response error - got %s; want %s", response, wantError)
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		dataRequest := handlers.SetNameRequest{
+		dataRequest := handlers.SetProfileRequest{
 			FirstName: gofaker.FirstName(),
 			LastName:  gofaker.LastName(),
 		}
@@ -187,7 +187,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 		mux := chi.NewMux()
-		db := &mockSetNameDB{
+		db := &mockSetProfileDB{
 			UpdateUserNameFunc: func(ctx context.Context, arg storage.UpdateUserNameParams) (*models.User, error) {
 				return &updatedUser, nil
 			},
@@ -196,7 +196,7 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 			},
 		}
 
-		handler.SetName(mux, db)
+		handler.SetProfile(mux, db)
 		code, _, response := helpertest.MakePostRequest(
 			mux,
 			"/name",
@@ -206,13 +206,13 @@ func testSetName(t *testing.T, handler *handlers.AppHandler) {
 		)
 		wantCode := http.StatusOK
 		if code != wantCode {
-			t.Fatalf("SetName(): code - got %d; want %d", code, wantCode)
+			t.Fatalf("SetProfile(): code - got %d; want %d", code, wantCode)
 		}
 
-		got := handlers.SetNameResponse{}
+		got := handlers.SetProfileResponse{}
 		json.Unmarshal([]byte(response), &got)
 		if !got.Done {
-			t.Fatalf("SetName(): response done - got %+v; want true", got.Done)
+			t.Fatalf("SetProfile(): response done - got %+v; want true", got.Done)
 		}
 	})
 }
