@@ -147,9 +147,9 @@ func testOrganizationMiddleware(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("organization found", func(t *testing.T) {
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		mux := chi.NewMux()
 		db := &mockOrganizationMiddlewareDB{
@@ -221,9 +221,9 @@ func testGetAllCompanies(t *testing.T, handler *handlers.AppHandler) {
 			GetAllCompaniesFunc: func(ctx context.Context, arg storage.GetAllCompaniesParams) ([]*models.Organization, error) {
 				for i := 0; i < NUM_COMPANIES_CREATED; i++ {
 					organization := &models.Organization{
-						Id:          primitive.NewObjectID(),
-						Name:        sfaker.Company().Name(),
-						Description: gofaker.Paragraph(),
+						Id:   primitive.NewObjectID(),
+						Name: sfaker.Company().Name(),
+						Bio:  gofaker.Paragraph(),
 					}
 					organizations = append(organizations, organization)
 				}
@@ -253,9 +253,9 @@ func testGetOrganization(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 
 		db := &struct{}{}
@@ -332,8 +332,8 @@ func testCreateOrganization(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			helpertest.CreateFormHeader(),
 			handlers.CreateOrganizationRequest{
-				Name:        sfaker.Company().Name(),
-				Description: gofaker.Paragraph(),
+				Name: sfaker.Company().Name(),
+				Bio:  gofaker.Paragraph(),
 			},
 			[]helpertest.ContextData{},
 		)
@@ -348,9 +348,9 @@ func testCreateOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 
 		mux := chi.NewMux()
@@ -366,8 +366,8 @@ func testCreateOrganization(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			helpertest.CreateFormHeader(),
 			handlers.CreateOrganizationRequest{
-				Name:        organization.Name,
-				Description: organization.Description,
+				Name: organization.Name,
+				Bio:  organization.Bio,
 			},
 			[]helpertest.ContextData{},
 		)
@@ -432,14 +432,14 @@ func testUpdateOrganization(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			helpertest.CreateFormHeader(),
 			handlers.UpdateOrganizationRequest{
-				Name:        sfaker.Company().Name(),
-				Description: gofaker.Paragraph(),
+				Name: sfaker.Company().Name(),
+				Bio:  gofaker.Paragraph(),
 			},
 			[]helpertest.ContextData{
 				{Name: "organization", Value: &models.Organization{
-					Id:          primitive.NewObjectID(),
-					Name:        sfaker.Company().Name(),
-					Description: gofaker.Paragraph(),
+					Id:   primitive.NewObjectID(),
+					Name: sfaker.Company().Name(),
+					Bio:  gofaker.Paragraph(),
 				}},
 			},
 		)
@@ -455,18 +455,18 @@ func testUpdateOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 
 		mux := chi.NewMux()
 		db := &mockUpdateOrganizationDB{
 			UpdateOrganizationFunc: func(ctx context.Context, arg storage.UpdateOrganizationParams) (*models.Organization, error) {
 				return &models.Organization{
-					Id:          organization.Id,
-					Name:        sfaker.Company().Name(),
-					Description: gofaker.Paragraph(),
+					Id:   organization.Id,
+					Name: sfaker.Company().Name(),
+					Bio:  gofaker.Paragraph(),
 				}, nil
 			},
 		}
@@ -477,8 +477,8 @@ func testUpdateOrganization(t *testing.T, handler *handlers.AppHandler) {
 			"/",
 			helpertest.CreateFormHeader(),
 			handlers.UpdateOrganizationRequest{
-				Name:        organization.Name,
-				Description: organization.Description,
+				Name: organization.Name,
+				Bio:  organization.Bio,
 			},
 			[]helpertest.ContextData{
 				{
@@ -524,9 +524,9 @@ func testDeleteOrganization(t *testing.T, handler *handlers.AppHandler) {
 			nil,
 			[]helpertest.ContextData{
 				{Name: "organization", Value: &models.Organization{
-					Id:          primitive.NewObjectID(),
-					Name:        sfaker.Company().Name(),
-					Description: gofaker.Paragraph(),
+					Id:   primitive.NewObjectID(),
+					Name: sfaker.Company().Name(),
+					Bio:  gofaker.Paragraph(),
 				}},
 			},
 		)
@@ -556,9 +556,9 @@ func testDeleteOrganization(t *testing.T, handler *handlers.AppHandler) {
 			nil,
 			[]helpertest.ContextData{
 				{Name: "organization", Value: &models.Organization{
-					Id:          primitive.NewObjectID(),
-					Name:        sfaker.Company().Name(),
-					Description: gofaker.Paragraph(),
+					Id:   primitive.NewObjectID(),
+					Name: sfaker.Company().Name(),
+					Bio:  gofaker.Paragraph(),
 				}},
 			},
 		)
@@ -591,8 +591,8 @@ func organizationEq(got, want *models.Organization) error {
 	if got.Name != want.Name {
 		return fmt.Errorf("got.Name = %s; want %s", got.Name, want.Name)
 	}
-	if got.Description != want.Description {
-		return fmt.Errorf("got.Description = %s; want %s", got.Description, want.Description)
+	if got.Bio != want.Bio {
+		return fmt.Errorf("got.Bio = %s; want %s", got.Bio, want.Bio)
 	}
 	if got.CreatedBy != want.CreatedBy {
 		return fmt.Errorf("got.CreatedBy = %s; want %s", got.CreatedBy, want.CreatedBy)

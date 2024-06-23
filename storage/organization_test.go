@@ -35,8 +35,8 @@ func TestOrganization(t *testing.T) {
 
 func testCreateOrganization(t *testing.T, db *storage.Database) {
 	organization, err := db.Storage.CreateOrganization(context.Background(), storage.CreateOrganizationParams{
-		Name:        sfaker.Company().Name(),
-		Description: gofaker.Paragraph(),
+		Name: sfaker.Company().Name(),
+		Bio:  gofaker.Paragraph(),
 
 		CreatedBy: primitive.NewObjectID(),
 	})
@@ -67,8 +67,8 @@ func testGetAllCompanies(t *testing.T, db *storage.Database) {
 
 	for i := 0; i < NUM_COMPANIES_CREATED; i++ {
 		organization, _ := db.Storage.CreateOrganization(context.Background(), storage.CreateOrganizationParams{
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 
 			CreatedBy: userA,
 		})
@@ -107,16 +107,16 @@ func testGetAllCompanies(t *testing.T, db *storage.Database) {
 
 func testUpdateOrganization(t *testing.T, db *storage.Database) {
 	organization, _ := db.Storage.CreateOrganization(context.Background(), storage.CreateOrganizationParams{
-		Name:        sfaker.Company().Name(),
-		Description: gofaker.Paragraph(),
+		Name: sfaker.Company().Name(),
+		Bio:  gofaker.Paragraph(),
 
 		CreatedBy: primitive.NewObjectID(),
 	})
 
 	got, err := db.Storage.UpdateOrganization(context.Background(), storage.UpdateOrganizationParams{
-		Id:          organization.Id,
-		Name:        sfaker.Company().Name(),
-		Description: gofaker.Paragraph(),
+		Id:   organization.Id,
+		Name: sfaker.Company().Name(),
+		Bio:  gofaker.Paragraph(),
 	})
 	if err != nil {
 		t.Fatalf("UpdateOrganization(): got error=%+v; want not error", err)
@@ -124,8 +124,8 @@ func testUpdateOrganization(t *testing.T, db *storage.Database) {
 	if organization.Name == got.Name {
 		t.Fatalf("UpdateOrganization(): got same name (%s); want different name", got.Name)
 	}
-	if organization.Description == got.Description {
-		t.Fatalf("UpdateOrganization() Name: got same description (%s); want different description", got.Description)
+	if organization.Bio == got.Bio {
+		t.Fatalf("UpdateOrganization() Name: got same description (%s); want different description", got.Bio)
 	}
 	if organization.CreatedBy != got.CreatedBy {
 		t.Fatalf("UpdateOrganization() Created by: got %s; want %s", got.CreatedBy.String(), organization.CreatedBy.String())
@@ -140,8 +140,8 @@ func testUpdateOrganization(t *testing.T, db *storage.Database) {
 	if organization.Name == got.Name {
 		t.Fatalf("GetOrganization(): got same name (%s); want different name", got.Name)
 	}
-	if organization.Description == got.Description {
-		t.Fatalf("GetOrganization() Name: got same description (%s); want different description", got.Description)
+	if organization.Bio == got.Bio {
+		t.Fatalf("GetOrganization() Name: got same description (%s); want different description", got.Bio)
 	}
 	if organization.CreatedBy != got.CreatedBy {
 		t.Fatalf("GetOrganization() Created by: got %s; want %s", got.CreatedBy.String(), organization.CreatedBy.String())
@@ -150,8 +150,8 @@ func testUpdateOrganization(t *testing.T, db *storage.Database) {
 
 func testDeleteOrganization(t *testing.T, db *storage.Database) {
 	organization, _ := db.Storage.CreateOrganization(context.Background(), storage.CreateOrganizationParams{
-		Name:        sfaker.Company().Name(),
-		Description: gofaker.Paragraph(),
+		Name: sfaker.Company().Name(),
+		Bio:  gofaker.Paragraph(),
 
 		CreatedBy: primitive.NewObjectID(),
 	})
@@ -190,8 +190,8 @@ func organizationEq(got, want *models.Organization) error {
 	if got.Name != want.Name {
 		return fmt.Errorf("got.Name = %s; want %s", got.Name, want.Name)
 	}
-	if got.Description != want.Description {
-		return fmt.Errorf("got.Description = %s; want %s", got.Description, want.Description)
+	if got.Bio != want.Bio {
+		return fmt.Errorf("got.Bio = %s; want %s", got.Bio, want.Bio)
 	}
 	if got.CreatedBy != want.CreatedBy {
 		return fmt.Errorf("got.CreatedBy = %s; want %s", got.CreatedBy, want.CreatedBy)

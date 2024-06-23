@@ -261,8 +261,8 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error creating organization", func(t *testing.T) {
 		dataRequest := handlers.FirstOrganizationRequest{
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		mux := chi.NewMux()
 		db := &mockFirstOrganizationDB{
@@ -293,13 +293,13 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("error update user preferences", func(t *testing.T) {
 		dataRequest := handlers.FirstOrganizationRequest{
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 
 			CreatedBy: authenticatedUser.Id,
 		}
@@ -334,13 +334,13 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		dataRequest := handlers.FirstOrganizationRequest{
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		organization := models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		updatedUser := models.User{
 			Id:          authenticatedUser.Id,
@@ -351,7 +351,7 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 			Preferences: models.UserPreferences{
 				Organization: models.UserPreferencesOrganization{
 					Id:   organization.Id,
-					Name: organization.Description,
+					Name: organization.Bio,
 				},
 				OnboardingStep: 1,
 			},
@@ -425,9 +425,9 @@ func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		organization := models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		updatedUser := models.User{
 			Id:          authenticatedUser.Id,
@@ -438,7 +438,7 @@ func testEndOfOnboarding(t *testing.T, handler *handlers.AppHandler) {
 			Preferences: models.UserPreferences{
 				Organization: models.UserPreferencesOrganization{
 					Id:   organization.Id,
-					Name: organization.Description,
+					Name: organization.Bio,
 				},
 				OnboardingStep: -1,
 			},

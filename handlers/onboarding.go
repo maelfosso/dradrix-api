@@ -80,8 +80,10 @@ type FirstOrganizationInterface interface {
 }
 
 type FirstOrganizationRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name    string         `json:"name"`
+	Bio     string         `json:"bio"`
+	Email   string         `json:"email"`
+	Address models.Address `json:"address"`
 }
 
 type FirstOrganizationResponse struct {
@@ -94,7 +96,7 @@ func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganiza
 
 		currentAuthUser := appHandler.GetAuthenticatedUser(r)
 
-		var input CreateOrganizationRequest
+		var input FirstOrganizationRequest
 		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
 		if err != nil {
 			http.Error(w, err.Error(), httpStatus)
@@ -102,9 +104,11 @@ func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganiza
 		}
 
 		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
-			Name:        input.Name,
-			Description: input.Description,
-			CreatedBy:   currentAuthUser.Id,
+			Name:      input.Name,
+			Bio:       input.Bio,
+			Email:     input.Email,
+			Address:   input.Address,
+			CreatedBy: currentAuthUser.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_OBD_CPN_01", http.StatusBadRequest)
@@ -119,7 +123,7 @@ func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganiza
 					"_id":  organization.Id,
 					"name": organization.Name,
 				},
-				"onboarding_step": 3,
+				"onboarding_step": 2,
 			},
 		})
 		if err != nil {

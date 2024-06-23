@@ -77,9 +77,9 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewRouter()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		db := &mockAcitivityMiddlewareDB{}
 		db.GetActivityFunc = func(ctx context.Context, arg storage.GetActivityParams) (*models.Activity, error) {
@@ -115,9 +115,9 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("no activity found", func(t *testing.T) {
 		mux := chi.NewRouter()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		db := &mockAcitivityMiddlewareDB{}
 		db.GetActivityFunc = func(ctx context.Context, arg storage.GetActivityParams) (*models.Activity, error) {
@@ -153,9 +153,9 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("activity found", func(t *testing.T) {
 		mux := chi.NewRouter()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		activity := &models.Activity{
 			Id:          primitive.NewObjectID(),
@@ -228,9 +228,9 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		mockDb.GetAllActivitiesFunc = func(ctx context.Context, arg storage.GetAllActivitiesParams) ([]*models.Activity, error) {
 			return []*models.Activity{}, errors.New("error from db")
@@ -261,9 +261,9 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 
 		activities := []*models.Activity{
@@ -363,9 +363,9 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		db := &mockCreateActivityDB{
 			CreateActivityFunc: func(ctx context.Context, arg storage.CreateActivityParams) (*models.Activity, error) {
@@ -400,9 +400,9 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 	t.Run("success", func(t *testing.T) {
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		activity := &models.Activity{
 			Id:          primitive.NewObjectID(),
@@ -443,7 +443,7 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 			helpertest.CreateFormHeader(),
 			handlers.CreateActivityRequest{
 				Name:        organization.Name,
-				Description: organization.Description,
+				Description: organization.Bio,
 			},
 			[]helpertest.ContextData{{Name: "organization", Value: organization}},
 		)
@@ -561,9 +561,9 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("wrong input.field value", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		activity := &models.Activity{
 			Id:          primitive.NewObjectID(),
@@ -783,9 +783,9 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		activity := &models.Activity{
 			Id:          primitive.NewObjectID(),
@@ -1020,9 +1020,9 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 
 		for name, tc := range testCases {
 			organization = &models.Organization{
-				Id:          primitive.NewObjectID(),
-				Name:        sfaker.Company().Name(),
-				Description: gofaker.Paragraph(),
+				Id:   primitive.NewObjectID(),
+				Name: sfaker.Company().Name(),
+				Bio:  gofaker.Paragraph(),
 			}
 			activity = &models.Activity{
 				Id:          primitive.NewObjectID(),
@@ -1109,9 +1109,9 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("error from db", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		activity := &models.Activity{
 			Id:          primitive.NewObjectID(),
@@ -1167,9 +1167,9 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 	t.Run("success", func(t *testing.T) {
 		mux := chi.NewMux()
 		organization := &models.Organization{
-			Id:          primitive.NewObjectID(),
-			Name:        sfaker.Company().Name(),
-			Description: gofaker.Paragraph(),
+			Id:   primitive.NewObjectID(),
+			Name: sfaker.Company().Name(),
+			Bio:  gofaker.Paragraph(),
 		}
 		activity := &models.Activity{
 			Id:          primitive.NewObjectID(),

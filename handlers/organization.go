@@ -87,8 +87,8 @@ type createOrganizationInterface interface {
 }
 
 type CreateOrganizationRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name string `json:"name"`
+	Bio  string `json:"description"`
 }
 
 type CreateOrganizationResponse struct {
@@ -108,9 +108,9 @@ func (handler *AppHandler) CreateOrganization(mux chi.Router, db createOrganizat
 		}
 
 		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
-			Name:        input.Name,
-			Description: input.Description,
-			CreatedBy:   authUser.Id,
+			Name:      input.Name,
+			Bio:       input.Bio,
+			CreatedBy: authUser.Id,
 		})
 		if err != nil {
 			http.Error(w, "ERR_C_CMP_01", http.StatusBadRequest)
@@ -162,8 +162,8 @@ type updateOrganizationInterface interface {
 }
 
 type UpdateOrganizationRequest struct {
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
+	Name string `json:"name,omitempty"`
+	Bio  string `json:"description,omitempty"`
 }
 
 type UpdateOrganizationResponse struct {
@@ -184,9 +184,9 @@ func (handler *AppHandler) UpdateOrganization(mux chi.Router, db updateOrganizat
 		organization := ctx.Value("organization").(*models.Organization)
 
 		updatedOrganization, err := db.UpdateOrganization(ctx, storage.UpdateOrganizationParams{
-			Id:          organization.Id,
-			Name:        input.Name,
-			Description: input.Description,
+			Id:   organization.Id,
+			Name: input.Name,
+			Bio:  input.Bio,
 		})
 		if err != nil {
 			http.Error(w, "ERR_U_CMP_01", http.StatusBadRequest)

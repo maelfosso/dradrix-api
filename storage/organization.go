@@ -13,17 +13,19 @@ import (
 )
 
 type CreateOrganizationParams struct {
-	Name        string
-	Description string
+	Name    string
+	Bio     string
+	Email   string
+	Address models.Address
 
 	CreatedBy primitive.ObjectID
 }
 
 func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error) {
 	var organization models.Organization = models.Organization{
-		Id:          primitive.NewObjectID(),
-		Name:        arg.Name,
-		Description: arg.Description,
+		Id:   primitive.NewObjectID(),
+		Name: arg.Name,
+		Bio:  arg.Bio,
 
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -83,9 +85,9 @@ func (q *Queries) GetOrganization(ctx context.Context, arg GetOrganizationParams
 }
 
 type UpdateOrganizationParams struct {
-	Id          primitive.ObjectID
-	Name        string
-	Description string
+	Id   primitive.ObjectID
+	Name string
+	Bio  string
 }
 
 func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (*models.Organization, error) {
@@ -95,7 +97,7 @@ func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganization
 	update := bson.M{
 		"$set": bson.M{
 			"name":        arg.Name,
-			"description": arg.Description,
+			"description": arg.Bio,
 		},
 	}
 	after := options.After
