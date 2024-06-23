@@ -41,7 +41,6 @@ func (s *Server) setupRoutes() {
 			r.Route("/onboarding", func(r chi.Router) {
 				appHandler.SetProfile(r, s.database.Storage)
 				appHandler.FirstOrganization(r, s.database.Storage)
-				appHandler.EndOfOnboarding(r, s.database.Storage)
 			})
 		})
 

@@ -123,7 +123,7 @@ func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganiza
 					"_id":  organization.Id,
 					"name": organization.Name,
 				},
-				"onboarding_step": 2,
+				"onboarding_step": -1,
 			},
 		})
 		if err != nil {
@@ -139,44 +139,6 @@ func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganiza
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, "ERR_OBD_CPN_END", http.StatusBadRequest)
-			return
-		}
-	})
-}
-
-type EndOfOnboardingInterface interface {
-	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
-}
-
-type EndOfOnboardingResponse struct {
-	Done bool `json:"done,omitempty"`
-}
-
-func (appHandler *AppHandler) EndOfOnboarding(mux chi.Router, db EndOfOnboardingInterface) {
-	mux.Post("/end", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		currentAuthUser := appHandler.GetAuthenticatedUser(r)
-
-		_, err := db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
-			Id: currentAuthUser.Id,
-			Changes: map[string]any{
-				"onboarding_step": -1,
-			},
-		})
-		if err != nil {
-			http.Error(w, "ERR_OBD_END_01", http.StatusBadRequest)
-			return
-		}
-
-		response := EndOfOnboardingResponse{
-			Done: true,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "ERR_OBD_END_END", http.StatusBadRequest)
 			return
 		}
 	})
