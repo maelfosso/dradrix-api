@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stockinos.com/api/models"
 	"stockinos.com/api/storage"
 )
@@ -87,7 +88,7 @@ type FirstOrganizationRequest struct {
 }
 
 type FirstOrganizationResponse struct {
-	Done bool `json:"done,omitempty"`
+	Id primitive.ObjectID `json:"id"`
 }
 
 func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganizationInterface) {
@@ -132,7 +133,7 @@ func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganiza
 		}
 
 		response := FirstOrganizationResponse{
-			Done: true,
+			Id: organization.Id,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
