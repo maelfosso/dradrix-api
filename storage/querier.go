@@ -10,6 +10,8 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (*models.User, error)
 	DoesUserExists(ctx context.Context, arg DoesUserExistsParams) (*models.User, error)
 	GetUserByPhoneNumber(ctx context.Context, arg GetUserByPhoneNumberParams) (*models.User, error)
+	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (*models.User, error)
+	UpdateUserPreferences(ctx context.Context, arg UpdateUserPreferencesParams) (*models.User, error)
 
 	// OTP
 	CheckOTP(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
@@ -18,12 +20,12 @@ type Querier interface {
 	CreateOTP(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
 	GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
 
-	// Company
-	CreateCompany(ctx context.Context, arg CreateCompanyParams) (*models.Company, error)
-	GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Company, error)
-	GetCompany(ctx context.Context, arg GetCompanyParams) (*models.Company, error)
-	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (*models.Company, error)
-	DeleteCompany(ctx context.Context, arg DeleteCompanyParams) error
+	// Organization
+	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error)
+	GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Organization, error)
+	GetOrganization(ctx context.Context, arg GetOrganizationParams) (*models.Organization, error)
+	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (*models.Organization, error)
+	DeleteOrganization(ctx context.Context, arg DeleteOrganizationParams) error
 
 	// Monitoring
 	// Activity

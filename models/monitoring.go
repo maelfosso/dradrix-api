@@ -32,8 +32,8 @@ type Activity struct {
 	UpdatedAt time.Time  `bson:"updated_at" json:"updated_at,omitempty"`
 	DeletedAt *time.Time `bson:"deleted_at" json:"deleted_at,omitempty"`
 
-	CompanyId primitive.ObjectID `bson:"company_id" json:"company_id,omitempty"`
-	CreatedBy primitive.ObjectID `bson:"created_by" json:"created_by,omitempty"`
+	OrganizationId primitive.ObjectID `bson:"organization_id" json:"organization_id,omitempty"`
+	CreatedBy      primitive.ObjectID `bson:"created_by" json:"created_by,omitempty"`
 }
 
 type Data struct {

@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"stockinos.com/api/integrationtest"
@@ -15,7 +16,8 @@ func TestCreateUser(t *testing.T) {
 
 		user, err := db.Storage.CreateUser(context.Background(), storage.CreateUserParams{
 			PhoneNumber: "0000-0000",
-			Name:        "John Doe",
+			FirstName:   "Doe",
+			LastName:    "John",
 		})
 		if err != nil {
 			t.Fatalf("CreateUser() - err=%v; want=nil", err)
@@ -33,8 +35,8 @@ func TestCreateUser(t *testing.T) {
 		if user == nil {
 			t.Fatalf("GetUserByPhoneNumber() user should not be nil")
 		}
-		if user.PhoneNumber != "0000-0000" || user.Name != "John Doe" {
-			t.Fatalf("GetUserByPhoneNumber() - wrong fetched user; got=%s/%s; want=0000-0000/John Doe", user.PhoneNumber, user.Name)
+		if user.PhoneNumber != "0000-0000" || user.FirstName != "Doe" || user.LastName != "John" {
+			t.Fatalf("GetUserByPhoneNumber() - wrong fetched user; got=%s/%s; want=0000-0000/John Doe", user.PhoneNumber, fmt.Sprintf("%s %s", user.LastName, user.FirstName))
 		}
 
 		user, err = db.Storage.DoesUserExists(context.Background(), storage.DoesUserExistsParams{
@@ -46,8 +48,8 @@ func TestCreateUser(t *testing.T) {
 		if user == nil {
 			t.Fatalf("DoesUserExists() user should not be nil")
 		}
-		if user.PhoneNumber != "0000-0000" || user.Name != "John Doe" {
-			t.Fatalf("DoesUserExists() - wrong fetched user; got=%s/%s; want=0000-0000/John Doe", user.PhoneNumber, user.Name)
+		if user.PhoneNumber != "0000-0000" || user.FirstName != "Doe" || user.LastName != "John" {
+			t.Fatalf("DoesUserExists() - wrong fetched user; got=%s/%s; want=0000-0000/John Doe", user.PhoneNumber, fmt.Sprintf("%s %s", user.LastName, user.FirstName))
 		}
 	})
 }
@@ -59,7 +61,8 @@ func TestGetUserByPhoneNumber(t *testing.T) {
 
 		db.Storage.CreateUser(context.Background(), storage.CreateUserParams{
 			PhoneNumber: "0000-0000",
-			Name:        "John Doe",
+			FirstName:   "Doe",
+			LastName:    "John",
 		})
 
 		user, err := db.Storage.GetUserByPhoneNumber(context.Background(), storage.GetUserByPhoneNumberParams{
@@ -81,7 +84,8 @@ func TestDoesUserExists(t *testing.T) {
 
 		db.Storage.CreateUser(context.Background(), storage.CreateUserParams{
 			PhoneNumber: "0000-0000",
-			Name:        "John Doe",
+			FirstName:   "Doe",
+			LastName:    "John",
 		})
 
 		user, err := db.Storage.DoesUserExists(context.Background(), storage.DoesUserExistsParams{

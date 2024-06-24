@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -90,8 +92,9 @@ func NewAppHandler() *AppHandler {
 				// Catch error caused by extra unexpected fields in the request body.
 				// We extract the field name from the errror message and interpolate it in our custom error message
 				case strings.HasPrefix(err.Error(), "json: unknown field "):
-					// fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-					// msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+					fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+					msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+					log.Printf("\n\nError PRB: %s", msg)
 					return http.StatusBadRequest, errors.New("ERR_HDL_PRB_05")
 
 				// An io.EOF error is returned by Decode() if the request body is empty

@@ -74,7 +74,8 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 		if user == nil {
 			_, err := svc.CreateUser(ctx, storage.CreateUserParams{
 				PhoneNumber: input.PhoneNumber,
-				Name:        "",
+				FirstName:   "",
+				LastName:    "",
 			})
 			if err != nil {
 				log.Println("Error at CreateUser", err)

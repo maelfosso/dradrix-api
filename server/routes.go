@@ -35,18 +35,25 @@ func (s *Server) setupRoutes() {
 		r.Use(services.Authenticator)
 		r.Use(s.convertJWTTokenToMember)
 
-		handlers.GetCurrentUser(r)
+		r.Route("/user", func(r chi.Router) {
+			handlers.GetCurrentUser(r)
 
-		r.Route("/companies", func(r chi.Router) {
+			r.Route("/onboarding", func(r chi.Router) {
+				appHandler.SetProfile(r, s.database.Storage)
+				appHandler.FirstOrganization(r, s.database.Storage)
+			})
+		})
+
+		r.Route("/organizations", func(r chi.Router) {
 			appHandler.GetAllCompanies(r, s.database.Storage)
-			appHandler.CreateCompany(r, s.database.Storage)
+			appHandler.CreateOrganization(r, s.database.Storage)
 
-			r.Route("/{companyId}", func(r chi.Router) {
-				appHandler.CompanyMiddleware(r, s.database.Storage)
+			r.Route("/{organizationId}", func(r chi.Router) {
+				appHandler.OrganizationMiddleware(r, s.database.Storage)
 
-				appHandler.GetCompany(r, s.database.Storage)
-				appHandler.UpdateCompany(r, s.database.Storage)
-				appHandler.DeleteCompany(r, s.database.Storage)
+				appHandler.GetOrganization(r, s.database.Storage)
+				appHandler.UpdateOrganization(r, s.database.Storage)
+				appHandler.DeleteOrganization(r, s.database.Storage)
 
 				r.Route("/activities", func(r chi.Router) {
 					appHandler.GetAllActivities(r, s.database.Storage)
@@ -57,7 +64,7 @@ func (s *Server) setupRoutes() {
 
 						appHandler.GetActivity(r, s.database.Storage)
 						appHandler.DeleteActivity(r, s.database.Storage)
-						appHandler.UpdateCompany(r, s.database.Storage)
+						appHandler.UpdateOrganization(r, s.database.Storage)
 					})
 				})
 			})

@@ -17,8 +17,8 @@ type CreateActivityParams struct {
 	Description string
 	Fields      []models.ActivityFields
 
-	CompanyId primitive.ObjectID
-	CreatedBy primitive.ObjectID
+	OrganizationId primitive.ObjectID
+	CreatedBy      primitive.ObjectID
 }
 
 func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error) {
@@ -32,8 +32,8 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 		UpdatedAt: time.Now(),
 		// DeletedAt:   null.,
 
-		CompanyId: arg.CompanyId,
-		CreatedBy: arg.CreatedBy,
+		OrganizationId: arg.OrganizationId,
+		CreatedBy:      arg.CreatedBy,
 	}
 
 	_, err := q.activitiesCollection.InsertOne(ctx, activity)
@@ -45,17 +45,17 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 }
 
 type GetActivityParams struct {
-	Id        primitive.ObjectID
-	CompanyId primitive.ObjectID
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
 }
 
 func (q *Queries) GetActivity(ctx context.Context, arg GetActivityParams) (*models.Activity, error) {
 	var activity models.Activity
 
 	filter := bson.M{
-		"_id":        arg.Id,
-		"company_id": arg.CompanyId,
-		"deleted_at": nil,
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
+		"deleted_at":      nil,
 	}
 	err := q.activitiesCollection.FindOne(ctx, filter).Decode(&activity)
 	if err != nil {
@@ -69,15 +69,15 @@ func (q *Queries) GetActivity(ctx context.Context, arg GetActivityParams) (*mode
 }
 
 type GetAllActivitiesParams struct {
-	CompanyId primitive.ObjectID
+	OrganizationId primitive.ObjectID
 }
 
 func (q *Queries) GetAllActivities(ctx context.Context, arg GetAllActivitiesParams) ([]*models.Activity, error) {
 	var activities []*models.Activity
 
 	filter := bson.M{
-		"company_id": arg.CompanyId,
-		"deleted_at": nil,
+		"organization_id": arg.OrganizationId,
+		"deleted_at":      nil,
 	}
 	cursor, err := q.activitiesCollection.Find(ctx, filter)
 	if err != nil {
@@ -94,14 +94,14 @@ func (q *Queries) GetAllActivities(ctx context.Context, arg GetAllActivitiesPara
 }
 
 type DeleteActivityParams struct {
-	Id        primitive.ObjectID
-	CompanyId primitive.ObjectID
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
 }
 
 func (q *Queries) DeleteActivity(ctx context.Context, arg DeleteActivityParams) error {
 	filter := bson.M{
-		"_id":        arg.Id,
-		"company_id": arg.CompanyId,
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
 	}
 	update := bson.M{
 		"$set": bson.M{
@@ -127,8 +127,8 @@ func (q *Queries) DeleteActivity(ctx context.Context, arg DeleteActivityParams) 
 }
 
 type UpdateSetInActivityParams struct {
-	Id        primitive.ObjectID
-	CompanyId primitive.ObjectID
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
 
 	Field string
 	Value interface{}
@@ -137,8 +137,8 @@ type UpdateSetInActivityParams struct {
 
 func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivityParams) (*models.Activity, error) {
 	filter := bson.M{
-		"_id":        arg.Id,
-		"company_id": arg.CompanyId,
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
 	}
 	update := bson.M{
 		"$set": bson.M{
@@ -150,8 +150,8 @@ func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivi
 }
 
 type UpdateAddToActivityParams struct {
-	Id        primitive.ObjectID
-	CompanyId primitive.ObjectID
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
 
 	Position uint
 	Field    string
@@ -160,8 +160,8 @@ type UpdateAddToActivityParams struct {
 
 func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivityParams) (*models.Activity, error) {
 	filter := bson.M{
-		"_id":        arg.Id,
-		"company_id": arg.CompanyId,
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
 	}
 	update := bson.M{
 		"$push": bson.M{
@@ -178,8 +178,8 @@ func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivi
 }
 
 type UpdateRemoveFromActivityParams struct {
-	Id        primitive.ObjectID
-	CompanyId primitive.ObjectID
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
 
 	Position uint
 	Field    string
@@ -189,8 +189,8 @@ type UpdateRemoveFromActivityParams struct {
 func (q *Queries) UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error) {
 	fieldWithPosition := fmt.Sprintf("%s.%d", arg.Field, arg.Position)
 	filter := bson.M{
-		"_id":        arg.Id,
-		"company_id": arg.CompanyId,
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
 	}
 	update := bson.M{
 		"$unset": bson.M{
