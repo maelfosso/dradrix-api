@@ -80,7 +80,7 @@ func (s *Server) setupRoutes() {
 			// Auth
 			r.Route("/auth", func(r chi.Router) {
 				appHandler.CreateOTP(r, s.database.Storage)
-				handlers.CheckOTP(r, s.database.Storage)
+				appHandler.CheckOTP(r, s.database.Storage)
 				// handlers.ResendOTP(r, s.database)
 			})
 		})

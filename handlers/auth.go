@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -124,53 +123,51 @@ type CheckOTPRequest struct {
 	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
 }
 
-func CheckOTP(mux chi.Router, svc checkOTPInterface) {
+type CheckOTPResponse struct {
+	User models.User `json:"user"`
+}
+
+func (appHandler *AppHandler) CheckOTP(mux chi.Router, db checkOTPInterface) {
 	mux.Post("/otp/check", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// read the request body
 		var input CheckOTPRequest
-
-		// // read the request body
-		decoder := json.NewDecoder(r.Body)
-
-		// extract the phone number and the pin code
-		err := decoder.Decode(&input)
+		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
 		if err != nil {
-			log.Println("error when extracting the request body: ", err)
-			http.Error(w, "ERR_CTOP_101", http.StatusBadRequest)
+			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
-		user, err := svc.DoesUserExists(ctx, storage.DoesUserExistsParams{
+		user, err := db.DoesUserExists(ctx, storage.DoesUserExistsParams{
 			PhoneNumber: input.PhoneNumber,
 		})
 		if err != nil {
 			log.Println("error when saving the OTP: ", err)
-			http.Error(w, "ERR_COTP_152", http.StatusBadRequest)
+			http.Error(w, "ERR_AUTH_CHK_OTP_01", http.StatusBadRequest)
 			return
 		}
 		if user == nil {
 			log.Println("error when saving the OTP: ", err)
-			http.Error(w, "ERR_COTP_152", http.StatusBadRequest)
+			http.Error(w, "ERR_AUTH_CHK_OTP_02", http.StatusBadRequest)
 			return
 		}
 		// check that the pin code is 6 digit
 		// var m *models.OTP
 
 		// check that the phone number is correct
-		otp, err := svc.CheckOTPTx(r.Context(), storage.CheckOTPParams{
+		otp, err := db.CheckOTPTx(r.Context(), storage.CheckOTPParams{
 			PhoneNumber: input.PhoneNumber,
 			UserOTP:     input.PinCode,
 		})
 		if err != nil {
-			log.Println("error when checking the otp: ", err)
-			http.Error(w, fmt.Sprintf("ERR_COTP_102_%s", err), http.StatusBadRequest)
+			// log.Println("error when checking the otp: ", err)
+			http.Error(w, "ERR_AUTH_CHK_OTP_03", http.StatusBadRequest)
 			return
 		}
 		if otp == nil {
-			log.Println("error when checking the otp - no corresponding otp found: ", err)
-			http.Error(w, "ERR_CHECK_OTP_", http.StatusBadRequest)
+			// log.Println("error when checking the otp - no corresponding otp found: ", err)
+			http.Error(w, "ERR_AUTH_CHK_OTP_04", http.StatusBadRequest)
 			return
 		}
 
@@ -195,11 +192,15 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 			},
 		)
 
+		response := CheckOTPResponse{
+			User: *user,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(user); err != nil {
-			log.Println("error when encoding auth result: ", err)
-			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			// log.Println("error when encoding auth result: ", err)
+			http.Error(w, "ERR_AUTH_CHK_OTP_END", http.StatusBadRequest)
 			return
 		}
 	})
