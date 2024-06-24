@@ -381,8 +381,8 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 
 		got := handlers.FirstOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
-		if !got.Done {
-			t.Fatalf("FirstOrganization(): response done - got %+v; want true", got.Done)
+		if got.Id != organization.Id {
+			t.Fatalf("FirstOrganization(): response Id - got %s; want %s", got.Id, organization.Id)
 		}
 	})
 }
