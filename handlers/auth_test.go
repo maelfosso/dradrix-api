@@ -3,283 +3,256 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-chi/chi/v5"
+	gofaker "github.com/go-faker/faker/v4"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stockinos.com/api/handlers"
 	"stockinos.com/api/helpertest"
 	"stockinos.com/api/models"
 	"stockinos.com/api/storage"
-	"stockinos.com/api/utils"
 )
 
 type getOTPMock struct{}
 
-var userId = primitive.NewObjectID()
-var otpId = primitive.NewObjectID()
-var pinCode = utils.GenerateOTP(time.Now())
-var users []models.User
-var otps []models.OTP
-
-func (s *getOTPMock) CreateUser(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
-	users = append(users, models.User{
-		Id:          userId,
-		PhoneNumber: "695165033",
-	})
-
-	return &users[len(users)-1], nil
-}
-
-func (s *getOTPMock) DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
-	var user *models.User = nil
-	for _, _user := range users {
-		if _user.PhoneNumber == arg.PhoneNumber {
-			user = &_user
-
-			break
+func TestOTP(t *testing.T) {
+	handler := handlers.NewAppHandler()
+	handler.GetAuthenticatedUser = func(req *http.Request) *models.User {
+		return &models.User{
+			Id:          primitive.NewObjectID(),
+			FirstName:   gofaker.FirstName(),
+			LastName:    gofaker.LastName(),
+			PhoneNumber: gofaker.Phonenumber(),
 		}
 	}
-	return user, nil
-}
 
-func (s *getOTPMock) CreateOTPx(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
-	otp := models.OTP{
-		Id:          otpId,
-		WaMessageId: "xxx-yyy-zzz",
-		PhoneNumber: "695165033",
-		PinCode:     pinCode,
-		Active:      true,
+	tests := map[string]func(*testing.T, *handlers.AppHandler){
+		"CreateOTP": testCreateOTP,
 	}
-	otps = append(otps, otp)
 
-	return &otps[len(otps)-1], nil
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc(t, handler)
+		})
+	}
 }
 
-func Init() {
-	users = make([]models.User, 0)
-	otps = make([]models.OTP, 0)
+type mockCreateOTPDB struct {
+	CreateUserFunc     func(ctx context.Context, arg storage.CreateUserParams) (*models.User, error)
+	DoesUserExistsFunc func(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
+	CreateOTPxFunc     func(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
 }
 
-func TestCreateOTP(t *testing.T) {
-	mux := chi.NewMux()
-	svc := &getOTPMock{}
-	handlers.CreateOTP(mux, svc)
+func (mdb *mockCreateOTPDB) CreateUser(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
+	return mdb.CreateUserFunc(ctx, arg)
+}
 
-	t.Run("return 200", func(t *testing.T) {
-		Init()
+func (mdb *mockCreateOTPDB) DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
+	return mdb.DoesUserExistsFunc(ctx, arg)
+}
 
-		userPhoneNumber := "695165033"
-		code, _, responseData := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: userPhoneNumber,
-			Language:    "fr",
-		}, []helpertest.ContextData{})
+func (mdb *mockCreateOTPDB) CreateOTPx(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+	return mdb.CreateOTPxFunc(ctx, arg)
+}
 
-		if code != http.StatusOK {
-			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
+func testCreateOTP(t *testing.T, appHandler *handlers.AppHandler) {
+	t.Run("invalid input data", func(t *testing.T) {
+		mux := chi.NewMux()
+		db := &mockCreateOTPDB{
+			CreateUserFunc: func(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
+				return nil, nil
+			},
+			DoesUserExistsFunc: func(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
+				return nil, nil
+			},
+			CreateOTPxFunc: func(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+				return nil, nil
+			},
 		}
 
-		var responsePhoneNumber string
-		err := json.Unmarshal([]byte(responseData), &responsePhoneNumber)
-		if err != nil || responsePhoneNumber != userPhoneNumber {
-			t.Fatalf("CreateOTP() response request = %s; want = %s", responsePhoneNumber, userPhoneNumber)
+		appHandler.CreateOTP(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/otp",
+			helpertest.CreateFormHeader(),
+			"{\"test\": \"that\"}",
+			[]helpertest.ContextData{},
+		)
+		wantStatus := http.StatusBadRequest
+		if code != wantStatus {
+			t.Fatalf("CreateOTP(): status - got %d; want %d", code, wantStatus)
 		}
-		if users[len(users)-1].PhoneNumber != "695165033" {
-			t.Fatalf("CreateOTP() last user phone number = %s; want = %s", otps[len(otps)-1].PhoneNumber, "695165033")
-		}
-		if otps[len(otps)-1].PhoneNumber != "695165033" {
-			t.Fatalf("CreateOTP() created otp phone number = %s; want = %s", otps[len(otps)-1].PhoneNumber, "695165033")
-		}
-		if otps[len(otps)-1].Active != true {
-			t.Fatalf("CreateOTP() create otp active status = %v; want = %v", otps[len(otps)-1].Active, true)
+		wantCode := "ERR_HDL_PRB_"
+		if !strings.HasPrefix(response, wantCode) {
+			t.Fatalf("CreateOTP(): response error - got %s, want %s", response, wantCode)
 		}
 	})
 
-	t.Run("return 200 but with no more users if phone number already exists", func(t *testing.T) {
-		Init()
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-		code, _, _ := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-		if code != http.StatusOK {
-			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
+	t.Run("error when checking if user exists", func(t *testing.T) {
+		dataRequest := handlers.CreateOTPRequest{
+			PhoneNumber: gofaker.Phonenumber(),
+			Language:    "en",
 		}
-		if len(users) == 2 {
-			t.Fatalf("CreateOTP() number of users created = %d; want = %d", len(users), 1)
+
+		mux := chi.NewMux()
+		db := &mockCreateOTPDB{
+			CreateUserFunc: func(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
+				return nil, nil
+			},
+			DoesUserExistsFunc: func(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
+				return nil, errors.New("error when checking")
+			},
+			CreateOTPxFunc: func(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+				return nil, nil
+			},
+		}
+
+		appHandler.CreateOTP(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/otp",
+			helpertest.CreateFormHeader(),
+			dataRequest,
+			[]helpertest.ContextData{},
+		)
+		wantStatus := http.StatusBadRequest
+		if code != wantStatus {
+			t.Fatalf("CreateOTP(): status - got %d; want %d", code, wantStatus)
+		}
+		wantCode := "ERR_AUTH_CRT_OTP_01"
+		if !strings.HasPrefix(response, wantCode) {
+			t.Fatalf("CreateOTP(): response error - got %s, want %s", response, wantCode)
 		}
 	})
 
-	t.Run("return 200 but always only one active otp", func(t *testing.T) {
-		Init()
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-		code, _, _ := helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-		if code != http.StatusOK {
-			t.Fatalf("CreateOTP() status code = %d; want = %d", code, http.StatusOK)
+	t.Run("user does not exists", func(t *testing.T) {
+		dataRequest := handlers.CreateOTPRequest{
+			PhoneNumber: gofaker.Phonenumber(),
+			Language:    "en",
 		}
-		if len(otps) < 2 {
-			t.Fatalf("CreateOTP() number of otps created = %d; want = %d", len(otps), 2)
-		}
-		nActiveOTP := 0
-		for i := range otps {
-			otp := otps[i]
-			if otp.Active == true {
-				nActiveOTP += 1
+
+		mux := chi.NewMux()
+
+		t.Run("error when creating user", func(t *testing.T) {
+			db := &mockCreateOTPDB{
+				CreateUserFunc: func(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
+					return nil, errors.New("error when creating user")
+				},
+				DoesUserExistsFunc: func(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
+					return nil, nil
+				},
+				CreateOTPxFunc: func(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+					return nil, nil
+				},
 			}
-		}
-		if nActiveOTP != 1 {
-			t.Fatalf("CreateOTP number of active otps = %d; want = %d", nActiveOTP, 1)
-		}
-	})
 
-}
-
-type checkOTPMock struct{}
-
-func (s *checkOTPMock) DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
-	var user *models.User = nil
-	for _, _user := range users {
-		if _user.PhoneNumber == arg.PhoneNumber {
-			user = &_user
-
-			break
-		}
-	}
-	return user, nil
-}
-
-func (s *checkOTPMock) CheckOTPTx(ctx context.Context, arg storage.CheckOTPParams) (*models.OTP, error) {
-	var otp *models.OTP = nil
-	var ix int
-	for _i, _otp := range otps {
-		if _otp.PhoneNumber == arg.PhoneNumber && _otp.PinCode == arg.UserOTP && _otp.Active == true {
-			otp = &_otp
-			ix = _i
-
-			break
-		}
-	}
-	if otp != nil {
-		otps[ix].Active = false
-	}
-	return otp, nil
-}
-
-func (s *checkOTPMock) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
-	return nil, nil
-}
-
-func TestCheckOTP(t *testing.T) {
-	mux := chi.NewMux()
-	checkSVC := &checkOTPMock{}
-	getSVC := &getOTPMock{}
-	handlers.CheckOTP(mux, checkSVC)
-	handlers.CreateOTP(mux, getSVC)
-
-	t.Run("return 200", func(t *testing.T) {
-		Init()
-
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-
-		code, _, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-			PinCode:     otps[len(otps)-1].PinCode,
-		}, []helpertest.ContextData{})
-		if code != http.StatusOK {
-			t.Fatalf("CheckOTP() status code = %d; want = %d", code, http.StatusOK)
-		}
-	})
-
-	t.Run("return 400 if the user phone number doesn't exists", func(t *testing.T) {
-		Init()
-
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-
-		code, _, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
-			PhoneNumber: "678908989",
-			Language:    "fr",
-			PinCode:     otps[len(otps)-1].PinCode,
-		}, []helpertest.ContextData{})
-		if code != http.StatusBadRequest {
-			t.Fatalf("CheckOTP() status code = %d; want = %d", code, http.StatusBadRequest)
-		}
-	})
-
-	t.Run("return 400 if the user otp is not correct", func(t *testing.T) {
-		Init()
-
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-
-		code, _, _ := helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-			PinCode:     "0000",
-		}, []helpertest.ContextData{})
-		if code != http.StatusBadRequest {
-			t.Fatalf("CheckOTP() status code = %d; want = %d", code, http.StatusBadRequest)
-		}
-	})
-
-	t.Run("return 400 if there is any otp active after checking", func(t *testing.T) {
-		Init()
-
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
-
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-			PinCode:     otps[len(otps)-1].PinCode,
-		}, []helpertest.ContextData{})
-
-		var activeOTPExists bool = false
-		for i := range otps {
-			otp := otps[i]
-			if otp.Active {
-				activeOTPExists = true
+			appHandler.CreateOTP(mux, db)
+			code, _, response := helpertest.MakePostRequest(
+				mux,
+				"/otp",
+				helpertest.CreateFormHeader(),
+				dataRequest,
+				[]helpertest.ContextData{},
+			)
+			wantStatus := http.StatusBadRequest
+			if code != wantStatus {
+				t.Fatalf("CreateOTP(): status - got %d; want %d", code, wantStatus)
 			}
+			wantCode := "ERR_AUTH_CRT_OTP_02"
+			if !strings.HasPrefix(response, wantCode) {
+				t.Fatalf("CreateOTP(): response error - got %s, want %s", response, wantCode)
+			}
+		})
+	})
+
+	t.Run("error when creating OTP", func(t *testing.T) {
+		dataRequest := handlers.CreateOTPRequest{
+			PhoneNumber: gofaker.Phonenumber(),
+			Language:    "en",
 		}
-		if activeOTPExists {
-			t.Fatalf("CheckOTP() status active-otp-exists = %t; want = %t", activeOTPExists, false)
+
+		mux := chi.NewMux()
+		db := &mockCreateOTPDB{
+			CreateUserFunc: func(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
+				return nil, nil
+			},
+			DoesUserExistsFunc: func(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
+				return &models.User{
+					PhoneNumber: dataRequest.PhoneNumber,
+					FirstName:   gofaker.FirstName(),
+					LastName:    gofaker.LastName(),
+					Email:       gofaker.Email(),
+				}, nil
+			},
+			CreateOTPxFunc: func(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+				return nil, errors.New("error when creating OTP")
+			},
+		}
+
+		appHandler.CreateOTP(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/otp",
+			helpertest.CreateFormHeader(),
+			dataRequest,
+			[]helpertest.ContextData{},
+		)
+		wantStatus := http.StatusBadRequest
+		if code != wantStatus {
+			t.Fatalf("CreateOTP(): status - got %d; want %d", code, wantStatus)
+		}
+		wantCode := "ERR_AUTH_CRT_OTP_03"
+		if !strings.HasPrefix(response, wantCode) {
+			t.Fatalf("CreateOTP(): response error - got %s, want %s", response, wantCode)
 		}
 	})
 
-	t.Run("contains jwt cookies into header", func(t *testing.T) {
-		Init()
+	t.Run("success", func(t *testing.T) {
+		dataRequest := handlers.CreateOTPRequest{
+			PhoneNumber: gofaker.Phonenumber(),
+			Language:    "en",
+		}
 
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp", helpertest.CreateFormHeader(), handlers.CreateOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-		}, []helpertest.ContextData{})
+		mux := chi.NewMux()
+		db := &mockCreateOTPDB{
+			CreateUserFunc: func(ctx context.Context, arg storage.CreateUserParams) (*models.User, error) {
+				return nil, nil
+			},
+			DoesUserExistsFunc: func(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error) {
+				return &models.User{
+					PhoneNumber: dataRequest.PhoneNumber,
+					FirstName:   gofaker.FirstName(),
+					LastName:    gofaker.LastName(),
+					Email:       gofaker.Email(),
+				}, nil
+			},
+			CreateOTPxFunc: func(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error) {
+				return nil, nil
+			},
+		}
 
-		_, _, _ = helpertest.MakePostRequest(mux, "/otp/check", helpertest.CreateFormHeader(), handlers.CheckOTPRequest{
-			PhoneNumber: "695165033",
-			Language:    "fr",
-			PinCode:     otps[len(otps)-1].PinCode,
-		}, []helpertest.ContextData{})
-		// headers.
+		appHandler.CreateOTP(mux, db)
+		code, _, response := helpertest.MakePostRequest(
+			mux,
+			"/otp",
+			helpertest.CreateFormHeader(),
+			dataRequest,
+			[]helpertest.ContextData{},
+		)
+		wantStatus := http.StatusOK
+		if code != wantStatus {
+			t.Fatalf("CreateOTP(): status - got %d; want %d", code, wantStatus)
+		}
+
+		got := handlers.CreateOTPResponse{}
+		json.Unmarshal([]byte(response), &got)
+		if got.PhoneNumber != dataRequest.PhoneNumber {
+			t.Fatalf("CreateOTP(): response Phone number - got %s; want %s", got.PhoneNumber, dataRequest.PhoneNumber)
+		}
 	})
+
 }

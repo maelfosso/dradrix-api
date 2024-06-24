@@ -17,7 +17,7 @@ import (
 	"stockinos.com/api/utils"
 )
 
-type getOTPInterface interface {
+type createOTPInterface interface {
 	CreateUser(ctx context.Context, arg storage.CreateUserParams) (*models.User, error)
 	DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
 	CreateOTPx(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
@@ -28,19 +28,18 @@ type CreateOTPRequest struct {
 	Language    string `json:"language,omitempty"`     // Language for template
 }
 
-func CreateOTP(mux chi.Router, svc getOTPInterface) {
+type CreateOTPResponse struct {
+	PhoneNumber string `json"phone_number"`
+}
+
+func (appHandler *AppHandler) CreateOTP(mux chi.Router, db createOTPInterface) {
 	mux.Post("/otp", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		var input CreateOTPRequest
-
-		// read the request body
-		decoder := json.NewDecoder(r.Body)
-
-		// extract the phone number
-		err := decoder.Decode(&input)
+		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
@@ -62,23 +61,26 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 		waMessageId := "xxx-yyy-zzz"
 
 		// Check if there is an user with this phone number
-		user, err := svc.DoesUserExists(ctx, storage.DoesUserExistsParams{
+		user, err := db.DoesUserExists(ctx, storage.DoesUserExistsParams{
 			PhoneNumber: input.PhoneNumber,
 		})
 		if err != nil {
-			log.Println("Error at DoesUserExists", err)
+			// log.Println("Error at DoesUserExists", err)
+			http.Error(w, "ERR_AUTH_CRT_OTP_01", http.StatusBadRequest)
 			return
 		}
 
 		// If there is none, we create the user
 		if user == nil {
-			_, err := svc.CreateUser(ctx, storage.CreateUserParams{
+			_, err := db.CreateUser(ctx, storage.CreateUserParams{
 				PhoneNumber: input.PhoneNumber,
 				FirstName:   "",
 				LastName:    "",
+				Email:       "",
 			})
 			if err != nil {
-				log.Println("Error at CreateUser", err)
+				// log.Println("Error at CreateUser", err)
+				http.Error(w, "ERR_AUTH_CRT_OTP_02", http.StatusBadRequest)
 				return
 			}
 		}
@@ -86,22 +88,26 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 		// Then we save the OTP
 		// 1- update all otps to not active
 		// 2- create the new otp as active
-		_, err = svc.CreateOTPx(ctx, storage.CreateOTPParams{
+		_, err = db.CreateOTPx(ctx, storage.CreateOTPParams{
 			WaMessageId: waMessageId,
 			PhoneNumber: input.PhoneNumber,
 			PinCode:     pinCode,
 		})
 		if err != nil {
-			log.Println("error when saving the OTP: ", err)
-			http.Error(w, "ERR_COTP_152", http.StatusBadRequest)
+			// log.Println("error when saving the OTP: ", err)
+			http.Error(w, "ERR_AUTH_CRT_OTP_03", http.StatusBadRequest)
 			return
+		}
+
+		response := CreateOTPResponse{
+			PhoneNumber: input.PhoneNumber,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(input.PhoneNumber); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Println("error when encoding auth result: ", err)
-			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
+			http.Error(w, "ERR_AUTH_CRT_OTP_END", http.StatusBadRequest)
 			return
 		}
 	})

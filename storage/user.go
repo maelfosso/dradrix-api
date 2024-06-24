@@ -61,6 +61,7 @@ type CreateUserParams struct {
 	PhoneNumber string
 	FirstName   string
 	LastName    string
+	Email       string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models.User, error) {
@@ -69,6 +70,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models
 		PhoneNumber: arg.PhoneNumber,
 		FirstName:   arg.FirstName,
 		LastName:    arg.LastName,
+		Email:       arg.Email,
 	}
 
 	result, err := q.usersCollection.InsertOne(ctx, user)
