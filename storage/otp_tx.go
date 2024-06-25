@@ -26,7 +26,7 @@ func (store *MongoStorage) CreateOTPx(ctx context.Context, arg CreateOTPParams) 
 			PinCode:     arg.PinCode,
 		})
 		if err != nil {
-			log.Println("error when saving the OTP: ", err)
+			// log.Println("error when saving the OTP: ", err)
 			return nil, fmt.Errorf("%v", err)
 		}
 
@@ -47,11 +47,11 @@ func (store *MongoStorage) CheckOTPTx(ctx context.Context, arg CheckOTPParams) (
 			UserOTP:     arg.UserOTP,
 		})
 		if err != nil {
-			log.Println("error when checking the otp: ", err)
+			// log.Println("error when checking the otp: ", err)
 			return nil, fmt.Errorf("ERR_COTP_102_%v", err)
 		}
 		if otp == nil {
-			log.Println("error when checking the otp - no corresponding otp found: ", err)
+			// log.Println("error when checking the otp - no corresponding otp found: ", err)
 			return nil, fmt.Errorf("ERR_COTP_102_%s", err)
 		}
 

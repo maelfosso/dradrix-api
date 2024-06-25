@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -73,8 +72,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models
 		Email:       arg.Email,
 	}
 
-	result, err := q.usersCollection.InsertOne(ctx, user)
-	log.Println("[CreateUser] ", result.InsertedID, user.Id)
+	_, err := q.usersCollection.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
 	} else {
@@ -161,4 +159,30 @@ func (q *Queries) UpdateUserPreferences(ctx context.Context, arg UpdateUserPrefe
 	}
 
 	return &user, nil
+}
+
+/* For e2e testing */
+
+type GetAllUsersParams struct {
+	PhoneNumber string
+}
+
+func (q *Queries) GetAllUsers(ctx context.Context, arg GetAllUsersParams) ([]*models.User, error) {
+	var users []*models.User
+
+	filter := bson.M{}
+
+	cursor, err := q.usersCollection.Find(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

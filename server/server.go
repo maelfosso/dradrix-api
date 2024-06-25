@@ -43,7 +43,7 @@ func New(opts Options) *Server {
 	mux := chi.NewMux()
 
 	return &Server{
-		database: createDatabase(opts.Log),
+		database: opts.Database,
 		// nats:     createNats(opts.Log),
 		address: address,
 		log:     opts.Log,

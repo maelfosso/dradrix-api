@@ -339,12 +339,6 @@ func testCheckOTP(t *testing.T, appHandler *handlers.AppHandler) {
 			Language:    "en",
 			PinCode:     "0123",
 		}
-		// user := models.User{
-		// 	PhoneNumber: dataRequest.PhoneNumber,
-		// 	FirstName: gofaker.FirstName(),
-		// 	LastName: gofaker.LastName(),
-		// 	Email: gofaker.Email(),
-		// }
 
 		mux := chi.NewMux()
 		db := &mockCheckOTPDB{

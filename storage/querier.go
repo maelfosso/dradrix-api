@@ -13,12 +13,16 @@ type Querier interface {
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (*models.User, error)
 	UpdateUserPreferences(ctx context.Context, arg UpdateUserPreferencesParams) (*models.User, error)
 
+	GetAllUsers(ctx context.Context, arg GetAllUsersParams) ([]*models.User, error)
+
 	// OTP
 	CheckOTP(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
 	DesactivateOTP(ctx context.Context, arg DesactivateOTPParams) (*models.OTP, error)
 	DesactivateAllOTPFromPhoneNumber(ctx context.Context, arg DesactivateAllOTPFromPhoneNumberParams) error
 	CreateOTP(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
 	GetActivateOTP(ctx context.Context, arg GetActivateOTPParams) (*models.OTP, error)
+
+	GetAllOTPs(ctx context.Context, arg GetAllOTPsParams) ([]*models.OTP, error)
 
 	// Organization
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error)

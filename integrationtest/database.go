@@ -23,9 +23,8 @@ func CreateDatabase() (*storage.Database, func()) {
 	once.Do(initDatabase)
 
 	db, cleanup := connect("stockinos-test")
-	defer cleanup()
-
 	db.DB.Database("stockinos-test").Drop(context.Background())
+	cleanup()
 
 	return connect("stockinos-test")
 }

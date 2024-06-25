@@ -143,12 +143,12 @@ func (appHandler *AppHandler) CheckOTP(mux chi.Router, db checkOTPInterface) {
 			PhoneNumber: input.PhoneNumber,
 		})
 		if err != nil {
-			log.Println("error when saving the OTP: ", err)
+			// log.Println("error when saving the OTP: ", err)
 			http.Error(w, "ERR_AUTH_CHK_OTP_01", http.StatusBadRequest)
 			return
 		}
 		if user == nil {
-			log.Println("error when saving the OTP: ", err)
+			// log.Println("error when saving the OTP: ", err)
 			http.Error(w, "ERR_AUTH_CHK_OTP_02", http.StatusBadRequest)
 			return
 		}

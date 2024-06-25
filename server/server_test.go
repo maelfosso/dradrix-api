@@ -12,7 +12,7 @@ func TestServer_Start(t *testing.T) {
 
 	t.Run("starts the server and listens for requests", func(t *testing.T) {
 
-		cleanup := integrationtest.CreateServer()
+		cleanup, _ := integrationtest.CreateServer()
 		defer cleanup()
 
 		resp, err := http.Get("http://localhost:8081/")

@@ -143,3 +143,31 @@ func (q *Queries) CheckOTP(ctx context.Context, arg CheckOTPParams) (*models.OTP
 	}
 	return &otp, nil
 }
+
+/* For e2e testing */
+
+type GetAllOTPsParams struct {
+	PhoneNumber string
+}
+
+func (q *Queries) GetAllOTPs(ctx context.Context, arg GetAllOTPsParams) ([]*models.OTP, error) {
+	var otps []*models.OTP
+
+	filter := bson.M{
+		"phone_number": arg.PhoneNumber,
+	}
+
+	cursor, err := q.otpsCollection.Find(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	if err = cursor.All(ctx, &otps); err != nil {
+		return nil, err
+	}
+
+	return otps, nil
+}

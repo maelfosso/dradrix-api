@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"stockinos.com/api/server"
+	"stockinos.com/api/storage"
 )
 
 // CreateServer for testing on port 8080, returning a cleanup function stops the server.
@@ -14,7 +15,7 @@ import (
 //
 //	cleanup := CreateServer()
 //	defer cleanup()
-func CreateServer() func() {
+func CreateServer() (func(), *storage.Database) {
 	db, cleanupDB := CreateDatabase()
 	s := server.New(server.Options{
 		Host:     "localhost",
@@ -42,7 +43,7 @@ func CreateServer() func() {
 			panic(err)
 		}
 		cleanupDB()
-	}
+	}, db
 }
 
 // SkipIfShort skips t if the "-short" flag is passed to "go test"
