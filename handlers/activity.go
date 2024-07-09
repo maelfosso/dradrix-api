@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -89,9 +90,9 @@ type createActivityInterface interface {
 }
 
 type CreateActivityRequest struct {
-	Name        string                  `json:"name,omitempty"`
-	Description string                  `json:"description,omitempty"`
-	Fields      []models.ActivityFields `json:"fields,omitempty"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Fields      []models.ActivityField `json:"fields"`
 }
 
 type CreateActivityResponse struct {
@@ -111,10 +112,17 @@ func (handler *AppHandler) CreateActivity(mux chi.Router, db createActivityInter
 
 		organization := ctx.Value("organization").(*models.Organization)
 
+		var fields []models.ActivityField
+		if len(input.Fields) == 0 {
+			fields = make([]models.ActivityField, 0)
+		} else {
+			fields = input.Fields
+		}
+
 		activity, err := db.CreateActivity(ctx, storage.CreateActivityParams{
 			Name:        input.Name,
 			Description: input.Description,
-			Fields:      input.Fields,
+			Fields:      fields,
 
 			OrganizationId: organization.Id,
 		})
@@ -253,18 +261,32 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				http.Error(w, "ERR_ATVT_UDT_011", http.StatusBadRequest)
 				return
 			}
-			// if err, ok := input.Value.(models.ActivityFields); !ok {
-			// 	log.Printf("Error : %+v\n%+v\n\n%+v\n\n", err, input.Value, input)
-			// 	http.Error(w, "ERR_ATVT_UDT_014", http.StatusBadRequest)
-			// 	return
-			// }
+			if err, ok := input.Value.(models.ActivityField); !ok {
+				log.Printf("Error : %+v\n%+v\n\n%+v\n\n", err, input.Value, input)
+				// http.Error(w, "ERR_ATVT_UDT_014", http.StatusBadRequest)
+				// return
+
+			}
+			value := models.ActivityField{
+				Name:        getOrDefault(input.Value.(map[string]any), "name", "").(string),
+				Description: getOrDefault(input.Value.(map[string]any), "description", "").(string),
+				Type:        getOrDefault(input.Value.(map[string]any), "type", "").(string),
+				Id:          getOrDefault(input.Value.(map[string]any), "id", false).(bool),
+				Code:        getOrDefault(input.Value.(map[string]any), "code", "").(string),
+				Options: models.ActivityFieldOptions{
+					Reference:    nil,
+					DefaultValue: nil,
+					Multiple:     false,
+					Automatic:    false,
+				},
+			}
 
 			updatedActivity, err = db.UpdateAddToActivity(ctx, storage.UpdateAddToActivityParams{
 				Id:             activity.Id,
 				OrganizationId: organization.Id,
 
 				Field:    field,
-				Value:    input.Value,
+				Value:    value,
 				Position: uint(input.Position),
 			})
 		case "remove":
@@ -303,4 +325,13 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			return
 		}
 	})
+}
+
+func getOrDefault(m map[string]any, key string, defaultValue any) any {
+	value, ok := m[key]
+	if ok {
+		return value
+	} else {
+		return defaultValue
+	}
 }
