@@ -64,7 +64,7 @@ func (s *Server) setupRoutes() {
 
 						appHandler.GetActivity(r, s.database.Storage)
 						appHandler.DeleteActivity(r, s.database.Storage)
-						appHandler.UpdateOrganization(r, s.database.Storage)
+						appHandler.UpdateActivity(r, s.database.Storage)
 					})
 				})
 			})

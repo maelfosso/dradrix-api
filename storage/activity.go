@@ -15,7 +15,7 @@ import (
 type CreateActivityParams struct {
 	Name        string
 	Description string
-	Fields      []models.ActivityFields
+	Fields      []models.ActivityField
 
 	OrganizationId primitive.ObjectID
 	CreatedBy      primitive.ObjectID
@@ -26,7 +26,7 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 		Id:          primitive.NewObjectID(),
 		Name:        arg.Name,
 		Description: arg.Description,
-		Fields:      arg.Fields,
+		Fields:      arg.Fields, // Default to [] empty array instead of null
 
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

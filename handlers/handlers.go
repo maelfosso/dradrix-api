@@ -83,10 +83,11 @@ func NewAppHandler() *AppHandler {
 				// Catch any type errors, like trying to assign a string in the JSON request body
 				// to a int field in our data struct
 				case errors.As(err, &unmarshalTypeError):
-					// msg := fmt.Sprintf(
-					// 	"Request body contains an invalid value for the %q field (at position)",
-					// 	unmarshalTypeError.Offset,
-					// )
+					msg := fmt.Sprintf(
+						"Request body contains an invalid value for the %+v field (at position): %+v",
+						unmarshalTypeError.Offset, err,
+					)
+					log.Println("PRB error :", msg)
 					return http.StatusBadRequest, errors.New("ERR_HDL_PRB_04")
 
 				// Catch error caused by extra unexpected fields in the request body.
