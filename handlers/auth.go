@@ -126,6 +126,10 @@ type CheckOTPRequest struct {
 	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
 }
 
+type CheckOTPResponse struct {
+	User models.User `json:"user"`
+}
+
 func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 	mux.Post("/otp/check", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -197,9 +201,13 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 			},
 		)
 
+		response := CheckOTPResponse{
+			User: *user,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(user); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Println("error when encoding auth result: ", err)
 			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
 			return
