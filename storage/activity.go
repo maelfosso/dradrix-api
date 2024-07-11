@@ -155,7 +155,7 @@ type UpdateAddToActivityParams struct {
 
 	Position uint
 	Field    string
-	Value    interface{}
+	Value    models.ActivityField // interface{}
 }
 
 func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivityParams) (*models.Activity, error) {

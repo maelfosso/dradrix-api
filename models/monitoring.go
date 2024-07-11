@@ -14,10 +14,11 @@ type ActivityFieldOptions struct {
 }
 
 type ActivityField struct {
+	Id          primitive.ObjectID   `bson:"_id" json:"id"`
 	Name        string               `bson:"name" json:"name"`
 	Description string               `bson:"description" json:"description"`
 	Type        string               `bson:"type" json:"type"`       // Text, Number, Date, Time, Uploaded file
-	Id          bool                 `bons:"id" json:"id"`           // Is it an identifiant?
+	Key         bool                 `bons:"key" json:"key"`         // Is it an identifiant?
 	Options     ActivityFieldOptions `bson:"options" json:"options"` // There can be options
 	Code        string               `bson:"code" json:"code"`       // the id associated to the field, created internally
 }

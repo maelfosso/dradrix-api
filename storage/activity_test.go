@@ -145,7 +145,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		Description: "Activity 1",
 		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
-			{Name: "f2", Description: "Description 2", Type: "text", Id: true},
+			{Name: "f2", Description: "Description 2", Type: "text", Key: true},
 		},
 
 		OrganizationId: primitive.NewObjectID(),
@@ -207,7 +207,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		if err != nil {
 			t.Fatalf("UpdateActivity(): got error %v; want nil", err)
 		}
-		if updated.Fields[0].Id != argForUpdate.Value {
+		if updated.Fields[0].Key != argForUpdate.Value {
 			t.Fatalf(
 				"UpdateActivity(): updated %s value - got %s; want %s",
 				argForUpdate.Field, updated.Name, argForUpdate.Value,
@@ -315,7 +315,7 @@ func testGetAllActivities(t *testing.T, db *storage.Database) {
 
 			Fields: []models.ActivityField{
 				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "number"},
-				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", Id: true},
+				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", Key: true},
 			},
 
 			OrganizationId: organizationA,
@@ -407,7 +407,7 @@ func activityEq(got, want *models.Activity) error {
 		g := gotFields[i]
 		w := wantFields[i]
 
-		if g.Id != w.Id ||
+		if g.Key != w.Key ||
 			g.Code != w.Code ||
 			g.Name != w.Name ||
 			g.Description != w.Description ||

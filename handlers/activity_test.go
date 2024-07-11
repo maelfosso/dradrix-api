@@ -168,7 +168,7 @@ func testActivityMiddleware(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -277,7 +277,7 @@ func testGetAllActivities(t *testing.T, handler *handlers.AppHandler) {
 						Name:        sfaker.App().String(),
 						Description: gofaker.Paragraph(),
 						Type:        "number",
-						Id:          false,
+						Key:         false,
 					},
 					{
 						Code:        sfaker.App().Name(),
@@ -415,7 +415,7 @@ func testCreateActivity(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -478,7 +478,7 @@ func testGetActivity(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -576,7 +576,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -798,7 +798,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -1035,7 +1035,7 @@ func testUpdateActivity(t *testing.T, handler *handlers.AppHandler) {
 						Name:        sfaker.App().String(),
 						Description: gofaker.Paragraph(),
 						Type:        "number",
-						Id:          true,
+						Key:         true,
 					},
 					{
 						Code:        sfaker.App().Name(),
@@ -1124,7 +1124,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -1182,7 +1182,7 @@ func testDeleteActivity(t *testing.T, handler *handlers.AppHandler) {
 					Name:        sfaker.App().String(),
 					Description: gofaker.Paragraph(),
 					Type:        "number",
-					Id:          false,
+					Key:         false,
 				},
 				{
 					Code:        sfaker.App().Name(),
@@ -1261,7 +1261,7 @@ func activityEq(got, want *models.Activity) error {
 		g := gotFields[i]
 		w := wantFields[i]
 
-		if g.Id != w.Id ||
+		if g.Key != w.Key ||
 			g.Code != w.Code ||
 			g.Name != w.Name ||
 			g.Description != w.Description ||
