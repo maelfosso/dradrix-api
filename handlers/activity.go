@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -264,12 +265,18 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			}
 			// TODO: check type of input.Value string|int|bool
 
+			set := make(map[string]any)
+			set[field] = value
+
+			fieldSplitten := strings.Split(field, ".")
+			if fieldSplitten[0] == "fields" && fieldSplitten[len(fieldSplitten)-1] == "type" {
+				set[fmt.Sprintf("fields.%s.details", fieldSplitten[1])] = models.NewActivityFieldType(value.(string))
+			}
 			updatedActivity, err = db.UpdateSetInActivity(ctx, storage.UpdateSetInActivityParams{
 				Id:             activity.Id,
 				OrganizationId: organization.Id,
 
-				Field: field,
-				Value: value, // input.Value,
+				FieldsToSet: set,
 			})
 		case "add":
 			if field != "fields" {
@@ -282,11 +289,12 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				// return
 
 			}
+			fieldType := getOrDefault(input.Value.(map[string]any), "type", "text").(string)
 			value := models.ActivityField{
 				Id:          primitive.NewObjectID(),
 				Name:        getOrDefault(input.Value.(map[string]any), "name", "").(string),
 				Description: getOrDefault(input.Value.(map[string]any), "description", "").(string),
-				Type:        getOrDefault(input.Value.(map[string]any), "type", "").(string),
+				Type:        fieldType,
 				Key:         getOrDefault(input.Value.(map[string]any), "id", false).(bool),
 				Code:        getOrDefault(input.Value.(map[string]any), "code", "").(string),
 				Options: models.ActivityFieldOptions{
@@ -295,6 +303,7 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 					Multiple:     false,
 					Automatic:    false,
 				},
+				Details: models.NewActivityFieldType(fieldType),
 			}
 
 			updatedActivity, err = db.UpdateAddToActivity(ctx, storage.UpdateAddToActivityParams{

@@ -13,6 +13,32 @@ type ActivityFieldOptions struct {
 	Reference    *string `bson:"reference" json:"reference"` // Is it an id from another activity
 }
 
+type ActivityFieldList struct {
+	Multiple bool     `bson:"multiple" json:"multiple,omitempty"`
+	Choices  []string `bson:"choices" json:"choices,omitempty"`
+}
+
+type ActivityFieldType struct {
+	*ActivityFieldList `bson:",inline" json:",inline"`
+}
+
+func NewActivityFieldType(fieldType string) ActivityFieldType {
+	switch fieldType {
+	case "multiple-choice":
+		return ActivityFieldType{
+			&ActivityFieldList{
+				Multiple: false,
+				Choices:  []string{},
+			},
+		}
+
+	default:
+		return ActivityFieldType{
+			ActivityFieldList: nil,
+		}
+	}
+}
+
 type ActivityField struct {
 	Id          primitive.ObjectID   `bson:"_id" json:"id"`
 	Name        string               `bson:"name" json:"name"`
@@ -21,6 +47,7 @@ type ActivityField struct {
 	Key         bool                 `bons:"key" json:"key"`         // Is it an identifiant?
 	Options     ActivityFieldOptions `bson:"options" json:"options"` // There can be options
 	Code        string               `bson:"code" json:"code"`       // the id associated to the field, created internally
+	Details     ActivityFieldType    `bson:"details" json:"details"`
 }
 
 type Activity struct {

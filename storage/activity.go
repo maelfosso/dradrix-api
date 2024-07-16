@@ -130,9 +130,7 @@ type UpdateSetInActivityParams struct {
 	Id             primitive.ObjectID
 	OrganizationId primitive.ObjectID
 
-	Field string
-	Value interface{}
-	// Type  string
+	FieldsToSet map[string]any
 }
 
 func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivityParams) (*models.Activity, error) {
@@ -140,10 +138,13 @@ func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivi
 		"_id":             arg.Id,
 		"organization_id": arg.OrganizationId,
 	}
+
+	set := bson.M{}
+	for field, value := range arg.FieldsToSet {
+		set[field] = value
+	}
 	update := bson.M{
-		"$set": bson.M{
-			arg.Field: arg.Value,
-		},
+		"$set": set,
 	}
 
 	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
