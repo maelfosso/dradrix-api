@@ -13,28 +13,39 @@ type ActivityFieldOptions struct {
 	Reference    *string `bson:"reference" json:"reference"` // Is it an id from another activity
 }
 
-type ActivityFieldList struct {
+type ActivityFieldMultipleChoices struct {
 	Multiple bool     `bson:"multiple" json:"multiple,omitempty"`
 	Choices  []string `bson:"choices" json:"choices,omitempty"`
 }
 
+type ActivityFieldReference struct {
+	ActivityId primitive.ObjectID `bson:"activity_id" json:"activity_id,omitempty"`
+	FieldId    primitive.ObjectID `bson:"field_id" json:"field_id,omitempty"`
+}
+
 type ActivityFieldType struct {
-	*ActivityFieldList `bson:",inline" json:",inline"`
+	*ActivityFieldMultipleChoices `bson:",inline" json:",inline"`
+	*ActivityFieldReference       `bson:",inline" json:",inline"`
 }
 
 func NewActivityFieldType(fieldType string) ActivityFieldType {
 	switch fieldType {
 	case "multiple-choice":
 		return ActivityFieldType{
-			&ActivityFieldList{
+			&ActivityFieldMultipleChoices{
 				Multiple: false,
 				Choices:  []string{},
+			},
+			&ActivityFieldReference{
+				ActivityId: primitive.NilObjectID,
+				FieldId:    primitive.NilObjectID,
 			},
 		}
 
 	default:
 		return ActivityFieldType{
-			ActivityFieldList: nil,
+			ActivityFieldMultipleChoices: nil,
+			ActivityFieldReference:       nil,
 		}
 	}
 }
@@ -44,7 +55,7 @@ type ActivityField struct {
 	Name        string               `bson:"name" json:"name"`
 	Description string               `bson:"description" json:"description"`
 	Type        string               `bson:"type" json:"type"`       // Text, Number, Date, Time, Uploaded file
-	Key         bool                 `bons:"key" json:"key"`         // Is it an identifiant?
+	PrimaryKey  bool                 `bons:"key" json:"primary_key"` // Is it an identifier?
 	Options     ActivityFieldOptions `bson:"options" json:"options"` // There can be options
 	Code        string               `bson:"code" json:"code"`       // the id associated to the field, created internally
 	Details     ActivityFieldType    `bson:"details" json:"details"`

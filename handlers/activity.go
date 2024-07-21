@@ -295,7 +295,7 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				Name:        getOrDefault(input.Value.(map[string]any), "name", "").(string),
 				Description: getOrDefault(input.Value.(map[string]any), "description", "").(string),
 				Type:        fieldType,
-				Key:         getOrDefault(input.Value.(map[string]any), "id", false).(bool),
+				PrimaryKey:  getOrDefault(input.Value.(map[string]any), "id", false).(bool),
 				Code:        getOrDefault(input.Value.(map[string]any), "code", "").(string),
 				Options: models.ActivityFieldOptions{
 					Reference:    nil,
