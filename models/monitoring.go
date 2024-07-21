@@ -13,6 +13,11 @@ type ActivityFieldOptions struct {
 	Reference    *string `bson:"reference" json:"reference"` // Is it an id from another activity
 }
 
+type ActivityFieldUpload struct {
+	TypeOfFiles      []string `bson:"type_of_files" json:"type_of_files,omitempty"`
+	MaxNumberOfFiles int      `bson:"max_number_of_items" json:"max_number_of_items"`
+}
+
 type ActivityFieldMultipleChoices struct {
 	Multiple bool     `bson:"multiple" json:"multiple,omitempty"`
 	Choices  []string `bson:"choices" json:"choices,omitempty"`
@@ -26,6 +31,7 @@ type ActivityFieldReference struct {
 type ActivityFieldType struct {
 	*ActivityFieldMultipleChoices `bson:",inline" json:",inline"`
 	*ActivityFieldReference       `bson:",inline" json:",inline"`
+	*ActivityFieldUpload          `bson:",inline" json:",inline"`
 }
 
 func NewActivityFieldType(fieldType string) ActivityFieldType {
@@ -39,6 +45,10 @@ func NewActivityFieldType(fieldType string) ActivityFieldType {
 			&ActivityFieldReference{
 				ActivityId: primitive.NilObjectID,
 				FieldId:    primitive.NilObjectID,
+			},
+			&ActivityFieldUpload{
+				TypeOfFiles:      []string{},
+				MaxNumberOfFiles: 0,
 			},
 		}
 
