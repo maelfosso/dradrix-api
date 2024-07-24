@@ -48,7 +48,7 @@ func testCreateActivity(t *testing.T, db *storage.Database) {
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
-		Fields: []models.ActivityFields{
+		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
 			{Name: "f2", Description: "Description 2", Type: "text"},
 		},
@@ -88,7 +88,7 @@ func testDeleteActivity(t *testing.T, db *storage.Database) {
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
-		Fields: []models.ActivityFields{
+		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
 			{Name: "f2", Description: "Description 2", Type: "text"},
 		},
@@ -143,9 +143,9 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 	arg := storage.CreateActivityParams{
 		Name:        "a1",
 		Description: "Activity 1",
-		Fields: []models.ActivityFields{
+		Fields: []models.ActivityField{
 			{Name: "f1", Description: "Description 1", Type: "number"},
-			{Name: "f2", Description: "Description 2", Type: "text", Id: true},
+			{Name: "f2", Description: "Description 2", Type: "text", PrimaryKey: true},
 		},
 
 		OrganizationId: primitive.NewObjectID(),
@@ -207,7 +207,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 		if err != nil {
 			t.Fatalf("UpdateActivity(): got error %v; want nil", err)
 		}
-		if updated.Fields[0].Id != argForUpdate.Value {
+		if updated.Fields[0].PrimaryKey != argForUpdate.Value {
 			t.Fatalf(
 				"UpdateActivity(): updated %s value - got %s; want %s",
 				argForUpdate.Field, updated.Name, argForUpdate.Value,
@@ -232,7 +232,7 @@ func testUpdateActivity(t *testing.T, db *storage.Database) {
 			OrganizationId: arg.OrganizationId,
 
 			Field: "fields",
-			Value: models.ActivityFields{
+			Value: models.ActivityField{
 				Name:        sfaker.App().String(),
 				Description: gofaker.Paragraph(),
 				Type:        "number",
@@ -313,9 +313,9 @@ func testGetAllActivities(t *testing.T, db *storage.Database) {
 			Name:        sfaker.Company().Name(),
 			Description: gofaker.Paragraph(),
 
-			Fields: []models.ActivityFields{
+			Fields: []models.ActivityField{
 				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "number"},
-				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", Id: true},
+				{Code: sfaker.App().Name(), Name: gofaker.Name(), Description: gofaker.Paragraph(), Type: "text", PrimaryKey: true},
 			},
 
 			OrganizationId: organizationA,
@@ -407,7 +407,7 @@ func activityEq(got, want *models.Activity) error {
 		g := gotFields[i]
 		w := wantFields[i]
 
-		if g.Id != w.Id ||
+		if g.PrimaryKey != w.PrimaryKey ||
 			g.Code != w.Code ||
 			g.Name != w.Name ||
 			g.Description != w.Description ||

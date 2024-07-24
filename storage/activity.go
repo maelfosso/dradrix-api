@@ -15,7 +15,7 @@ import (
 type CreateActivityParams struct {
 	Name        string
 	Description string
-	Fields      []models.ActivityFields
+	Fields      []models.ActivityField
 
 	OrganizationId primitive.ObjectID
 	CreatedBy      primitive.ObjectID
@@ -26,7 +26,7 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 		Id:          primitive.NewObjectID(),
 		Name:        arg.Name,
 		Description: arg.Description,
-		Fields:      arg.Fields,
+		Fields:      arg.Fields, // Default to [] empty array instead of null
 
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -130,9 +130,7 @@ type UpdateSetInActivityParams struct {
 	Id             primitive.ObjectID
 	OrganizationId primitive.ObjectID
 
-	Field string
-	Value interface{}
-	// Type  string
+	FieldsToSet map[string]any
 }
 
 func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivityParams) (*models.Activity, error) {
@@ -140,10 +138,13 @@ func (q *Queries) UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivi
 		"_id":             arg.Id,
 		"organization_id": arg.OrganizationId,
 	}
+
+	set := bson.M{}
+	for field, value := range arg.FieldsToSet {
+		set[field] = value
+	}
 	update := bson.M{
-		"$set": bson.M{
-			arg.Field: arg.Value,
-		},
+		"$set": set,
 	}
 
 	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
@@ -155,7 +156,7 @@ type UpdateAddToActivityParams struct {
 
 	Position uint
 	Field    string
-	Value    interface{}
+	Value    models.ActivityField // interface{}
 }
 
 func (q *Queries) UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivityParams) (*models.Activity, error) {
