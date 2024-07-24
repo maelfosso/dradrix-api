@@ -176,6 +176,10 @@ func (s *checkOTPMock) CheckOTPTx(ctx context.Context, arg storage.CheckOTPParam
 	return otp, nil
 }
 
+func (s *checkOTPMock) UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error) {
+	return nil, nil
+}
+
 func TestCheckOTP(t *testing.T) {
 	mux := chi.NewMux()
 	checkSVC := &checkOTPMock{}

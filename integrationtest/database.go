@@ -56,7 +56,7 @@ func connect(name string) (*storage.Database, func()) {
 }
 
 func Cleanup(db *storage.Database) {
-	db.GetCollection("companies").DeleteMany(context.Background(), bson.M{})
+	db.GetCollection("organizations").DeleteMany(context.Background(), bson.M{})
 	db.GetCollection("activities").DeleteMany(context.Background(), bson.M{})
 	db.GetCollection("otps").DeleteMany(context.Background(), bson.M{})
 	db.GetCollection("users").DeleteMany(context.Background(), bson.M{})

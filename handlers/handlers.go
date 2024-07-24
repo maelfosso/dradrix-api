@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -81,17 +83,19 @@ func NewAppHandler() *AppHandler {
 				// Catch any type errors, like trying to assign a string in the JSON request body
 				// to a int field in our data struct
 				case errors.As(err, &unmarshalTypeError):
-					// msg := fmt.Sprintf(
-					// 	"Request body contains an invalid value for the %q field (at position)",
-					// 	unmarshalTypeError.Offset,
-					// )
+					msg := fmt.Sprintf(
+						"Request body contains an invalid value for the %+v field (at position): %+v",
+						unmarshalTypeError.Offset, err,
+					)
+					log.Println("PRB error :", msg)
 					return http.StatusBadRequest, errors.New("ERR_HDL_PRB_04")
 
 				// Catch error caused by extra unexpected fields in the request body.
 				// We extract the field name from the errror message and interpolate it in our custom error message
 				case strings.HasPrefix(err.Error(), "json: unknown field "):
-					// fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-					// msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+					fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+					msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+					log.Printf("\n\nError PRB: %s", msg)
 					return http.StatusBadRequest, errors.New("ERR_HDL_PRB_05")
 
 				// An io.EOF error is returned by Decode() if the request body is empty

@@ -109,7 +109,7 @@ func testDeleteData(t *testing.T, db *storage.Database) {
 		ActivityId: arg.ActivityId,
 	})
 	if err != nil {
-		t.Fatalf("DeleteDataFromCompany(): got err = %v; want nil", err)
+		t.Fatalf("DeleteDataFromOrganization(): got err = %v; want nil", err)
 	}
 
 	data, err = db.Storage.GetData(context.Background(), storage.GetDataParams{

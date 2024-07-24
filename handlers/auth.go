@@ -28,6 +28,10 @@ type CreateOTPRequest struct {
 	Language    string `json:"language,omitempty"`     // Language for template
 }
 
+type CreateOTPResponse struct {
+	PhoneNumber string `json:"phone_number"`
+}
+
 func CreateOTP(mux chi.Router, svc getOTPInterface) {
 	mux.Post("/otp", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -74,7 +78,8 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 		if user == nil {
 			_, err := svc.CreateUser(ctx, storage.CreateUserParams{
 				PhoneNumber: input.PhoneNumber,
-				Name:        "",
+				FirstName:   "",
+				LastName:    "",
 			})
 			if err != nil {
 				log.Println("Error at CreateUser", err)
@@ -96,9 +101,13 @@ func CreateOTP(mux chi.Router, svc getOTPInterface) {
 			return
 		}
 
+		response := CreateOTPResponse{
+			PhoneNumber: input.PhoneNumber,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(input.PhoneNumber); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Println("error when encoding auth result: ", err)
 			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
 			return
@@ -115,6 +124,10 @@ type CheckOTPRequest struct {
 	PhoneNumber string `json:"phone_number,omitempty"` // Phone number of the customer
 	Language    string `json:"language,omitempty"`     // Language for template
 	PinCode     string `json:"pin_code,omitempty"`     // Pin code entered
+}
+
+type CheckOTPResponse struct {
+	User models.User `json:"user"`
 }
 
 func CheckOTP(mux chi.Router, svc checkOTPInterface) {
@@ -188,9 +201,13 @@ func CheckOTP(mux chi.Router, svc checkOTPInterface) {
 			},
 		)
 
+		response := CheckOTPResponse{
+			User: *user,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(user); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Println("error when encoding auth result: ", err)
 			http.Error(w, "ERR_COTP_106", http.StatusBadRequest)
 			return
