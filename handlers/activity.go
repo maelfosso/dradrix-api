@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -248,8 +249,13 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				http.Error(w, "ERR_ATVT_UDT_010", http.StatusBadRequest)
 				return
 			}
-			var value any
-			if field == "fields" {
+
+			fieldSplitten := strings.Split(field, ".")
+
+			set := make(map[string]any)
+
+			switch {
+			case field == "fields":
 				t, _ := json.Marshal(input.Value)
 				j := []byte(t)
 				var v []models.ActivityField
@@ -259,19 +265,67 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 					return
 				}
 
-				value = v
-			} else {
-				value = input.Value
-			}
-			// TODO: check type of input.Value string|int|bool
+				set[field] = v
 
-			set := make(map[string]any)
-			set[field] = value
+			case fieldSplitten[len(fieldSplitten)-1] == "details":
+				position, err := strconv.Atoi(fieldSplitten[1])
+				if err != nil {
+					http.Error(w, "ERR_ATVT_UDT_015", http.StatusBadRequest)
+					return
+				}
 
-			fieldSplitten := strings.Split(field, ".")
-			if fieldSplitten[0] == "fields" && fieldSplitten[len(fieldSplitten)-1] == "type" {
-				set[fmt.Sprintf("fields.%s.details", fieldSplitten[1])] = models.NewActivityFieldType(value.(string))
+				switch activity.Fields[position].Type {
+				case "key":
+					t, _ := json.Marshal(input.Value)
+					j := []byte(t)
+					var v models.ActivityFieldKey
+					err := json.Unmarshal(j, &v)
+					if err != nil {
+						http.Error(w, "ERR_ATVT_UDT_014", http.StatusBadRequest)
+						return
+					}
+
+					set[field] = v
+
+				case "upload":
+					t, _ := json.Marshal(input.Value)
+					j := []byte(t)
+					var v models.ActivityFieldUpload
+					err := json.Unmarshal(j, &v)
+					if err != nil {
+						http.Error(w, "ERR_ATVT_UDT_014", http.StatusBadRequest)
+						return
+					}
+
+					set[field] = v
+
+				case "multiple-choices":
+					t, _ := json.Marshal(input.Value)
+					j := []byte(t)
+					var v models.ActivityFieldMultipleChoices
+					err := json.Unmarshal(j, &v)
+					if err != nil {
+						http.Error(w, "ERR_ATVT_UDT_014", http.StatusBadRequest)
+						return
+					}
+
+					set[field] = v
+
+				case "date":
+				case "time":
+				default:
+				}
+
+			case fieldSplitten[len(fieldSplitten)-1] == "type":
+				v := input.Value.(string)
+				set[field] = v
+				set[fmt.Sprintf("fields.%s.details", fieldSplitten[1])] = models.NewActivityFieldType(v)
+
+			default:
+				// TODO: check type of input.Value string|int|bool
+				set[field] = input.Value
 			}
+
 			updatedActivity, err = db.UpdateSetInActivity(ctx, storage.UpdateSetInActivityParams{
 				Id:             activity.Id,
 				OrganizationId: organization.Id,

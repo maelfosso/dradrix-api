@@ -23,29 +23,41 @@ type ActivityFieldMultipleChoices struct {
 	Choices  []string `bson:"choices" json:"choices,omitempty"`
 }
 
-type ActivityFieldReference struct {
+type ActivityFieldKey struct {
 	ActivityId primitive.ObjectID `bson:"activity_id" json:"activity_id,omitempty"`
 	FieldId    primitive.ObjectID `bson:"field_id" json:"field_id,omitempty"`
 }
 
 type ActivityFieldType struct {
 	*ActivityFieldMultipleChoices `bson:",inline" json:",inline"`
-	*ActivityFieldReference       `bson:",inline" json:",inline"`
+	*ActivityFieldKey             `bson:",inline" json:",inline"`
 	*ActivityFieldUpload          `bson:",inline" json:",inline"`
 }
 
 func NewActivityFieldType(fieldType string) ActivityFieldType {
 	switch fieldType {
-	case "multiple-choice":
+	case "multiple-choices":
 		return ActivityFieldType{
 			&ActivityFieldMultipleChoices{
 				Multiple: false,
 				Choices:  []string{},
 			},
-			&ActivityFieldReference{
+			nil,
+			nil,
+		}
+	case "key":
+		return ActivityFieldType{
+			nil,
+			&ActivityFieldKey{
 				ActivityId: primitive.NilObjectID,
 				FieldId:    primitive.NilObjectID,
 			},
+			nil,
+		}
+	case "upload":
+		return ActivityFieldType{
+			nil,
+			nil,
 			&ActivityFieldUpload{
 				TypeOfFiles:      []string{},
 				MaxNumberOfFiles: 0,
@@ -55,7 +67,8 @@ func NewActivityFieldType(fieldType string) ActivityFieldType {
 	default:
 		return ActivityFieldType{
 			ActivityFieldMultipleChoices: nil,
-			ActivityFieldReference:       nil,
+			ActivityFieldKey:             nil,
+			ActivityFieldUpload:          nil,
 		}
 	}
 }
