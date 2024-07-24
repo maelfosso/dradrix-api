@@ -70,7 +70,7 @@ func (s *Server) setupRoutes() {
 							appHandler.CreateData(r, s.database.Storage)
 							appHandler.GetAllData(r, s.database.Storage)
 
-							r.Route("{dataId}", func(r chi.Router) {
+							r.Route("/{dataId}", func(r chi.Router) {
 								appHandler.DataMiddleware(r, s.database.Storage)
 
 								appHandler.GetData(r, s.database.Storage)

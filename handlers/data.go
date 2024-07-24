@@ -74,14 +74,14 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 
 		activity := ctx.Value("activity").(*models.Activity)
 		// We should ensure that all the data are the type of the one defined in activity
-		values := make(map[string]any)
-		for _, field := range activity.Fields {
-			value := input.Values[field.Code]
-			castValue, ok := field.IsValid(value)
-			if ok {
-				values[field.Code] = castValue
-			}
-		}
+		// values := make(map[string]any)
+		// for _, field := range activity.Fields {
+		// 	value := input.Values[field.Code]
+		// 	castValue, ok := field.IsValid(value)
+		// 	if ok {
+		// 		values[field.Code] = castValue
+		// 	}
+		// }
 		// for code, value := range input.Values {
 		// 	var field models.ActivityFields
 
