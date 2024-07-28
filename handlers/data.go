@@ -119,7 +119,8 @@ type getAllDataInterface interface {
 }
 
 type GetAllDataResponse struct {
-	Data []*models.Data `json:"data,omitempty"`
+	Fields map[string]string `json:"fields"`
+	Data   []*models.Data    `json:"data"`
 }
 
 func (handler *AppHandler) GetAllData(mux chi.Router, db getAllDataInterface) {
@@ -136,8 +137,14 @@ func (handler *AppHandler) GetAllData(mux chi.Router, db getAllDataInterface) {
 			return
 		}
 
+		fields := make(map[string]string)
+		for _, field := range activity.Fields {
+			fields[field.Id.Hex()] = field.Name
+		}
+
 		response := GetAllDataResponse{
-			Data: data,
+			Fields: fields,
+			Data:   data,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
