@@ -3,7 +3,14 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -216,5 +223,85 @@ func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface) {
 			http.Error(w, "ERR_DATA_DLT_END", http.StatusBadRequest)
 			return
 		}
+	})
+}
+
+var (
+	_, b, _, _ = runtime.Caller(0)
+	RootPath   = filepath.Join(filepath.Dir(b), "../..")
+)
+
+func fileNameWithoutExtension(filename string) string {
+	return filename[:len(filename)-len(filepath.Ext(filename))]
+}
+
+func saveFile(file multipart.File, handler *multipart.FileHeader) (string, error) {
+	//2. Retrieve file from form-data
+	//<Form-id> is the form key that we will read from. Client should use the same form key when uploading the file
+	defer file.Close()
+
+	//3. Create a temporary file to our directory
+	tempFolderPath := fmt.Sprintf("%s%s", RootPath, "/tempFiles")
+	tempFileName := fmt.Sprintf("upload-%s-*%s", fileNameWithoutExtension(handler.Filename), filepath.Ext(handler.Filename))
+	tempFile, err := os.CreateTemp(tempFolderPath, tempFileName)
+	if err != nil {
+		errStr := fmt.Sprintf("Error in creating the file %s\n", err)
+		fmt.Println(errStr)
+		return errStr, err
+	}
+
+	defer tempFile.Close()
+
+	//4. Write upload file bytes to your new file
+	filebytes, err := io.ReadAll(file)
+	if err != nil {
+		errStr := fmt.Sprintf("Error in reading the file buffer %s\n", err)
+		fmt.Println(errStr)
+		return errStr, err
+	}
+
+	tempFile.Write(filebytes)
+	return "Successfully uploaded\n", nil
+}
+
+// type UploadFilesRequest struct {}
+type UploadFilesResponse struct{}
+
+func (appHandler *AppHandler) UploadFiles(mux chi.Router) {
+	mux.Post("/upload", func(w http.ResponseWriter, r *http.Request) {
+		// The argument to ParseMultipartForm is the max memory size (in bytes)
+		// that will be used to store the file in memory.
+		r.ParseMultipartForm(200 << 20) // 200 MB
+
+		files := r.MultipartForm.File["uploadedFiles[]"]
+		for _, handler := range files {
+			// Open the file
+			file, err := handler.Open()
+			if err != nil {
+				// Handle error
+				log.Println("r.MultipartForm", handler, err)
+			}
+			// defer file.Close()
+			// Process each file similarly to the single file scenario
+			r, err := saveFile(file, handler)
+			if err != nil {
+				log.Println("errror when processing ", r)
+			}
+
+		}
+
+		response := UploadFilesResponse{}
+		// w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_DATA_UPLF_END", http.StatusBadRequest)
+			return
+		}
+	})
+}
+
+func (appHandler *AppHandler) GetFiles(mux chi.Router) {
+	mux.Get("/upload", func(w http.ResponseWriter, r *http.Request) {
+
 	})
 }
