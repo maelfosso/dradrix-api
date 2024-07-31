@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -273,22 +272,15 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router) {
 		// that will be used to store the file in memory.
 		r.ParseMultipartForm(200 << 20) // 200 MB
 
-		files := r.MultipartForm.File["uploadedFiles[]"]
-		for _, handler := range files {
-			// Open the file
-			file, err := handler.Open()
-			if err != nil {
-				// Handle error
-				log.Println("r.MultipartForm", handler, err)
-			}
-			// defer file.Close()
-			// Process each file similarly to the single file scenario
-			r, err := saveFile(file, handler)
-			if err != nil {
-				log.Println("errror when processing ", r)
-			}
-
+		file, handler, err := r.FormFile("uploaded-file")
+		if err != nil {
+			errStr := fmt.Sprintf("Error in reading the file %s\n", err)
+			fmt.Println(errStr)
+			return
 		}
+
+		result, err := saveFile(file, handler)
+		fmt.Println(w, result, err)
 
 		response := UploadFilesResponse{}
 		// w.Header().Set("Content-Type", "application/json")
