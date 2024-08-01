@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -234,39 +236,49 @@ func fileNameWithoutExtension(filename string) string {
 	return filename[:len(filename)-len(filepath.Ext(filename))]
 }
 
-func saveFile(file multipart.File, handler *multipart.FileHeader) (string, error) {
+func saveFile(file multipart.File, handler *multipart.FileHeader) (*os.File, error) {
 	//2. Retrieve file from form-data
 	//<Form-id> is the form key that we will read from. Client should use the same form key when uploading the file
 	defer file.Close()
 
 	//3. Create a temporary file to our directory
-	tempFolderPath := fmt.Sprintf("%s%s", RootPath, "/tempFiles")
+	tempFolderPath := fmt.Sprintf("%s%s", RootPath, "/tmp-files")
 	tempFileName := fmt.Sprintf("upload-%s-*%s", fileNameWithoutExtension(handler.Filename), filepath.Ext(handler.Filename))
 	tempFile, err := os.CreateTemp(tempFolderPath, tempFileName)
 	if err != nil {
-		errStr := fmt.Sprintf("Error in creating the file %s\n", err)
+		errStr := fmt.Errorf("error in creating the file %s", err)
 		fmt.Println(errStr)
-		return errStr, err
+		return nil, errStr
 	}
 
-	defer tempFile.Close()
+	// defer tempFile.Close()
 
 	//4. Write upload file bytes to your new file
 	filebytes, err := io.ReadAll(file)
 	if err != nil {
-		errStr := fmt.Sprintf("Error in reading the file buffer %s\n", err)
+		errStr := fmt.Errorf("error in reading the file buffer %s", err)
 		fmt.Println(errStr)
-		return errStr, err
+		return nil, errStr
 	}
 
 	tempFile.Write(filebytes)
-	return "Successfully uploaded\n", nil
+	return tempFile, nil
+}
+
+type uploadFilesDBInterface interface {
+	DeleteData(ctx context.Context, arg storage.DeleteDataParams) error
+}
+
+type uploadFilesStorageInterface interface {
+	UploadFile(uploadKey string, fileToUpload *os.File) error
 }
 
 // type UploadFilesRequest struct {}
-type UploadFilesResponse struct{}
+type UploadFilesResponse struct {
+	FileKey string `json:"file_key"`
+}
 
-func (appHandler *AppHandler) UploadFiles(mux chi.Router) {
+func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterface, s3 uploadFilesStorageInterface) {
 	mux.Post("/upload", func(w http.ResponseWriter, r *http.Request) {
 		// The argument to ParseMultipartForm is the max memory size (in bytes)
 		// that will be used to store the file in memory.
@@ -276,13 +288,32 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router) {
 		if err != nil {
 			errStr := fmt.Sprintf("Error in reading the file %s\n", err)
 			fmt.Println(errStr)
+			http.Error(w, "ERR_UPLF_01", http.StatusBadRequest)
 			return
 		}
 
-		result, err := saveFile(file, handler)
-		fmt.Println(w, result, err)
+		fileToUpload, err := saveFile(file, handler)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "ERR_UPLF_02", http.StatusBadRequest)
+			return
+		}
+		// fmt.Println(w, result, err)
 
-		response := UploadFilesResponse{}
+		fileKey := fmt.Sprintf("%d-%s", time.Now().Unix(), handler.Filename)
+		err = s3.UploadFile(
+			fileKey,
+			fileToUpload,
+		)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "ERR_UPLF_03", http.StatusBadRequest)
+			return
+		}
+
+		response := UploadFilesResponse{
+			FileKey: fileKey,
+		}
 		// w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(response); err != nil {

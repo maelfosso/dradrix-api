@@ -69,7 +69,7 @@ func (s *Server) setupRoutes() {
 						r.Route("/data", func(r chi.Router) {
 							appHandler.CreateData(r, s.database.Storage)
 							appHandler.GetAllData(r, s.database.Storage)
-							appHandler.UploadFiles(r)
+							appHandler.UploadFiles(r, s.database.Storage, s.s3)
 
 							r.Route("/{dataId}", func(r chi.Router) {
 								appHandler.DataMiddleware(r, s.database.Storage)
