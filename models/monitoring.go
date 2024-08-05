@@ -113,3 +113,11 @@ type Data struct {
 	ActivityId primitive.ObjectID `bson:"activity_id" json:"activity_id"`
 	CreatedBy  primitive.ObjectID `bson:"created_by" json:"created_by"`
 }
+
+type UploadedFile struct {
+	UploadedBy primitive.ObjectID `bson:"uploaded_by" json:"uploaded_by"`
+	ActivityId primitive.ObjectID `bson:"activity_id" json:"activity_id"`
+	FileKey    string             `bson:"file_key" json:"file_key"`
+
+	UploadedAt time.Time `bson:"uploaded_at" json:"uploaded_at"`
+}
