@@ -44,6 +44,10 @@ type Querier interface {
 	UpdateSetInData(ctx context.Context, arg UpdateSetInDataParams) (*models.Data, error)
 	UpdateAddToData(ctx context.Context, arg UpdateAddToDataParams) (*models.Data, error)
 	UpdateRemoveFromData(ctx context.Context, arg UpdateRemoveFromDataParams) (*models.Data, error)
+	AddUploadedFile(ctx context.Context, arg AddUploadedFileParams) (*models.UploadedFile, error)
+	GetAllUploadedFile(ctx context.Context, arg GetAllUploadedFileParams) ([]*models.UploadedFile, error)
+	RemoveUploadedFile(ctx context.Context, arg RemoveUploadedFileParams) error
+	RemoveAllUploadedFile(ctx context.Context, arg RemoveUploadedFileParams) error
 }
 
 type QuerierTx interface {

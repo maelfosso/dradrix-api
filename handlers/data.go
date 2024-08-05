@@ -267,6 +267,7 @@ func saveFile(file multipart.File, handler *multipart.FileHeader) (*os.File, err
 
 type uploadFilesDBInterface interface {
 	DeleteData(ctx context.Context, arg storage.DeleteDataParams) error
+	AddUploadedFile(ctx context.Context, arg storage.AddUploadedFileParams) (*models.UploadedFile, error)
 }
 
 type uploadFilesStorageInterface interface {
@@ -280,6 +281,10 @@ type UploadFilesResponse struct {
 
 func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterface, s3 uploadFilesStorageInterface) {
 	mux.Post("/upload", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authUser := appHandler.GetAuthenticatedUser(r)
+		activity := ctx.Value("activity").(*models.Activity)
+
 		// The argument to ParseMultipartForm is the max memory size (in bytes)
 		// that will be used to store the file in memory.
 		r.ParseMultipartForm(200 << 20) // 200 MB
@@ -288,33 +293,43 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterf
 		if err != nil {
 			errStr := fmt.Sprintf("Error in reading the file %s\n", err)
 			fmt.Println(errStr)
-			http.Error(w, "ERR_UPLF_01", http.StatusBadRequest)
+			http.Error(w, "ERR_DATA_UPLF_01", http.StatusBadRequest)
 			return
 		}
 
 		fileToUpload, err := saveFile(file, handler)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "ERR_UPLF_02", http.StatusBadRequest)
+			http.Error(w, "ERR_DATA_UPLF_02", http.StatusBadRequest)
 			return
 		}
-		// fmt.Println(w, result, err)
 
-		fileKey := fmt.Sprintf("%d-%s", time.Now().Unix(), handler.Filename)
+		fileKey := fmt.Sprintf("data/%d-%s", time.Now().Unix(), handler.Filename)
 		err = s3.UploadFile(
 			fileKey,
 			fileToUpload,
 		)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "ERR_UPLF_03", http.StatusBadRequest)
+			http.Error(w, "ERR_DATA_UPLF_03", http.StatusBadRequest)
+			return
+		}
+
+		uploadedFile, err := db.AddUploadedFile(ctx, storage.AddUploadedFileParams{
+			UploadedBy: authUser.Id,
+			ActivityId: activity.Id,
+			FileKey:    fileKey,
+		})
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "ERR_DATA_UPLF_04", http.StatusBadRequest)
 			return
 		}
 
 		response := UploadFilesResponse{
-			FileKey: fileKey,
+			FileKey: uploadedFile.FileKey,
 		}
-		// w.Header().Set("Content-Type", "application/json")
+
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, "ERR_DATA_UPLF_END", http.StatusBadRequest)
