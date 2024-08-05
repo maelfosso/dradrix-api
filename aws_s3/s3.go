@@ -87,16 +87,17 @@ func (s3Client *S3Client) PutObject(
 // snippet-start:[gov2.s3.PresignDeleteObject]
 
 // DeleteObject makes a presigned request that can be used to delete an object from a bucket.
-// func (presigner Presigner) DeleteObject(bucketName string, objectKey string) (*v4.PresignedHTTPRequest, error) {
-// 	request, err := presigner.PresignClient.PresignDeleteObject(context.TODO(), &s3.DeleteObjectInput{
-// 		Bucket: aws.String(bucketName),
-// 		Key:    aws.String(objectKey),
-// 	})
-// 	if err != nil {
-// 		log.Printf("Couldn't get a presigned request to delete object %v. Here's why: %v\n", objectKey, err)
-// 	}
-// 	return request, err
-// }
+func (s3Client *S3Client) DeleteObject(objectKey string) (*v4.PresignedHTTPRequest, error) {
+	request, err := s3Client.S3PresignClient.PresignDeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: &s3Client.Bucket,
+		Key:    aws.String(objectKey),
+	})
+	if err != nil {
+		log.Printf("Couldn't get a presigned request to delete object %v. Here's why: %v\n", objectKey, err)
+		return nil, err
+	}
+	return request, err
+}
 
 func (client *S3Client) UploadFile(uploadKey string, fileToUpload *os.File) error {
 	defer fileToUpload.Close()
@@ -116,7 +117,6 @@ func (client *S3Client) UploadFile(uploadKey string, fileToUpload *os.File) erro
 		log.Println("Error on [Stat()]: ", err)
 		return fmt.Errorf("ERR_S3_UPLF_03")
 	}
-	// log.Println("File to upload stat", info.Size(), fileToUpload.)
 
 	putResponse, err := client.Put(presignedPutRequest.URL, info.Size(), fileToUpload)
 	if err != nil {
@@ -125,14 +125,23 @@ func (client *S3Client) UploadFile(uploadKey string, fileToUpload *os.File) erro
 	}
 	log.Printf("%v object %v with presigned URL returned %v.", presignedPutRequest.Method,
 		uploadKey, putResponse.StatusCode)
-	// body, err := ioutil.ReadAll(putResponse.Body)
-	// if err != nil {
-	// 	log.Println("Error reading response body: ", err)
-	// 	return err
-	// }
-	// log.Println("Put Response Body: ", string(body))
 
 	log.Println(strings.Repeat("-", 88))
 
+	return nil
+}
+
+func (client *S3Client) DeleteFile(uploadKey string) error {
+	presignedDeleteRequest, err := client.DeleteObject(uploadKey)
+	if err != nil {
+		return err
+	}
+
+	deleteResponse, err := client.Delete(presignedDeleteRequest.URL)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("%v object %v with presigned URL return %v.\n", presignedDeleteRequest.Method, uploadKey, deleteResponse.StatusCode)
 	return nil
 }
