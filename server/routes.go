@@ -76,7 +76,8 @@ func (s *Server) setupRoutes() {
 
 								appHandler.GetData(r, s.database.Storage)
 								appHandler.DeleteData(r, s.database.Storage)
-								appHandler.GetFiles(r)
+								appHandler.GetUploadedFiles(r, s.database.Storage)
+								appHandler.DeleteUploadedFile(r, s.database.Storage, s.s3)
 							})
 						})
 					})

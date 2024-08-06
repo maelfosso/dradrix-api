@@ -274,7 +274,6 @@ type uploadFilesStorageInterface interface {
 	UploadFile(uploadKey string, fileToUpload *os.File) error
 }
 
-// type UploadFilesRequest struct {}
 type UploadFilesResponse struct {
 	FileKey string `json:"file_key"`
 }
@@ -338,8 +337,93 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterf
 	})
 }
 
-func (appHandler *AppHandler) GetFiles(mux chi.Router) {
-	mux.Get("/upload", func(w http.ResponseWriter, r *http.Request) {
+type getFilesInterface interface {
+	GetAllUploadedFiles(ctx context.Context, arg storage.GetAllUploadedFilesParams) ([]*models.UploadedFile, error)
+}
 
+type GetAllUploadedFilesResponse struct {
+	Files []string `json:"files"`
+}
+
+func (appHandler *AppHandler) GetUploadedFiles(mux chi.Router, db getFilesInterface) {
+	mux.Get("/upload", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authUser := appHandler.GetAuthenticatedUser(r)
+		activity := ctx.Value("activity").(*models.Activity)
+
+		uploadedFiles, err := db.GetAllUploadedFiles(ctx, storage.GetAllUploadedFilesParams{
+			UploadedBy: authUser.Id,
+			ActivityId: activity.Id,
+		})
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "ERR_DATA_GUPF_01", http.StatusBadRequest)
+			return
+		}
+
+		files := make([]string, len(uploadedFiles))
+		for i := range uploadedFiles {
+			files = append(files, uploadedFiles[i].FileKey)
+		}
+
+		response := GetAllUploadedFilesResponse{
+			Files: files,
+		}
+
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_DATA_GUPF_END", http.StatusBadRequest)
+			return
+		}
 	})
+}
+
+type deleteUploadedFileDBInterface interface {
+	RemoveUploadedFile(ctx context.Context, arg storage.RemoveUploadedFileParams) error
+}
+
+type deleteUploadedFileStorageInterface interface {
+	DeleteFile(uploadKey string) error
+}
+
+type DeleteUploadedFileResponse struct {
+	Deleted bool `json:"deleted"`
+}
+
+func (appHandler *AppHandler) DeleteUploadedFile(mux chi.Router, db deleteUploadedFileDBInterface, s3 deleteUploadedFileStorageInterface) {
+	mux.Delete("/{fileKey}", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authUser := appHandler.GetAuthenticatedUser(r)
+		activity := ctx.Value("activity").(*models.Activity)
+
+		fileKey := chi.URLParamFromCtx(ctx, "fileKey")
+
+		err := s3.DeleteFile(fileKey)
+		if err != nil {
+			http.Error(w, "ERR_DATA_DULF_01", http.StatusBadRequest)
+			return
+		}
+
+		err = db.RemoveUploadedFile(ctx, storage.RemoveUploadedFileParams{
+			UploadedBy: authUser.Id,
+			ActivityId: activity.Id,
+			FileKey:    fileKey,
+		})
+		if err != nil {
+			http.Error(w, "ERR_DATA_DULF_02", http.StatusBadRequest)
+			return
+		}
+
+		response := DeleteUploadedFileResponse{
+			Deleted: true,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_DATA_DULF_END", http.StatusBadRequest)
+			return
+		}
+	})
+
 }

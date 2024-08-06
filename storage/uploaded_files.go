@@ -34,12 +34,12 @@ func (q *Queries) AddUploadedFile(ctx context.Context, arg AddUploadedFileParams
 	}
 }
 
-type GetAllUploadedFileParams struct {
+type GetAllUploadedFilesParams struct {
 	UploadedBy primitive.ObjectID
 	ActivityId primitive.ObjectID
 }
 
-func (q *Queries) GetAllUploadedFile(ctx context.Context, arg GetAllUploadedFileParams) ([]*models.UploadedFile, error) {
+func (q *Queries) GetAllUploadedFiles(ctx context.Context, arg GetAllUploadedFilesParams) ([]*models.UploadedFile, error) {
 	var files []*models.UploadedFile
 
 	filter := bson.M{
