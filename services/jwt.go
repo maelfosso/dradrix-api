@@ -46,7 +46,7 @@ func GenerateJwtToken(data map[string]interface{}) (string, error) {
 		User: data,
 		RegisteredClaims: &jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour * 24)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
 		},
 	}
 
