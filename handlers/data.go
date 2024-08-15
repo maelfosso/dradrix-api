@@ -309,7 +309,6 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterf
 			fileToUpload,
 		)
 		if err != nil {
-			log.Println(err)
 			http.Error(w, "ERR_DATA_UPLF_03", http.StatusBadRequest)
 			return
 		}
@@ -320,7 +319,6 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterf
 			FileKey:    fileKey,
 		})
 		if err != nil {
-			log.Println(err)
 			http.Error(w, "ERR_DATA_UPLF_04", http.StatusBadRequest)
 			return
 		}
@@ -390,15 +388,26 @@ type DeleteUploadedFileResponse struct {
 	Deleted bool `json:"deleted"`
 }
 
+type DeleteUploadedFileRequest struct {
+	FileKey string `json:"file_key"`
+}
+
 func (appHandler *AppHandler) DeleteUploadedFile(mux chi.Router, db deleteUploadedFileDBInterface, s3 deleteUploadedFileStorageInterface) {
-	mux.Delete("/{fileKey}", func(w http.ResponseWriter, r *http.Request) {
+	mux.Delete("/upload", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		authUser := appHandler.GetAuthenticatedUser(r)
 		activity := ctx.Value("activity").(*models.Activity)
 
-		fileKey := chi.URLParamFromCtx(ctx, "fileKey")
+		var input DeleteUploadedFileRequest
+		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
+		if err != nil {
+			http.Error(w, err.Error(), httpStatus)
+			return
+		}
 
-		err := s3.DeleteFile(fileKey)
+		fileKey := input.FileKey
+
+		err = s3.DeleteFile(fileKey)
 		if err != nil {
 			http.Error(w, "ERR_DATA_DULF_01", http.StatusBadRequest)
 			return
