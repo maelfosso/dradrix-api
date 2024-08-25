@@ -15,7 +15,7 @@ import (
 type CreateDataParams struct {
 	Values     map[string]any
 	ActivityId primitive.ObjectID
-	CreatedBy  primitive.ObjectID
+	CreatedBy  models.DataAuthor
 }
 
 func (q *Queries) CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error) {
@@ -82,8 +82,13 @@ func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*mode
 			return nil, err
 		}
 	}
+	defer cursor.Close(ctx)
+
 	if err = cursor.All(ctx, &data); err != nil {
 		return nil, err
+	}
+	if data == nil {
+		return []*models.Data{}, nil
 	}
 	return data, nil
 }

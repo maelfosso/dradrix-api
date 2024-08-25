@@ -19,6 +19,8 @@ import (
 	"stockinos.com/api/storage"
 )
 
+var AWS_S3_ROOT = "https://s3.amazonaws.com/monitoring.dadrix.s3/"
+
 type dataMiddlewareInterface interface {
 	GetData(ctx context.Context, arg storage.GetDataParams) (*models.Data, error)
 }
@@ -102,7 +104,10 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 			Values: input.Values,
 
 			ActivityId: activity.Id,
-			CreatedBy:  authUser.Id,
+			CreatedBy: models.DataAuthor{
+				Id:   authUser.Id,
+				Name: fmt.Sprintf("%s %s", authUser.LastName, authUser.FirstName),
+			},
 		})
 		if err != nil {
 			http.Error(w, "ERR_DATA_CRT_01", http.StatusBadRequest)
@@ -126,9 +131,14 @@ type getAllDataInterface interface {
 	GetAllData(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error)
 }
 
+type FieldResponse struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
 type GetAllDataResponse struct {
-	Fields map[string]string `json:"fields"`
-	Data   []*models.Data    `json:"data"`
+	Fields map[string]FieldResponse `json:"fields"`
+	Data   []*models.Data           `json:"data"`
 }
 
 func (handler *AppHandler) GetAllData(mux chi.Router, db getAllDataInterface) {
@@ -145,9 +155,12 @@ func (handler *AppHandler) GetAllData(mux chi.Router, db getAllDataInterface) {
 			return
 		}
 
-		fields := make(map[string]string)
+		fields := make(map[string]FieldResponse)
 		for _, field := range activity.Fields {
-			fields[field.Id.Hex()] = field.Name
+			fields[field.Id.Hex()] = FieldResponse{
+				Name: field.Name,
+				Type: field.Type,
+			}
 		}
 
 		response := GetAllDataResponse{
@@ -313,10 +326,11 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterf
 			return
 		}
 
+		fullFilePath := fmt.Sprintf("%s/%s", AWS_S3_ROOT, fileKey)
 		uploadedFile, err := db.AddUploadedFile(ctx, storage.AddUploadedFileParams{
 			UploadedBy: authUser.Id,
 			ActivityId: activity.Id,
-			FileKey:    fileKey,
+			FileKey:    fullFilePath,
 		})
 		if err != nil {
 			http.Error(w, "ERR_DATA_UPLF_04", http.StatusBadRequest)

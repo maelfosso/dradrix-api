@@ -99,6 +99,11 @@ type Activity struct {
 	CreatedBy      primitive.ObjectID `bson:"created_by" json:"created_by"`
 }
 
+type DataAuthor struct {
+	Id   primitive.ObjectID `bson:"_id" json:"id"`
+	Name string             `bson:"name" json:"name"`
+}
+
 type Data struct {
 	Id primitive.ObjectID `bson:"_id" json:"id"`
 	// key: code of the field
@@ -111,7 +116,7 @@ type Data struct {
 	DeletedAt *time.Time `bson:"deleted_at" json:"deleted_at"`
 
 	ActivityId primitive.ObjectID `bson:"activity_id" json:"activity_id"`
-	CreatedBy  primitive.ObjectID `bson:"created_by" json:"created_by"`
+	CreatedBy  DataAuthor         `bson:"created_by" json:"created_by"`
 }
 
 type UploadedFile struct {
