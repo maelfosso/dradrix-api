@@ -39,6 +39,7 @@ type Querier interface {
 	// Data
 	CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error)
 	GetData(ctx context.Context, arg GetDataParams) (*models.Data, error)
+	GetDataFromValues(ctx context.Context, arg GetDataFromValuesParams) (*models.Data, error)
 	GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error)
 	DeleteData(ctx context.Context, arg DeleteDataParams) error
 	UpdateSetInData(ctx context.Context, arg UpdateSetInDataParams) (*models.Data, error)

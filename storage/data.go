@@ -63,6 +63,31 @@ func (q *Queries) GetData(ctx context.Context, arg GetDataParams) (*models.Data,
 	return &data, nil
 }
 
+type GetDataFromValuesParams struct {
+	Values     map[string]any
+	ActivityId primitive.ObjectID
+}
+
+func (q *Queries) GetDataFromValues(ctx context.Context, arg GetDataFromValuesParams) (*models.Data, error) {
+	var data models.Data
+
+	set := bson.M{}
+	for field, value := range arg.Values {
+		set[fmt.Sprintf("values.%s", field)] = value
+	}
+	set["activity_id"] = arg.ActivityId
+	filter := set
+	err := q.datasCollections.FindOne(ctx, filter).Decode(&data)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	return &data, nil
+}
+
 type GetAllDataParams struct {
 	ActivityId primitive.ObjectID
 }

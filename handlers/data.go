@@ -60,6 +60,7 @@ func (handler *AppHandler) DataMiddleware(mux chi.Router, db dataMiddlewareInter
 
 type createDataInterface interface {
 	CreateData(ctx context.Context, arg storage.CreateDataParams) (*models.Data, error)
+	GetDataFromValues(ctx context.Context, arg storage.GetDataFromValuesParams) (*models.Data, error)
 }
 
 type CreateDataRequest struct {
@@ -83,6 +84,37 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 		}
 
 		activity := ctx.Value("activity").(*models.Activity)
+
+		// PRIMARY KEY CHECKING
+		var primaryKeyField models.ActivityField
+		for i := range activity.Fields {
+			field := activity.Fields[i]
+			if field.PrimaryKey {
+				primaryKeyField = field
+			}
+		}
+
+		primaryKeyValue := input.Values[primaryKeyField.Id.Hex()]
+		if primaryKeyValue == nil {
+			http.Error(w, "ERR_DATA_CRT_PRKEY_EMPTY", http.StatusBadRequest)
+			return
+		}
+
+		dataWithPrKey, err := db.GetDataFromValues(ctx, storage.GetDataFromValuesParams{
+			Values: map[string]any{
+				primaryKeyField.Id.Hex(): primaryKeyValue,
+			},
+			ActivityId: activity.Id,
+		})
+		if err != nil {
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+		if dataWithPrKey != nil {
+			http.Error(w, "ERR_DATA_CRT_PRKEY_ALREADY_USED", http.StatusBadRequest)
+			return
+		}
+
 		// We should ensure that all the data are the type of the one defined in activity
 		// values := make(map[string]any)
 		// for _, field := range activity.Fields {
@@ -326,7 +358,7 @@ func (appHandler *AppHandler) UploadFiles(mux chi.Router, db uploadFilesDBInterf
 			return
 		}
 
-		fullFilePath := fmt.Sprintf("%s/%s", AWS_S3_ROOT, fileKey)
+		fullFilePath := fmt.Sprintf("%s%s", AWS_S3_ROOT, fileKey)
 		uploadedFile, err := db.AddUploadedFile(ctx, storage.AddUploadedFileParams{
 			UploadedBy: authUser.Id,
 			ActivityId: activity.Id,
