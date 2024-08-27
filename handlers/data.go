@@ -96,7 +96,7 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 
 		primaryKeyValue := input.Values[primaryKeyField.Id.Hex()]
 		if primaryKeyValue == nil {
-			http.Error(w, "ERR_DATA_CRT_PRKEY_EMPTY", http.StatusBadRequest)
+			http.Error(w, "ERR_DATA_CRT_PRKEY_NOT_FOUND", http.StatusBadRequest)
 			return
 		}
 
