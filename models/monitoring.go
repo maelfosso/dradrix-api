@@ -25,8 +25,9 @@ type ActivityFieldMultipleChoices struct {
 }
 
 type ActivityFieldKey struct {
-	ActivityId primitive.ObjectID `bson:"activity_id" json:"activity_id,omitempty"`
-	FieldId    primitive.ObjectID `bson:"field_id" json:"field_id,omitempty"`
+	ActivityId   primitive.ObjectID `bson:"activity_id" json:"activity_id,omitempty"`
+	FieldId      primitive.ObjectID `bson:"field_id" json:"field_id,omitempty"`
+	FieldToUseId primitive.ObjectID `bson:"field_to_use_id" json:"field_to_use_id,omitempty"`
 }
 
 type ActivityFieldType struct {
