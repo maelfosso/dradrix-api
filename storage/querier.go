@@ -38,6 +38,7 @@ type Querier interface {
 	UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error)
 	// Data
 	CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error)
+	UpdateData(ctx context.Context, arg UpdateDataParams) (*models.Data, error)
 	GetData(ctx context.Context, arg GetDataParams) (*models.Data, error)
 	GetDataFromValues(ctx context.Context, arg GetDataFromValuesParams) (*models.Data, error)
 	GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error)

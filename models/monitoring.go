@@ -15,19 +15,19 @@ type ActivityFieldOptions struct {
 }
 
 type ActivityFieldUpload struct {
-	TypeOfFiles      []string `bson:"type_of_files" json:"type_of_files,omitempty"`
+	TypeOfFiles      []string `bson:"type_of_files" json:"type_of_files"`
 	MaxNumberOfFiles int      `bson:"max_number_of_items" json:"max_number_of_items"`
 }
 
 type ActivityFieldMultipleChoices struct {
-	Multiple bool     `bson:"multiple" json:"multiple,omitempty"`
-	Choices  []string `bson:"choices" json:"choices,omitempty"`
+	Multiple bool     `bson:"multiple" json:"multiple"`
+	Choices  []string `bson:"choices" json:"choices"`
 }
 
 type ActivityFieldKey struct {
-	ActivityId   primitive.ObjectID `bson:"activity_id" json:"activity_id,omitempty"`
-	FieldId      primitive.ObjectID `bson:"field_id" json:"field_id,omitempty"`
-	FieldToUseId primitive.ObjectID `bson:"field_to_use_id" json:"field_to_use_id,omitempty"`
+	ActivityId   primitive.ObjectID `bson:"activity_id" json:"activity_id"`
+	FieldId      primitive.ObjectID `bson:"field_id" json:"field_id"`
+	FieldToUseId primitive.ObjectID `bson:"field_to_use_id" json:"field_to_use_id"`
 }
 
 type ActivityFieldType struct {

@@ -159,6 +159,88 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 	})
 }
 
+type updateDataInterface interface {
+	UpdateData(ctx context.Context, arg storage.UpdateDataParams) (*models.Data, error)
+	GetDataFromValues(ctx context.Context, arg storage.GetDataFromValuesParams) (*models.Data, error)
+}
+
+type UpdateDataRequest struct {
+	Values map[string]any `json:"values"`
+}
+
+type UpdateDataResponse struct {
+	Data models.Data `json:"data"`
+}
+
+func (appHandler *AppHandler) UpdateData(mux chi.Router, db updateDataInterface) {
+	mux.Put("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		// authUser := appHandler.GetAuthenticatedUser(r)
+
+		var input UpdateDataRequest
+		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
+		if err != nil {
+			http.Error(w, err.Error(), httpStatus)
+			return
+		}
+
+		activity := ctx.Value("activity").(*models.Activity)
+		data := ctx.Value("data").(*models.Data)
+
+		// PRIMARY KEY CHECKING
+		var primaryKeyField models.ActivityField
+		for i := range activity.Fields {
+			field := activity.Fields[i]
+			if field.PrimaryKey {
+				primaryKeyField = field
+			}
+		}
+
+		primaryKeyValue := input.Values[primaryKeyField.Id.Hex()]
+		if primaryKeyValue == nil {
+			http.Error(w, "ERR_DATA_UPDT_PRKEY_NOT_FOUND", http.StatusBadRequest)
+			return
+		}
+
+		dataWithPrKey, err := db.GetDataFromValues(ctx, storage.GetDataFromValuesParams{
+			Values: map[string]any{
+				primaryKeyField.Id.Hex(): primaryKeyValue,
+			},
+			ActivityId: activity.Id,
+		})
+		if err != nil {
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+		if dataWithPrKey != nil {
+			http.Error(w, "ERR_DATA_UPDT_PRKEY_ALREADY_USED", http.StatusBadRequest)
+			return
+		}
+
+		data, err = db.UpdateData(ctx, storage.UpdateDataParams{
+			Id:         data.Id,
+			ActivityId: activity.Id,
+
+			Values: input.Values,
+		})
+		if err != nil {
+			http.Error(w, "ERR_DATA_UPDT_FAILED", http.StatusBadRequest)
+			return
+		}
+
+		response := UpdateDataResponse{
+			Data: *data,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "ERR_DATA_UPDT_ENC_RESP", http.StatusBadRequest)
+			return
+		}
+	})
+}
+
 type getAllDataInterface interface {
 	GetAllData(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error)
 }

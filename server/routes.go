@@ -74,6 +74,7 @@ func (s *Server) setupRoutes() {
 								appHandler.DataMiddleware(r, s.database.Storage)
 
 								appHandler.GetData(r, s.database.Storage)
+								appHandler.UpdateData(r, s.database.Storage)
 								appHandler.DeleteData(r, s.database.Storage)
 								appHandler.GetUploadedFiles(r, s.database.Storage)
 							})

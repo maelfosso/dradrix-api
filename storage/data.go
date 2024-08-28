@@ -230,3 +230,28 @@ func (q *Queries) UpdateRemoveFromData(ctx context.Context, arg UpdateRemoveFrom
 	}
 	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
 }
+
+type UpdateDataParams struct {
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
+
+	Values map[string]any
+}
+
+func (q *Queries) UpdateData(ctx context.Context, arg UpdateDataParams) (*models.Data, error) {
+	filter := bson.M{
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
+	}
+
+	set := bson.M{}
+	for key, value := range arg.Values {
+		field := fmt.Sprintf("values.%s", key)
+		set[field] = value
+	}
+	update := bson.M{
+		"$set": set,
+	}
+
+	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
+}
