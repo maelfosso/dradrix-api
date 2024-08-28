@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -321,16 +323,31 @@ type deleteDataInterface interface {
 	DeleteData(ctx context.Context, arg storage.DeleteDataParams) error
 }
 
+type deleteFilesS3Interface interface {
+	DeleteFile(uploadKey string) error
+}
+
 type DeleteDataResponse struct {
 	Deleted bool `json:"deleted"`
 }
 
-func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface) {
+func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface, s3 deleteFilesS3Interface) {
 	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		activity := ctx.Value("activity").(*models.Activity)
 		data := ctx.Value("data").(*models.Data)
+
+		uploadFields := make([]string, 0)
+		for i := range activity.Fields {
+			field := activity.Fields[i]
+			if field.Type == "upload" {
+				uploadFields = append(uploadFields, field.Id.Hex())
+			}
+		}
+		if len(uploadFields) > 0 {
+			deleteUploadFields(uploadFields, data, s3)
+		}
 
 		err := db.DeleteData(ctx, storage.DeleteDataParams{
 			Id:         data.Id,
@@ -352,6 +369,35 @@ func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface) {
 			return
 		}
 	})
+}
+
+func deleteUploadFields(uploadField []string, data *models.Data, s3 deleteFilesS3Interface) {
+	var wg sync.WaitGroup
+
+	s3Items := make([]string, 0)
+	for i := range uploadField {
+		var fieldValues []string
+
+		fieldId := uploadField[i]
+		_strValues := fmt.Sprintf("%s", data.Values[fieldId])
+		json.Unmarshal([]byte(_strValues), &fieldValues)
+		// if err != nil {}
+
+		s3Items = append(s3Items, fieldValues...)
+	}
+
+	wg.Add(len(s3Items))
+	for i := range s3Items {
+		fileKey := strings.TrimPrefix(s3Items[i], AWS_S3_ROOT)
+
+		go func(key string) {
+			defer wg.Done()
+
+			s3.DeleteFile(fileKey)
+		}(fileKey)
+	}
+	wg.Wait()
+
 }
 
 var (

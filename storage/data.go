@@ -76,7 +76,10 @@ func (q *Queries) GetDataFromValues(ctx context.Context, arg GetDataFromValuesPa
 		set[fmt.Sprintf("values.%s", field)] = value
 	}
 	set["activity_id"] = arg.ActivityId
+	set["deleted_at"] = nil
+
 	filter := set
+
 	err := q.datasCollections.FindOne(ctx, filter).Decode(&data)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
