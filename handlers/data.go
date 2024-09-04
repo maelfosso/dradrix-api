@@ -62,7 +62,7 @@ func (handler *AppHandler) DataMiddleware(mux chi.Router, db dataMiddlewareInter
 
 type createDataInterface interface {
 	CreateData(ctx context.Context, arg storage.CreateDataParams) (*models.Data, error)
-	GetDataFromValues(ctx context.Context, arg storage.GetDataFromValuesParams) (*models.Data, error)
+	GetDataFilterByValues(ctx context.Context, arg storage.GetDataFilterByValuesParams) (*models.Data, error)
 }
 
 type CreateDataRequest struct {
@@ -102,7 +102,7 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 			return
 		}
 
-		dataWithPrKey, err := db.GetDataFromValues(ctx, storage.GetDataFromValuesParams{
+		dataWithPrKey, err := db.GetDataFilterByValues(ctx, storage.GetDataFilterByValuesParams{
 			Values: map[string]any{
 				primaryKeyField.Id.Hex(): primaryKeyValue,
 			},
@@ -163,7 +163,7 @@ func (handler *AppHandler) CreateData(mux chi.Router, db createDataInterface) {
 
 type updateDataInterface interface {
 	UpdateData(ctx context.Context, arg storage.UpdateDataParams) (*models.Data, error)
-	GetDataFromValues(ctx context.Context, arg storage.GetDataFromValuesParams) (*models.Data, error)
+	GetDataFilterByValues(ctx context.Context, arg storage.GetDataFilterByValuesParams) (*models.Data, error)
 }
 
 type UpdateDataRequest struct {
@@ -204,7 +204,7 @@ func (appHandler *AppHandler) UpdateData(mux chi.Router, db updateDataInterface)
 			return
 		}
 
-		dataWithPrKey, err := db.GetDataFromValues(ctx, storage.GetDataFromValuesParams{
+		dataWithPrKey, err := db.GetDataFilterByValues(ctx, storage.GetDataFilterByValuesParams{
 			Values: map[string]any{
 				primaryKeyField.Id.Hex(): primaryKeyValue,
 			},
@@ -321,6 +321,7 @@ func (handler *AppHandler) GetData(mux chi.Router, db getDataInterface) {
 
 type deleteDataInterface interface {
 	DeleteData(ctx context.Context, arg storage.DeleteDataParams) error
+	GetAllData(ctx context.Context, arg storage.GetAllDataParams) ([]*models.Data, error)
 }
 
 type deleteFilesS3Interface interface {
@@ -338,15 +339,57 @@ func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface, s3
 		activity := ctx.Value("activity").(*models.Activity)
 		data := ctx.Value("data").(*models.Data)
 
-		uploadFields := make([]string, 0)
-		for i := range activity.Fields {
-			field := activity.Fields[i]
-			if field.Type == "upload" {
-				uploadFields = append(uploadFields, field.Id.Hex())
+		// Check for relationship
+		var relationships []models.ActivityRelationship = make([]models.ActivityRelationship, 0)
+		for i := range activity.Relationships {
+			relationship := activity.Relationships[i]
+			if relationship.Type == "has-one" || relationship.Type == "has-many" {
+
+				relationships = append(relationships, relationship)
 			}
 		}
-		if len(uploadFields) > 0 {
-			deleteUploadFields(uploadFields, data, s3)
+		if len(relationships) > 0 {
+			var primaryKeyField *models.ActivityField = nil
+			for i := range activity.Fields {
+				if activity.Fields[i].PrimaryKey {
+					primaryKeyField = &activity.Fields[i]
+
+					break
+				}
+			}
+			if primaryKeyField != nil {
+
+				var notDeletedReasons []string = make([]string, 0)
+				for i := range relationships {
+					relationship := relationships[i]
+
+					relationshipData, err := db.GetAllData(ctx, storage.GetAllDataParams{
+						ActivityId: relationship.ActivityId,
+						Projections: map[string]int{
+							fmt.Sprintf("values.%s", relationship.FieldId): 1,
+						},
+						FilterBy: map[string]any{
+							fmt.Sprintf("values.%s", relationship.FieldId): data.Values[primaryKeyField.Id.Hex()],
+						},
+					})
+					if err != nil {
+						http.Error(w, "ERR_", http.StatusBadRequest)
+						return
+					}
+
+					if len(relationshipData) > 0 {
+						// Must not be deleted
+						// Delete the children first
+						notDeletedReasons = append(notDeletedReasons, relationship.ActivityId.Hex())
+					}
+				}
+
+				if len(notDeletedReasons) > 0 {
+					http.Error(w, "ERR_DLT", http.StatusBadRequest)
+					return
+				}
+			}
+
 		}
 
 		err := db.DeleteData(ctx, storage.DeleteDataParams{

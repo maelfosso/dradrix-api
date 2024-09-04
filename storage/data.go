@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"stockinos.com/api/models"
 )
 
@@ -63,22 +64,20 @@ func (q *Queries) GetData(ctx context.Context, arg GetDataParams) (*models.Data,
 	return &data, nil
 }
 
-type GetDataFromValuesParams struct {
+type GetDataFilterByValuesParams struct {
 	Values     map[string]any
 	ActivityId primitive.ObjectID
 }
 
-func (q *Queries) GetDataFromValues(ctx context.Context, arg GetDataFromValuesParams) (*models.Data, error) {
+func (q *Queries) GetDataFilterByValues(ctx context.Context, arg GetDataFilterByValuesParams) (*models.Data, error) {
 	var data models.Data
 
-	set := bson.M{}
+	filter := bson.M{}
 	for field, value := range arg.Values {
-		set[fmt.Sprintf("values.%s", field)] = value
+		filter[fmt.Sprintf("values.%s", field)] = value
 	}
-	set["activity_id"] = arg.ActivityId
-	set["deleted_at"] = nil
-
-	filter := set
+	filter["activity_id"] = arg.ActivityId
+	filter["deleted_at"] = nil
 
 	err := q.datasCollections.FindOne(ctx, filter).Decode(&data)
 	if err != nil {
@@ -92,17 +91,32 @@ func (q *Queries) GetDataFromValues(ctx context.Context, arg GetDataFromValuesPa
 }
 
 type GetAllDataParams struct {
-	ActivityId primitive.ObjectID
+	ActivityId  primitive.ObjectID
+	Projections map[string]int
+	FilterBy    map[string]any
 }
 
 func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error) {
 	var data []*models.Data
 
+	projections := bson.M{}
+	if len(arg.Projections) > 0 {
+		for key, value := range arg.Projections {
+			projections[key] = value
+		}
+	}
+	opts := options.Find().SetProjection(projections)
+
 	filter := bson.M{
 		"activity_id": arg.ActivityId,
 		"deleted_at":  nil,
 	}
-	cursor, err := q.datasCollections.Find(ctx, filter)
+	if len(arg.FilterBy) > 0 {
+		for key, value := range arg.FilterBy {
+			filter[fmt.Sprintf("values.%s", key)] = value
+		}
+	}
+	cursor, err := q.datasCollections.Find(ctx, filter, opts)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
