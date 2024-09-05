@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	awss3 "stockinos.com/api/aws_s3"
 	"stockinos.com/api/server"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
@@ -57,8 +58,11 @@ func start() int {
 		log.Fatal("error connecting to database: %w", zap.Error(err))
 	}
 
+	s3Client := awss3.NewS3Client()
+
 	s := server.New(server.Options{
 		Database: database,
+		S3:       s3Client,
 		Host:     host,
 		Port:     port,
 		Log:      log,

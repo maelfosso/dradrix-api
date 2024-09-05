@@ -9,13 +9,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"stockinos.com/api/models"
 )
 
 type CreateDataParams struct {
 	Values     map[string]any
 	ActivityId primitive.ObjectID
-	CreatedBy  primitive.ObjectID
+	CreatedBy  models.DataAuthor
 }
 
 func (q *Queries) CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error) {
@@ -63,18 +64,22 @@ func (q *Queries) GetData(ctx context.Context, arg GetDataParams) (*models.Data,
 	return &data, nil
 }
 
-type GetAllDataParams struct {
+type GetDataFilterByValuesParams struct {
+	Values     map[string]any
 	ActivityId primitive.ObjectID
 }
 
-func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error) {
-	var data []*models.Data
+func (q *Queries) GetDataFilterByValues(ctx context.Context, arg GetDataFilterByValuesParams) (*models.Data, error) {
+	var data models.Data
 
-	filter := bson.M{
-		"activity_id": arg.ActivityId,
-		"deleted_at":  nil,
+	filter := bson.M{}
+	for field, value := range arg.Values {
+		filter[fmt.Sprintf("values.%s", field)] = value
 	}
-	cursor, err := q.datasCollections.Find(ctx, filter)
+	filter["activity_id"] = arg.ActivityId
+	filter["deleted_at"] = nil
+
+	err := q.datasCollections.FindOne(ctx, filter).Decode(&data)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
@@ -82,8 +87,50 @@ func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*mode
 			return nil, err
 		}
 	}
+	return &data, nil
+}
+
+type GetAllDataParams struct {
+	ActivityId  primitive.ObjectID
+	Projections map[string]int
+	FilterBy    map[string]any
+}
+
+func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error) {
+	var data []*models.Data
+
+	projections := bson.M{}
+	if len(arg.Projections) > 0 {
+		for key, value := range arg.Projections {
+			projections[key] = value
+		}
+	}
+	opts := options.Find().SetProjection(projections)
+
+	filter := bson.M{
+		"activity_id": arg.ActivityId,
+		"deleted_at":  nil,
+	}
+	if len(arg.FilterBy) > 0 {
+		for key, value := range arg.FilterBy {
+			filter[key] = value
+		}
+	}
+	cursor, err := q.datasCollections.Find(ctx, filter, opts)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	defer cursor.Close(ctx)
+
 	if err = cursor.All(ctx, &data); err != nil {
 		return nil, err
+	}
+	if data == nil {
+		return []*models.Data{}, nil
 	}
 	return data, nil
 }
@@ -198,5 +245,30 @@ func (q *Queries) UpdateRemoveFromData(ctx context.Context, arg UpdateRemoveFrom
 			field: nil,
 		},
 	}
+	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
+}
+
+type UpdateDataParams struct {
+	Id         primitive.ObjectID
+	ActivityId primitive.ObjectID
+
+	Values map[string]any
+}
+
+func (q *Queries) UpdateData(ctx context.Context, arg UpdateDataParams) (*models.Data, error) {
+	filter := bson.M{
+		"_id":         arg.Id,
+		"activity_id": arg.ActivityId,
+	}
+
+	set := bson.M{}
+	for key, value := range arg.Values {
+		field := fmt.Sprintf("values.%s", key)
+		set[field] = value
+	}
+	update := bson.M{
+		"$set": set,
+	}
+
 	return CommonUpdateQuery[models.Data](ctx, *q.datasCollections, filter, update)
 }

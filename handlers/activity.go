@@ -210,9 +210,9 @@ func (handler *AppHandler) DeleteActivity(mux chi.Router, db deleteActivityInter
 }
 
 type updateActivityInterface interface {
-	UpdateSetInActivity(ctx context.Context, arg storage.UpdateSetInActivityParams) (*models.Activity, error)
+	UpdateSetInActivityTx(ctx context.Context, arg storage.UpdateSetInActivityTxParams) (*models.Activity, error)
 	UpdateAddToActivity(ctx context.Context, arg storage.UpdateAddToActivityParams) (*models.Activity, error)
-	UpdateRemoveFromActivity(ctx context.Context, arg storage.UpdateRemoveFromActivityParams) (*models.Activity, error)
+	UpdateRemoveFromActivityTx(ctx context.Context, arg storage.UpdateRemoveFromActivityTxParams) (*models.Activity, error)
 }
 
 type UpdateActivityRequest struct {
@@ -326,11 +326,14 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 				set[field] = input.Value
 			}
 
-			updatedActivity, err = db.UpdateSetInActivity(ctx, storage.UpdateSetInActivityParams{
-				Id:             activity.Id,
+			updatedActivity, err = db.UpdateSetInActivityTx(ctx, storage.UpdateSetInActivityTxParams{
+				Activity:       *activity,
 				OrganizationId: organization.Id,
 
 				FieldsToSet: set,
+
+				Field:   field,
+				Details: set[field],
 			})
 		case "add":
 			if field != "fields" {
@@ -376,8 +379,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 			}
 			// TODO: check type of input.Value Should be emtpy
 
-			updatedActivity, err = db.UpdateRemoveFromActivity(ctx, storage.UpdateRemoveFromActivityParams{
-				Id:             activity.Id,
+			updatedActivity, err = db.UpdateRemoveFromActivityTx(ctx, storage.UpdateRemoveFromActivityTxParams{
+				Activity:       *activity,
 				OrganizationId: organization.Id,
 
 				Field:    field,

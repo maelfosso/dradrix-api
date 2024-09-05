@@ -211,3 +211,99 @@ func (q *Queries) UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemove
 
 	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
 }
+
+type AddRelationshipIntoActivityParams struct {
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
+
+	Type             string
+	ActivityId       primitive.ObjectID
+	FieldId          primitive.ObjectID
+	ConcernedFieldId primitive.ObjectID
+}
+
+func (q *Queries) AddRelationshipIntoActivity(ctx context.Context, arg AddRelationshipIntoActivityParams) (*models.Activity, error) {
+	relationship := models.ActivityRelationship{
+		Id:               primitive.NewObjectID(),
+		Type:             arg.Type,
+		ActivityId:       arg.ActivityId,
+		FieldId:          arg.FieldId,
+		ConcernedFieldId: arg.ConcernedFieldId,
+	}
+
+	filter := bson.M{
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
+	}
+	update := bson.M{
+		"$push": bson.M{
+			"relationships": bson.M{
+				"$each": bson.A{
+					relationship,
+				},
+			},
+		},
+	}
+
+	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
+}
+
+type RemoveRelationshipFromActivityParams struct {
+	Id             primitive.ObjectID
+	OrganizationId primitive.ObjectID
+
+	Type             string
+	ActivityId       primitive.ObjectID
+	FieldId          primitive.ObjectID
+	ConcernedFieldId primitive.ObjectID
+}
+
+func (q *Queries) RemoveRelationshipFromActivity(ctx context.Context, arg RemoveRelationshipFromActivityParams) (*models.Activity, error) {
+	filter := bson.M{
+		"_id":             arg.Id,
+		"organization_id": arg.OrganizationId,
+	}
+	// update := bson.M{
+	// 	"$unset": bson.M{
+	// 		// fieldWithPosition: 1,
+	// 	},
+	// }
+	// _, err := CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	update := bson.M{
+		"$pull": bson.M{
+			"relationships": bson.M{
+				// "type": arg.Type,
+				"activity_id":        arg.ActivityId,
+				"field_id":           arg.FieldId,
+				"concerned_field_id": arg.ConcernedFieldId,
+			},
+		},
+	}
+
+	_, err := CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	// Other side of the relationship
+	filter = bson.M{
+		"_id":             arg.ActivityId,
+		"organization_id": arg.OrganizationId,
+	}
+
+	update = bson.M{
+		"$pull": bson.M{
+			"relationships": bson.M{
+				"activity_id":        arg.Id,
+				"field_id":           arg.ConcernedFieldId,
+				"concerned_field_id": arg.FieldId,
+			},
+		},
+	}
+
+	return CommonUpdateQuery[models.Activity](ctx, *q.activitiesCollection, filter, update)
+}

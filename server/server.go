@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+	awss3 "stockinos.com/api/aws_s3"
 	"stockinos.com/api/broker"
 	"stockinos.com/api/storage"
 	"stockinos.com/api/utils"
@@ -20,6 +21,7 @@ import (
 type Server struct {
 	address  string
 	database *storage.Database
+	s3       *awss3.S3Client
 	// nats     *broker.Broker
 	log    *zap.Logger
 	mux    chi.Router
@@ -28,6 +30,7 @@ type Server struct {
 
 type Options struct {
 	Database *storage.Database
+	S3       *awss3.S3Client
 	// Nats     *broker.Broker
 	Host string
 	Log  *zap.Logger
@@ -44,6 +47,7 @@ func New(opts Options) *Server {
 
 	return &Server{
 		database: createDatabase(opts.Log),
+		s3:       opts.S3,
 		// nats:     createNats(opts.Log),
 		address: address,
 		log:     opts.Log,

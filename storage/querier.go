@@ -36,20 +36,32 @@ type Querier interface {
 	UpdateSetInActivity(ctx context.Context, arg UpdateSetInActivityParams) (*models.Activity, error)
 	UpdateAddToActivity(ctx context.Context, arg UpdateAddToActivityParams) (*models.Activity, error)
 	UpdateRemoveFromActivity(ctx context.Context, arg UpdateRemoveFromActivityParams) (*models.Activity, error)
+	AddRelationshipIntoActivity(ctx context.Context, arg AddRelationshipIntoActivityParams) (*models.Activity, error)
+	RemoveRelationshipFromActivity(ctx context.Context, arg RemoveRelationshipFromActivityParams) (*models.Activity, error)
 	// Data
 	CreateData(ctx context.Context, arg CreateDataParams) (*models.Data, error)
+	UpdateData(ctx context.Context, arg UpdateDataParams) (*models.Data, error)
 	GetData(ctx context.Context, arg GetDataParams) (*models.Data, error)
+	GetDataFilterByValues(ctx context.Context, arg GetDataFilterByValuesParams) (*models.Data, error)
 	GetAllData(ctx context.Context, arg GetAllDataParams) ([]*models.Data, error)
 	DeleteData(ctx context.Context, arg DeleteDataParams) error
 	UpdateSetInData(ctx context.Context, arg UpdateSetInDataParams) (*models.Data, error)
 	UpdateAddToData(ctx context.Context, arg UpdateAddToDataParams) (*models.Data, error)
 	UpdateRemoveFromData(ctx context.Context, arg UpdateRemoveFromDataParams) (*models.Data, error)
+	AddUploadedFile(ctx context.Context, arg AddUploadedFileParams) (*models.UploadedFile, error)
+	GetAllUploadedFiles(ctx context.Context, arg GetAllUploadedFilesParams) ([]*models.UploadedFile, error)
+	RemoveUploadedFile(ctx context.Context, arg RemoveUploadedFileParams) error
+	RemoveAllUploadedFile(ctx context.Context, arg RemoveUploadedFileParams) error
 }
 
 type QuerierTx interface {
 	// OTP
 	CheckOTPTx(ctx context.Context, arg CheckOTPParams) (*models.OTP, error)
 	CreateOTPx(ctx context.Context, arg CreateOTPParams) (*models.OTP, error)
+
+	// Activity
+	UpdateSetInActivityTx(ctx context.Context, arg UpdateSetInActivityTxParams) (*models.Activity, error)
+	UpdateRemoveFromActivityTx(ctx context.Context, arg UpdateRemoveFromActivityTxParams) (*models.Activity, error)
 }
 
 var _ Querier = (*Queries)(nil)

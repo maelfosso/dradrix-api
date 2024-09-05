@@ -411,7 +411,11 @@ func dataEq(got, want *models.Data) error {
 	}
 
 	if got.CreatedBy != want.CreatedBy {
-		return fmt.Errorf("got.CreatedBy = %s; want %s", got.CreatedBy, want.CreatedBy)
+		return fmt.Errorf("CreatedBy - got %s; want %s", got.CreatedBy, want.CreatedBy)
+	}
+
+	if got.ActivityId != want.ActivityId {
+		return fmt.Errorf("ActivityId - got %s; want %s", got.CreatedBy, want.CreatedBy)
 	}
 
 	return nil
