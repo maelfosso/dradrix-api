@@ -343,8 +343,7 @@ func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface, s3
 		var relationships []models.ActivityRelationship = make([]models.ActivityRelationship, 0)
 		for i := range activity.Relationships {
 			relationship := activity.Relationships[i]
-			if relationship.Type == "has-one" || relationship.Type == "has-many" {
-
+			if relationship.Type == "has_one" || relationship.Type == "has_many" {
 				relationships = append(relationships, relationship)
 			}
 		}
@@ -366,14 +365,14 @@ func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface, s3
 					relationshipData, err := db.GetAllData(ctx, storage.GetAllDataParams{
 						ActivityId: relationship.ActivityId,
 						Projections: map[string]int{
-							fmt.Sprintf("values.%s", relationship.FieldId): 1,
+							fmt.Sprintf("values.%s", relationship.FieldId.Hex()): 1,
 						},
 						FilterBy: map[string]any{
-							fmt.Sprintf("values.%s", relationship.FieldId): data.Values[primaryKeyField.Id.Hex()],
+							fmt.Sprintf("values.%s", relationship.FieldId.Hex()): data.Values[primaryKeyField.Id.Hex()],
 						},
 					})
 					if err != nil {
-						http.Error(w, "ERR_", http.StatusBadRequest)
+						http.Error(w, "ERR_DATA_DLT_GET_DATA_USING_PK_VALUE", http.StatusBadRequest)
 						return
 					}
 
@@ -385,7 +384,7 @@ func (handler *AppHandler) DeleteData(mux chi.Router, db deleteDataInterface, s3
 				}
 
 				if len(notDeletedReasons) > 0 {
-					http.Error(w, "ERR_DLT", http.StatusBadRequest)
+					http.Error(w, "ERR_DATA_DLT_ROW_REF_SWH", http.StatusBadRequest)
 					return
 				}
 			}

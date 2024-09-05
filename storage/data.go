@@ -113,7 +113,7 @@ func (q *Queries) GetAllData(ctx context.Context, arg GetAllDataParams) ([]*mode
 	}
 	if len(arg.FilterBy) > 0 {
 		for key, value := range arg.FilterBy {
-			filter[fmt.Sprintf("values.%s", key)] = value
+			filter[key] = value
 		}
 	}
 	cursor, err := q.datasCollections.Find(ctx, filter, opts)
