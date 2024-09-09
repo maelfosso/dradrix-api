@@ -98,6 +98,7 @@ type DBCollections struct {
 	usersCollection          *mongo.Collection
 	otpsCollection           *mongo.Collection
 	organizationsCollection  *mongo.Collection
+	teamsCollection          *mongo.Collection
 	activitiesCollection     *mongo.Collection
 	datasCollections         *mongo.Collection
 	uploadedFilesCollections *mongo.Collection
@@ -108,6 +109,7 @@ func (d *Database) GetAllCollections() *DBCollections {
 		usersCollection:          d.GetCollection("users"),
 		otpsCollection:           d.GetCollection("otps"),
 		organizationsCollection:  d.GetCollection("organizations"),
+		teamsCollection:          d.GetCollection("teams"),
 		activitiesCollection:     d.GetCollection("activities"),
 		datasCollections:         d.GetCollection("datas"),
 		uploadedFilesCollections: d.GetCollection("uploaded_files"),

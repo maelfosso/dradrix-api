@@ -27,6 +27,9 @@ type Querier interface {
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (*models.Organization, error)
 	DeleteOrganization(ctx context.Context, arg DeleteOrganizationParams) error
 
+	// Team
+	GetMembersFromOrganization(ctx context.Context, arg GetMembersFromOrganizationParams) ([]models.Member, error)
+
 	// Monitoring
 	// Activity
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (*models.Activity, error)

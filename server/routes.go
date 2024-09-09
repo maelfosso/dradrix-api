@@ -84,6 +84,10 @@ func (s *Server) setupRoutes() {
 						})
 					})
 				})
+
+				r.Route("/team", func(r chi.Router) {
+					appHandler.GetTeam(r, s.database.Storage)
+				})
 			})
 		})
 	})

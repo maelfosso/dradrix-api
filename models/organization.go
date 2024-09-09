@@ -26,4 +26,20 @@ type Organization struct {
 	DeletedAt *time.Time `bson:"deleted_at" json:"deleted_at,omitempty"`
 
 	CreatedBy primitive.ObjectID `bson:"created_by" json:"created_by,omitempty"`
+
+	OwnedBy     primitive.ObjectID `bson:"owned_by" json:"owned_by"`
+	InviteToken string             `bson:"invite_token" json:"invite_token"`
+}
+
+type Member struct {
+	Id             primitive.ObjectID `bson:"_id" json:"id"`
+	OrganizationId primitive.ObjectID `bson:"organization_id" json:"organization_id"`
+	User           User               `bson:"user" json:"user"`
+
+	InvitedAt  time.Time  `bson:"invited_at" json:"invited_at"`
+	AnsweredAt *time.Time `bson:"answered_at" json:"answered_at"`
+	DeletedAt  *time.Time `bson:"deleted_at" json:"deleted_at"`
+
+	Status string `bson:"status" json:"status"`
+	Role   string `bson:"role" json:"role"`
 }

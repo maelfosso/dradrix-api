@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"stockinos.com/api/models"
 	"stockinos.com/api/storage"
@@ -108,9 +109,11 @@ func (handler *AppHandler) CreateOrganization(mux chi.Router, db createOrganizat
 		}
 
 		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
-			Name:      input.Name,
-			Bio:       input.Bio,
-			CreatedBy: authUser.Id,
+			Name:        input.Name,
+			Bio:         input.Bio,
+			CreatedBy:   authUser.Id,
+			OwnedBy:     authUser.Id,
+			InviteToken: uuid.New().String(),
 		})
 		if err != nil {
 			http.Error(w, "ERR_C_CMP_01", http.StatusBadRequest)

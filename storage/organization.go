@@ -18,7 +18,9 @@ type CreateOrganizationParams struct {
 	Email   string
 	Address models.Address
 
-	CreatedBy primitive.ObjectID
+	CreatedBy   primitive.ObjectID
+	OwnedBy     primitive.ObjectID
+	InviteToken string
 }
 
 func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error) {
@@ -30,7 +32,9 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 
-		CreatedBy: arg.CreatedBy,
+		CreatedBy:   arg.CreatedBy,
+		OwnedBy:     arg.OwnedBy,
+		InviteToken: arg.InviteToken,
 	}
 
 	_, err := q.organizationsCollection.InsertOne(ctx, organization)
