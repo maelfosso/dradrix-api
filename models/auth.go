@@ -8,8 +8,9 @@ type UserPreferencesOrganization struct {
 }
 
 type UserPreferences struct {
-	Organization   UserPreferencesOrganization `bson:"organization" json:"organization,omitempty"`
-	OnboardingStep int                         `bson:"onboarding_step" json:"onboarding_step"`
+	// Organization  UserPreferencesOrganization `bson:"organization" json:"organization,omitempty"`
+	CurrentOrganizationId primitive.ObjectID `bson:"current_organization_id" json:"current_organization_id"`
+	CurrentStatus         string             `bson:"current_status" json:"current_status"`
 }
 
 type User struct {

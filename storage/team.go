@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -61,4 +62,33 @@ func (q *Queries) GetMembersFromOrganization(ctx context.Context, arg GetMembers
 	}
 
 	return members, nil
+}
+
+type AddMemberIntoOrganizationParams struct {
+	OrganizationId primitive.ObjectID
+	UserId         primitive.ObjectID
+	InvitedAt      time.Time
+	ConfirmedAt    *time.Time
+}
+
+func (q *Queries) AddMemberIntoOrganization(ctx context.Context, arg AddMemberIntoOrganizationParams) (*models.Member, error) {
+	var member models.Member = models.Member{
+		Id:             primitive.NewObjectID(),
+		OrganizationId: arg.OrganizationId,
+		MemberId:       arg.UserId,
+
+		InvitedAt:   arg.InvitedAt,
+		ConfirmedAt: arg.ConfirmedAt,
+		DeletedAt:   nil,
+
+		Status: "confirmed",
+		Role:   "member",
+	}
+
+	_, err := q.teamsCollection.InsertOne(ctx, member)
+	if err != nil {
+		return nil, err
+	} else {
+		return &member, nil
+	}
 }

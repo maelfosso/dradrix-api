@@ -69,6 +69,10 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*models
 		PhoneNumber: arg.PhoneNumber,
 		FirstName:   arg.FirstName,
 		LastName:    arg.LastName,
+
+		Preferences: models.UserPreferences{
+			CurrentStatus: "is-creating-account",
+		},
 	}
 
 	result, err := q.usersCollection.InsertOne(ctx, user)

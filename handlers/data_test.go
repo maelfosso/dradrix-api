@@ -20,12 +20,6 @@ import (
 	sfaker "syreclabs.com/go/faker"
 )
 
-var authenticatedUser = &models.User{
-	Id:          primitive.NewObjectID(),
-	Name:        gofaker.Name(),
-	PhoneNumber: gofaker.Phonenumber(),
-}
-
 func TestData(t *testing.T) {
 	handler := handlers.NewAppHandler()
 	handler.GetAuthenticatedUser = func(r *http.Request) *models.User {

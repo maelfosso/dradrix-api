@@ -39,8 +39,8 @@ func (s *Server) setupRoutes() {
 			handlers.GetCurrentUser(r)
 
 			r.Route("/onboarding", func(r chi.Router) {
-				appHandler.SetProfile(r, s.database.Storage)
-				appHandler.FirstOrganization(r, s.database.Storage)
+				appHandler.UpdateProfile(r, s.database.Storage)
+				appHandler.SetUpOrganization(r, s.database.Storage)
 			})
 		})
 
@@ -90,6 +90,7 @@ func (s *Server) setupRoutes() {
 				})
 			})
 		})
+
 	})
 
 	// Public Routes
@@ -100,8 +101,19 @@ func (s *Server) setupRoutes() {
 		r.Group(func(r chi.Router) {
 			// Auth
 			r.Route("/auth", func(r chi.Router) {
-				handlers.CreateOTP(r, s.database.Storage)
-				handlers.CheckOTP(r, s.database.Storage)
+				appHandler.CreateOTP(r, s.database.Storage)
+				appHandler.CheckOTP(r, s.database.Storage)
+				appHandler.UpdateProfile(r, s.database.Storage)
+				appHandler.SetUpOrganization(r, s.database.Storage)
+				// handlers.ResendOTP(r, s.database)
+			})
+
+			r.Route("/join/{inviteToken}", func(r chi.Router) {
+				appHandler.InvitationMiddleware(r, s.database.Storage)
+
+				appHandler.GetOrganizationFromInvitationToken(r, s.database.Storage)
+
+				appHandler.AddMember(r, s.database.Storage)
 				// handlers.ResendOTP(r, s.database)
 			})
 		})

@@ -19,13 +19,6 @@ import (
 	sfaker "syreclabs.com/go/faker"
 )
 
-var authenticatedUser = &models.User{
-	Id:          primitive.NewObjectID(),
-	FirstName:   gofaker.FirstName(),
-	LastName:    gofaker.LastName(),
-	PhoneNumber: gofaker.Phonenumber(),
-}
-
 func TestOnboarding(t *testing.T) {
 	handler := handlers.NewAppHandler()
 	handler.GetAuthenticatedUser = func(req *http.Request) *models.User {
@@ -103,7 +96,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 			mux,
 			"/name",
 			helpertest.CreateFormHeader(),
-			handlers.SetProfileRequest{
+			handlers.UpdateProfileRequest{
 				FirstName: gofaker.FirstName(),
 				LastName:  gofaker.LastName(),
 			},
@@ -120,7 +113,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("error update user preferences", func(t *testing.T) {
-		dataRequest := handlers.SetProfileRequest{
+		dataRequest := handlers.UpdateProfileRequest{
 			FirstName: gofaker.FirstName(),
 			LastName:  gofaker.LastName(),
 		}
@@ -167,7 +160,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		dataRequest := handlers.SetProfileRequest{
+		dataRequest := handlers.UpdateProfileRequest{
 			FirstName: gofaker.FirstName(),
 			LastName:  gofaker.LastName(),
 		}
@@ -208,7 +201,7 @@ func testSetProfile(t *testing.T, handler *handlers.AppHandler) {
 			t.Fatalf("SetProfile(): code - got %d; want %d", code, wantCode)
 		}
 
-		got := handlers.SetProfileResponse{}
+		got := handlers.UpdateProfileResponse{}
 		json.Unmarshal([]byte(response), &got)
 		if !got.Done {
 			t.Fatalf("SetProfile(): response done - got %+v; want true", got.Done)
@@ -259,7 +252,7 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("error creating organization", func(t *testing.T) {
-		dataRequest := handlers.FirstOrganizationRequest{
+		dataRequest := handlers.SetUpOrganizationRequest{
 			Name: sfaker.Company().Name(),
 			Bio:  gofaker.Paragraph(),
 		}
@@ -291,7 +284,7 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("error update user preferences", func(t *testing.T) {
-		dataRequest := handlers.FirstOrganizationRequest{
+		dataRequest := handlers.SetUpOrganizationRequest{
 			Name: sfaker.Company().Name(),
 			Bio:  gofaker.Paragraph(),
 		}
@@ -332,7 +325,7 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		dataRequest := handlers.FirstOrganizationRequest{
+		dataRequest := handlers.SetUpOrganizationRequest{
 			Name: sfaker.Company().Name(),
 			Bio:  gofaker.Paragraph(),
 		}
@@ -379,7 +372,7 @@ func testFirstOrganization(t *testing.T, handler *handlers.AppHandler) {
 			t.Fatalf("FirstOrganization(): status - got %d; want %d", code, want)
 		}
 
-		got := handlers.FirstOrganizationResponse{}
+		got := handlers.SetUpOrganizationResponse{}
 		json.Unmarshal([]byte(response), &got)
 		if got.Id != organization.Id {
 			t.Fatalf("FirstOrganization(): response Id - got %s; want %s", got.Id, organization.Id)

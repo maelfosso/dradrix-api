@@ -25,16 +25,17 @@ type CreateOrganizationParams struct {
 
 func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error) {
 	var organization models.Organization = models.Organization{
-		Id:   primitive.NewObjectID(),
-		Name: arg.Name,
-		Bio:  arg.Bio,
+		Id:    primitive.NewObjectID(),
+		Name:  arg.Name,
+		Bio:   arg.Bio,
+		Email: arg.Email,
 
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 
-		CreatedBy:   arg.CreatedBy,
-		OwnedBy:     arg.OwnedBy,
-		InviteToken: arg.InviteToken,
+		CreatedBy:       arg.CreatedBy,
+		OwnedBy:         arg.OwnedBy,
+		InvitationToken: arg.InviteToken,
 	}
 
 	_, err := q.organizationsCollection.InsertOne(ctx, organization)
@@ -76,6 +77,28 @@ func (q *Queries) GetOrganization(ctx context.Context, arg GetOrganizationParams
 	filter := bson.M{
 		"_id":        arg.Id,
 		"deleted_at": nil,
+	}
+	err := q.organizationsCollection.FindOne(ctx, filter).Decode(&organization)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	return &organization, nil
+}
+
+type GetOrganizationFromInvitationTokenParams struct {
+	InviteToken string
+}
+
+func (q *Queries) GetOrganizationFromInvitationToken(ctx context.Context, arg GetOrganizationFromInvitationTokenParams) (*models.Organization, error) {
+	var organization models.Organization
+
+	filter := bson.M{
+		"invite_token": arg.InviteToken,
+		"deleted_at":   nil,
 	}
 	err := q.organizationsCollection.FindOne(ctx, filter).Decode(&organization)
 	if err != nil {

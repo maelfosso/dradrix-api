@@ -24,11 +24,13 @@ type Querier interface {
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error)
 	GetAllCompanies(ctx context.Context, arg GetAllCompaniesParams) ([]*models.Organization, error)
 	GetOrganization(ctx context.Context, arg GetOrganizationParams) (*models.Organization, error)
+	GetOrganizationFromInvitationToken(ctx context.Context, arg GetOrganizationFromInvitationTokenParams) (*models.Organization, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (*models.Organization, error)
 	DeleteOrganization(ctx context.Context, arg DeleteOrganizationParams) error
 
 	// Team
 	GetMembersFromOrganization(ctx context.Context, arg GetMembersFromOrganizationParams) ([]models.Member, error)
+	AddMemberIntoOrganization(ctx context.Context, arg AddMemberIntoOrganizationParams) (*models.Member, error)
 
 	// Monitoring
 	// Activity

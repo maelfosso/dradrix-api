@@ -1,146 +1,135 @@
 package handlers
 
-import (
-	"context"
-	"encoding/json"
-	"net/http"
+// type SetProfileInterface interface {
+// 	UpdateUserProfile(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error)
+// 	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
+// }
 
-	"github.com/go-chi/chi/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"stockinos.com/api/models"
-	"stockinos.com/api/storage"
-)
+// type SetProfileRequest struct {
+// 	FirstName string `json:"first_name,omitempty"`
+// 	LastName  string `json:"last_name,omitempty"`
+// 	Email     string `json:"email,omitempty"`
+// }
 
-type SetProfileInterface interface {
-	UpdateUserProfile(ctx context.Context, arg storage.UpdateUserProfileParams) (*models.User, error)
-	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
-}
+// type SetProfileResponse struct {
+// 	Done bool `json:"done,omitempty"`
+// }
 
-type SetProfileRequest struct {
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
-	Email     string `json:"email,omitempty"`
-}
+// func (appHandler *AppHandler) UpdateProfile(mux chi.Router, db SetProfileInterface) {
+// 	mux.Post("/profile", func(w http.ResponseWriter, r *http.Request) {
+// 		ctx := r.Context()
 
-type SetProfileResponse struct {
-	Done bool `json:"done,omitempty"`
-}
+// 		var input SetProfileRequest
+// 		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
+// 		if err != nil {
+// 			http.Error(w, err.Error(), httpStatus)
+// 			return
+// 		}
 
-func (appHandler *AppHandler) SetProfile(mux chi.Router, db SetProfileInterface) {
-	mux.Post("/profile", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+// 		currentAuthUser := appHandler.GetAuthenticatedUser(r)
 
-		var input SetProfileRequest
-		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
-		if err != nil {
-			http.Error(w, err.Error(), httpStatus)
-			return
-		}
+// 		_, err = db.UpdateUserProfile(ctx, storage.UpdateUserProfileParams{
+// 			Id:        currentAuthUser.Id,
+// 			FirstName: input.FirstName,
+// 			LastName:  input.LastName,
+// 			Email:     input.Email,
+// 		})
+// 		if err != nil {
+// 			http.Error(w, "ERR_OBD_SN_01", http.StatusBadRequest)
+// 			return
+// 		}
 
-		currentAuthUser := appHandler.GetAuthenticatedUser(r)
+// 		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
+// 			Id: currentAuthUser.Id,
 
-		_, err = db.UpdateUserProfile(ctx, storage.UpdateUserProfileParams{
-			Id:        currentAuthUser.Id,
-			FirstName: input.FirstName,
-			LastName:  input.LastName,
-			Email:     input.Email,
-		})
-		if err != nil {
-			http.Error(w, "ERR_OBD_SN_01", http.StatusBadRequest)
-			return
-		}
+// 			Changes: map[string]any{
+// 				"onboarding_step": 1,
+// 			},
+// 		})
+// 		if err != nil {
+// 			http.Error(w, "ERR_OBD_SN_02", http.StatusBadRequest)
+// 			return
+// 		}
 
-		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
-			Id: currentAuthUser.Id,
+// 		response := SetProfileResponse{
+// 			Done: true,
+// 		}
 
-			Changes: map[string]any{
-				"onboarding_step": 1,
-			},
-		})
-		if err != nil {
-			http.Error(w, "ERR_OBD_SN_02", http.StatusBadRequest)
-			return
-		}
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.WriteHeader(http.StatusOK)
+// 		if err := json.NewEncoder(w).Encode(response); err != nil {
+// 			http.Error(w, "ERR_OBD_SN_END", http.StatusBadRequest)
+// 			return
+// 		}
+// 	})
+// }
 
-		response := SetProfileResponse{
-			Done: true,
-		}
+// type FirstOrganizationInterface interface {
+// 	CreateOrganization(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error)
+// 	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
+// }
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "ERR_OBD_SN_END", http.StatusBadRequest)
-			return
-		}
-	})
-}
+// type FirstOrganizationRequest struct {
+// 	Name    string         `json:"name"`
+// 	Bio     string         `json:"bio"`
+// 	Email   string         `json:"email"`
+// 	Address models.Address `json:"address"`
+// }
 
-type FirstOrganizationInterface interface {
-	CreateOrganization(ctx context.Context, arg storage.CreateOrganizationParams) (*models.Organization, error)
-	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
-}
+// type FirstOrganizationResponse struct {
+// 	Id primitive.ObjectID `json:"id"`
+// }
 
-type FirstOrganizationRequest struct {
-	Name    string         `json:"name"`
-	Bio     string         `json:"bio"`
-	Email   string         `json:"email"`
-	Address models.Address `json:"address"`
-}
+// func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganizationInterface) {
+// 	mux.Post("/organization", func(w http.ResponseWriter, r *http.Request) {
+// 		ctx := r.Context()
 
-type FirstOrganizationResponse struct {
-	Id primitive.ObjectID `json:"id"`
-}
+// 		currentAuthUser := appHandler.GetAuthenticatedUser(r)
 
-func (appHandler *AppHandler) FirstOrganization(mux chi.Router, db FirstOrganizationInterface) {
-	mux.Post("/organization", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+// 		var input FirstOrganizationRequest
+// 		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
+// 		if err != nil {
+// 			http.Error(w, err.Error(), httpStatus)
+// 			return
+// 		}
 
-		currentAuthUser := appHandler.GetAuthenticatedUser(r)
+// 		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
+// 			Name:      input.Name,
+// 			Bio:       input.Bio,
+// 			Email:     input.Email,
+// 			Address:   input.Address,
+// 			CreatedBy: currentAuthUser.Id,
+// 		})
+// 		if err != nil {
+// 			http.Error(w, "ERR_OBD_CPN_01", http.StatusBadRequest)
+// 			return
+// 		}
 
-		var input FirstOrganizationRequest
-		httpStatus, err := appHandler.ParsingRequestBody(w, r, &input)
-		if err != nil {
-			http.Error(w, err.Error(), httpStatus)
-			return
-		}
+// 		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
+// 			Id: currentAuthUser.Id,
 
-		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
-			Name:      input.Name,
-			Bio:       input.Bio,
-			Email:     input.Email,
-			Address:   input.Address,
-			CreatedBy: currentAuthUser.Id,
-		})
-		if err != nil {
-			http.Error(w, "ERR_OBD_CPN_01", http.StatusBadRequest)
-			return
-		}
+// 			Changes: map[string]any{
+// 				"organization": map[string]any{
+// 					"_id":  organization.Id,
+// 					"name": organization.Name,
+// 				},
+// 				"onboarding_step": -1,
+// 			},
+// 		})
+// 		if err != nil {
+// 			http.Error(w, "ERR_OBD_CPN_02", http.StatusBadRequest)
+// 			return
+// 		}
 
-		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
-			Id: currentAuthUser.Id,
+// 		response := FirstOrganizationResponse{
+// 			Id: organization.Id,
+// 		}
 
-			Changes: map[string]any{
-				"organization": map[string]any{
-					"_id":  organization.Id,
-					"name": organization.Name,
-				},
-				"onboarding_step": -1,
-			},
-		})
-		if err != nil {
-			http.Error(w, "ERR_OBD_CPN_02", http.StatusBadRequest)
-			return
-		}
-
-		response := FirstOrganizationResponse{
-			Id: organization.Id,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "ERR_OBD_CPN_END", http.StatusBadRequest)
-			return
-		}
-	})
-}
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.WriteHeader(http.StatusOK)
+// 		if err := json.NewEncoder(w).Encode(response); err != nil {
+// 			http.Error(w, "ERR_OBD_CPN_END", http.StatusBadRequest)
+// 			return
+// 		}
+// 	})
+// }
