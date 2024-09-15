@@ -108,7 +108,7 @@ func (s *Server) setupRoutes() {
 				// handlers.ResendOTP(r, s.database)
 			})
 
-			r.Route("/join/{inviteToken}", func(r chi.Router) {
+			r.Route("/join/{invitationToken}", func(r chi.Router) {
 				appHandler.InvitationMiddleware(r, s.database.Storage)
 
 				appHandler.GetOrganizationFromInvitationToken(r, s.database.Storage)

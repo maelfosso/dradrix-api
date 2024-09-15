@@ -28,9 +28,8 @@ type getOTPInterface interface {
 }
 
 type CreateOTPRequest struct {
-	PhoneNumber    string `json:"phone_number"` // Phone number of the customer
-	Language       string `json:"language"`     // Language for template
-	OrganizationId string `json:"organization_id"`
+	PhoneNumber string `json:"phone_number"` // Phone number of the customer
+	Language    string `json:"language"`     // Language for template
 }
 
 type CreateOTPResponse struct {
@@ -212,7 +211,8 @@ func (appHandler *AppHandler) CheckOTP(mux chi.Router, db checkOTPInterface) {
 			},
 		)
 
-		redirectToUrl := nextLocation(r.URL.Path, finalCurrentStatus)
+		reqOrigin := r.URL.Query().Get("from")
+		redirectToUrl := nextLocation(reqOrigin, finalCurrentStatus)
 		if redirectToUrl == "" {
 			redirectToUrl = "/x" // fmt.Sprintf("/org/%s", user.Preferences.CurrentOrganizationId.Hex())
 		} else {
@@ -288,17 +288,17 @@ func (appHandler *AppHandler) UpdateProfile(mux chi.Router, db UpdateProfileInte
 			return
 		}
 
-		finalStatus := strings.Split(user.Preferences.CurrentStatus, "/")[0]
+		finalCurrentStatus := strings.Split(user.Preferences.CurrentStatus, "/")[0]
 		if user.Preferences.CurrentOrganizationId.IsZero() {
-			finalStatus = fmt.Sprintf("%s/set-org", finalStatus)
+			finalCurrentStatus = fmt.Sprintf("%s/set-org", finalCurrentStatus)
 		} else {
-			finalStatus = "registration-complete"
+			finalCurrentStatus = "registration-complete"
 		}
 		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
 			Id: user.Id,
 
 			Changes: map[string]any{
-				"current_status": finalStatus,
+				"current_status": finalCurrentStatus,
 			},
 		})
 		if err != nil {
@@ -306,9 +306,16 @@ func (appHandler *AppHandler) UpdateProfile(mux chi.Router, db UpdateProfileInte
 			return
 		}
 
+		reqOrigin := r.URL.Query().Get("from")
+		redirectToUrl := nextLocation(reqOrigin, finalCurrentStatus)
+		if redirectToUrl == "" {
+			redirectToUrl = "/x" // fmt.Sprintf("/org/%s", user.Preferences.CurrentOrganizationId.Hex())
+		} else {
+			redirectToUrl = fmt.Sprintf("%s?phone-number=%s", redirectToUrl, input.PhoneNumber)
+		}
 		response := UpdateProfileResponse{
 			Done:          true,
-			RedirectToUrl: fmt.Sprintf("%s?phone-number=%s", nextLocation(r.URL.Path, finalStatus), input.PhoneNumber),
+			RedirectToUrl: redirectToUrl,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -366,13 +373,13 @@ func (appHandler *AppHandler) SetUpOrganization(mux chi.Router, db SetUpOrganiza
 		}
 
 		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
-			Name:        input.Name,
-			Bio:         input.Bio,
-			Email:       input.Email,
-			Address:     input.Address,
-			CreatedBy:   user.Id,
-			OwnedBy:     user.Id,
-			InviteToken: uuid.New().String(),
+			Name:            input.Name,
+			Bio:             input.Bio,
+			Email:           input.Email,
+			Address:         input.Address,
+			CreatedBy:       user.Id,
+			OwnedBy:         user.Id,
+			InvitationToken: uuid.New().String(),
 		})
 		if err != nil {
 			http.Error(w, "ERR_OBD_CPN_01", http.StatusBadRequest)

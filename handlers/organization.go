@@ -109,11 +109,11 @@ func (handler *AppHandler) CreateOrganization(mux chi.Router, db createOrganizat
 		}
 
 		organization, err := db.CreateOrganization(ctx, storage.CreateOrganizationParams{
-			Name:        input.Name,
-			Bio:         input.Bio,
-			CreatedBy:   authUser.Id,
-			OwnedBy:     authUser.Id,
-			InviteToken: uuid.New().String(),
+			Name:            input.Name,
+			Bio:             input.Bio,
+			CreatedBy:       authUser.Id,
+			OwnedBy:         authUser.Id,
+			InvitationToken: uuid.New().String(),
 		})
 		if err != nil {
 			http.Error(w, "ERR_C_CMP_01", http.StatusBadRequest)

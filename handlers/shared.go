@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"strings"
 )
 
 func updateCurrentStatus(userCurrentStatus, justDoneStatus string) string {
@@ -19,9 +18,7 @@ func updateCurrentStatus(userCurrentStatus, justDoneStatus string) string {
 	return userCurrentStatus
 }
 
-func nextLocation(path, currentStatus string) string {
-	splittenPath := strings.Split(path, "/")
-
+func nextLocation(from, currentStatus string) string {
 	endPath := ""
 	switch currentStatus {
 	case "is-creating-account/set-profile":
@@ -32,12 +29,5 @@ func nextLocation(path, currentStatus string) string {
 		return ""
 	}
 
-	if strings.HasPrefix(path, "/auth") {
-		return fmt.Sprintf("/auth/%s", endPath)
-	}
-	if strings.HasPrefix(path, "/join") {
-		return fmt.Sprintf("/join/%s/%s", splittenPath[2], endPath)
-	}
-
-	return ""
+	return fmt.Sprintf("%s/%s", from, endPath)
 }

@@ -58,10 +58,10 @@ func (handler *AppHandler) InvitationMiddleware(mux chi.Router, db invitationMid
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			inviteToken := chi.URLParamFromCtx(ctx, "inviteToken")
+			invitationToken := chi.URLParamFromCtx(ctx, "invitationToken")
 
 			organization, err := db.GetOrganizationFromInvitationToken(ctx, storage.GetOrganizationFromInvitationTokenParams{
-				InviteToken: inviteToken,
+				InvitationToken: invitationToken,
 			})
 			if err != nil {
 				http.Error(w, "ERR_CMP_MDW_02", http.StatusBadRequest)
@@ -109,6 +109,7 @@ type addMemberInterface interface {
 	DoesUserExists(ctx context.Context, arg storage.DoesUserExistsParams) (*models.User, error)
 	CreateOTPx(ctx context.Context, arg storage.CreateOTPParams) (*models.OTP, error)
 	AddMemberIntoOrganization(ctx context.Context, arg storage.AddMemberIntoOrganizationParams) (*models.Member, error)
+	UpdateUserPreferences(ctx context.Context, arg storage.UpdateUserPreferencesParams) (*models.User, error)
 }
 
 type AddMemberRequest struct {
@@ -198,7 +199,18 @@ func (appHandler *AppHandler) AddMember(mux chi.Router, db addMemberInterface) {
 			return
 		}
 
-		// Joined organization but not end the sign-up process
+		_, err = db.UpdateUserPreferences(ctx, storage.UpdateUserPreferencesParams{
+			Id: user.Id,
+
+			Changes: map[string]any{
+				"current_organization_id": organization.Id,
+				"current_status":          user.Preferences.CurrentStatus,
+			},
+		})
+		if err != nil {
+			http.Error(w, "ERR_OBD_CPN_02", http.StatusBadRequest)
+			return
+		}
 
 		redirectToUrl := fmt.Sprintf(
 			"/join/%s/check-otp?phone-number=%s",

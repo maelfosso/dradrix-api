@@ -18,9 +18,9 @@ type CreateOrganizationParams struct {
 	Email   string
 	Address models.Address
 
-	CreatedBy   primitive.ObjectID
-	OwnedBy     primitive.ObjectID
-	InviteToken string
+	CreatedBy       primitive.ObjectID
+	OwnedBy         primitive.ObjectID
+	InvitationToken string
 }
 
 func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (*models.Organization, error) {
@@ -35,7 +35,7 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 
 		CreatedBy:       arg.CreatedBy,
 		OwnedBy:         arg.OwnedBy,
-		InvitationToken: arg.InviteToken,
+		InvitationToken: arg.InvitationToken,
 	}
 
 	_, err := q.organizationsCollection.InsertOne(ctx, organization)
@@ -90,15 +90,15 @@ func (q *Queries) GetOrganization(ctx context.Context, arg GetOrganizationParams
 }
 
 type GetOrganizationFromInvitationTokenParams struct {
-	InviteToken string
+	InvitationToken string
 }
 
 func (q *Queries) GetOrganizationFromInvitationToken(ctx context.Context, arg GetOrganizationFromInvitationTokenParams) (*models.Organization, error) {
 	var organization models.Organization
 
 	filter := bson.M{
-		"invite_token": arg.InviteToken,
-		"deleted_at":   nil,
+		"invitation_token": arg.InvitationToken,
+		"deleted_at":       nil,
 	}
 	err := q.organizationsCollection.FindOne(ctx, filter).Decode(&organization)
 	if err != nil {
