@@ -241,9 +241,8 @@ func (handler *AppHandler) UpdateActivity(mux chi.Router, db updateActivityInter
 		activity := ctx.Value("activity").(*models.Activity)
 
 		var updatedActivity *models.Activity
-		operation := strings.ToLower(input.Operation)
 		field := strings.ToLower(input.Field)
-		switch operation {
+		switch strings.ToLower(input.Operation) {
 		case "set":
 			if field == "" {
 				http.Error(w, "ERR_ATVT_UDT_010", http.StatusBadRequest)
