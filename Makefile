@@ -1,7 +1,7 @@
 .PHONY: build cover start test test-integration
 
 build:
-	docker build -t dadrix/api .
+	docker build -t stockinos/api .
 
 compile:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/main cmd/server/*
