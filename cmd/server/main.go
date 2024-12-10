@@ -49,7 +49,7 @@ func start() int {
 	port := utils.GetIntDefault("PORT", 8080)
 
 	database := storage.NewDatabase(storage.NewDatabaseOptions{
-		URI:  utils.GetDefault("MONGODB_URI", "mongodb://localhost:27017/stockinos"),
+		URI:  utils.GetDefault("MONGODB_URI", "mongodb://localhost:27017/"),
 		Name: utils.GetDefault("MONGDB_DBNAME", "stockinos"),
 		Log:  log,
 	})
