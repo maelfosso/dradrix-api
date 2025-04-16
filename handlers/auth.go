@@ -72,6 +72,7 @@ func (appHandler *AppHandler) CreateOTP(mux chi.Router, db getOTPInterface) {
 		})
 		if err != nil {
 			log.Println("Error at DoesUserExists", err)
+			http.Error(w, err.Error(), httpStatus)
 			return
 		}
 
@@ -84,6 +85,7 @@ func (appHandler *AppHandler) CreateOTP(mux chi.Router, db getOTPInterface) {
 			})
 			if err != nil {
 				log.Println("Error at CreateUser", err)
+				http.Error(w, err.Error(), httpStatus)
 				return
 			}
 		}
@@ -306,8 +308,8 @@ func (appHandler *AppHandler) UpdateProfile(mux chi.Router, db UpdateProfileInte
 			return
 		}
 
-		reqOrigin := r.URL.Query().Get("from")
-		redirectToUrl := nextLocation(reqOrigin, finalCurrentStatus)
+		// reqOrigin := r.URL.Query().Get("from")
+		redirectToUrl := nextLocation("/auth", finalCurrentStatus)
 		if redirectToUrl == "" {
 			redirectToUrl = "/x" // fmt.Sprintf("/org/%s", user.Preferences.CurrentOrganizationId.Hex())
 		} else {
@@ -410,7 +412,7 @@ func (appHandler *AppHandler) SetUpOrganization(mux chi.Router, db SetUpOrganiza
 
 		response := SetUpOrganizationResponse{
 			Id:            organization.Id,
-			RedirectToUrl: fmt.Sprintf("/org/%s", organization.Id.Hex()),
+			RedirectToUrl: "/x", // fmt.Sprintf("/org/%s", organization.Id.Hex()),
 		}
 
 		w.Header().Set("Content-Type", "application/json")

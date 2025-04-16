@@ -53,7 +53,6 @@ func (d *Database) Connect() error {
 	defer cancel()
 
 	var err error
-	// d.DB, err = gorm.Open(postgres.Open(d.createDataSourceName(true)), &gorm.Config{})
 	d.DB, err = mongo.Connect(
 		ctx,
 		options.Client().ApplyURI(d.uri),
@@ -67,7 +66,7 @@ func (d *Database) Connect() error {
 
 	err = d.DB.Ping(context.Background(), nil)
 	if err != nil {
-		d.log.Fatal("Ping to database has failed")
+		d.log.Fatal("Ping to database has failed", zap.Error(err))
 	}
 
 	d.log.Info("Successfully connected to MongoDB")

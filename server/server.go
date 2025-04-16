@@ -66,7 +66,7 @@ func New(opts Options) *Server {
 func createDatabase(log *zap.Logger) *storage.Database {
 	return storage.NewDatabase(storage.NewDatabaseOptions{
 		URI:  utils.GetDefault("MONGODB_URI", "mongodb://localhost"),
-		Name: utils.GetDefault("MONGDB_DBNAME", "stockinos"),
+		Name: utils.GetDefault("MONGDB_DBNAME", "dadrix"),
 		Log:  log,
 	})
 }
